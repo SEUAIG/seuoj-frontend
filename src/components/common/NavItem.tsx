@@ -43,7 +43,7 @@ export default function NavItem({
             {isActive && (
               <span
                 className="
-            absolute left-2 right-2 -bottom-px
+            absolute left-2 right-2 -bottom-1
             h-0.5
             rounded-full
             bg-primary
