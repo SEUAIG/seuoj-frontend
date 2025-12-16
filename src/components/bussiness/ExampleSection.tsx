@@ -3,14 +3,12 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy, Check } from "lucide-react";
 import { toast } from "sonner";
-
 interface ExampleSectionProps {
   input: string;
   output: string;
   isAuthenticated: boolean;
   explain: string;
 }
-
 export function ExampleSection({
   input,
   output,
@@ -21,16 +19,14 @@ export function ExampleSection({
     navigator.clipboard.writeText(text);
   };
 
-  const [showInputCopyCheck, setShowInputCopyCheck] = useState(false); // 初始化为布尔值 false
-  const [showOutputCopyCheck, setShowOutputCopyCheck] = useState(false); // 新增状态控制输出框按钮
-
+  const [showInputCopyCheck, setShowInputCopyCheck] = useState(false); 
+  const [showOutputCopyCheck, setShowOutputCopyCheck] = useState(false);
   const handleClick = (set: React.Dispatch<React.SetStateAction<boolean>>) => {
     set(true);
     setTimeout(() => {
       set(false);
     }, 1000); 
   };
-
   return (
     <Card className="overflow-hidden border shadow-sm">
       <CardHeader className="bg-gray-50 border-b py-3 px-4">

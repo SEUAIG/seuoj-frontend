@@ -13,6 +13,7 @@ import RankPage from "./components/pages/RankPage";
 import DiscussionPage from "./components/pages/DiscussionPage";
 import HelpPage from "./components/pages/HelpPage";
 import ProblemDetailPage from "./components/pages/ProblemDetailPage";
+import SubmissionPage from "./components/pages/SubmissionPage";
 
 function App() {
   return (
@@ -29,6 +30,10 @@ function App() {
           <Route path="/problemsLibrary">
             <Route index element={<ProblemsLibraryPage />} />
             <Route path=":id" element={<ProblemDetailPage />} />
+          </Route>
+          <Route path="/submission">
+            <Route index element={<SubmissionPage/>}/>
+            <Route path=":id" element={<SubmissionPage/>}/>
           </Route>
           <Route path="/competition" element={<CompetitionPage />} />
           <Route path="/evaluation" element={<EvaluationPage />} />
