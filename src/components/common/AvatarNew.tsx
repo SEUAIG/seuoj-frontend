@@ -1,7 +1,7 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import React from "react";
 import { User } from "../../features/auth/types";
-import { ArrowDown, User as UserIcon, LogOut } from "lucide-react"; // 引入图标
+import { ArrowDown, User as UserIcon, LogOut,ChevronDown } from "lucide-react"; 
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -26,15 +26,15 @@ export default function AvatarNew({ user }: { user: User }) {
             className="flex items-center space-x-1 text-lg font-medium hover:bg-gray-200 rounded-lg p-2"
           >
             <span>{user.username}</span>
-            <ArrowDown />
+            <ChevronDown />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-40 mt-2">
-          <DropdownMenuItem className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-2">
+          <DropdownMenuItem className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-2 cursor-pointer">
             <UserIcon size={16} />
             <span>个人中心</span>
           </DropdownMenuItem>
-          <DropdownMenuItem className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-2">
+          <DropdownMenuItem className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-2 cursor-pointer">
             <LogOut size={16} />
             <span>退出登录</span>
           </DropdownMenuItem>
