@@ -21,9 +21,9 @@ export default function TestPointOverview({
   return (
     <div
       className={[
-        "group flex items-center justify-between w-full cursor-pointer no-underline",
+        "flex items-center justify-between w-full cursor-pointer no-underline",
         active ? "text-foreground" : "text-muted-foreground",
-        "hover:text-foreground",
+        "group-hover:text-foreground",
       ].join(" ")}
     >
       <span>测试点 #1</span>

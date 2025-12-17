@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import React from "react";
 import AnswerState, { stateColorMap } from "../common/AnswerState";
+import ScoreBadge from "../common/ScoreBadage";
 
 export default function SubmissionRecord() {
   return (
@@ -34,7 +35,7 @@ export default function SubmissionRecord() {
           <TableCell>
             <AnswerState state="Accepted" className={stateColorMap["Accepted"]} />
           </TableCell>
-          <TableCell>100</TableCell>
+          <TableCell ><ScoreBadge score={100}/></TableCell>
           <TableCell>3ms</TableCell>
           <TableCell>284K</TableCell>
           <TableCell>C++/203B</TableCell>
