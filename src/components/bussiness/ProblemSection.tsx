@@ -14,7 +14,7 @@ export function ProblemSection({ title, children,download=false }: ProblemSectio
       <CardHeader className="bg-gray-50 border-b py-3 px-4">
         <CardTitle className="text-sm font-bold text-gray-700 inline-block">
           {title}
-          {download?<Button size="icon" variant="ghost"><Download/></Button>:<></>}
+          {download?<Button size="icon" variant="ghost" className="my-auto"><Download/></Button>:<></>}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 text-gray-700 leading-relaxed">

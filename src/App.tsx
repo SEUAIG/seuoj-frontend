@@ -2,7 +2,7 @@ import { Routes, Route, Link, Navigate } from "react-router-dom";
 import LoginPage from "./components/pages/LoginPage";
 import SignupPage from "./components/pages/SignupPage";
 import ForgetPage from "./components/pages/ForgetPage";
-import NotFoundPage from "./components/common/NotFoundPage";
+import NotFoundPage from "./components/pages/NotFoundPage";
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
 import HomePage from "./components/pages/HomePage";
