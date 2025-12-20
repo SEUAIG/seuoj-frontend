@@ -10,4 +10,5 @@ export type AuthState = {
     isAuthenticated:boolean;
     status:"idle"|"loading"|"succeed"|"failed";
     error?:string;
+    jwt?:string;
 }

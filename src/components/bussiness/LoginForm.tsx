@@ -1,7 +1,4 @@
-import {
-  login_Schema,
-  login_Values,
-} from "@/types/login_schema";
+import { login_Schema, login_Values } from "@/types/login_schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -15,8 +12,11 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { User,Lock,Eye,EyeOff } from "lucide-react";
-import { Link } from "react-router-dom";
+import { User, Lock, Eye, EyeOff } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { login } from "@/features/auth/authSlice";
+import { AppDispatch, RootState } from "@/app/store";
 export default function LoginForm() {
   // 我们虽然使用ShadCn组件库 但form组件是基于react hook form的 这个还是很强大的 推荐你学习一下 用于处理表单提交
   const form = useForm<login_Values>({
@@ -27,9 +27,24 @@ export default function LoginForm() {
     },
     // 一定要给初始值 这是react hook form 的要求
   });
-  const [showPassword,setShowPassword] = useState(false)
+  const dispatch = useDispatch<AppDispatch>();
+  const {isAuthenticated} = useSelector((state:RootState)=>state.auth)
+  const [showPassword, setShowPassword] = useState(false);
+  const nav = useNavigate()
   const { handleSubmit, register, control } = form;
-  function onSubmit(values: login_Values) {}
+  function onSubmit(values: login_Values) {
+    dispatch(
+      login({
+        username: values.account,
+        password: values.password,
+      })
+
+    );
+    if(isAuthenticated)
+    {
+      nav("/home")
+    }
+  }
   return (
     <Form {...form}>
       {/* 上下文提供者 shadcn自带组件 展开useForm返回的对象 */}
@@ -112,7 +127,7 @@ export default function LoginForm() {
           <Button variant="link" asChild className="px-0 text-sm">
             <Link to="/signup">注册账号</Link>
           </Button>
-                      {/* aschild 相当于只把这个样式传递给儿子 而不实际生成对用的dom button本身不支持内部包裹a或link */}
+          {/* aschild 相当于只把这个样式传递给儿子 而不实际生成对用的dom button本身不支持内部包裹a或link */}
           <Button variant="link" asChild className="px-0 text-sm">
             <Link to="/forget">忘记密码？</Link>
           </Button>
