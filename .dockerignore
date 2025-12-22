@@ -3,3 +3,22 @@ dist
 npm-debug.log
 .git
 .DS_Store
+
+# Environment variable files
+.env
+.env.*
+
+# Editor and IDE settings
+.vscode
+.idea
+
+# Logs
+*.log
+
+# Test coverage reports
+coverage
+coverage-*
+.nyc_output
+
+# Other VCS / metadata
+.gitignore
