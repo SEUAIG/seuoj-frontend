@@ -5,7 +5,7 @@ import { Button } from "../ui/button";
 interface ProblemSectionProps {
   title: string;
   children: ReactNode;
-  download:boolean;
+  download?: boolean;
 }
 
 export function ProblemSection({ title, children,download=false }: ProblemSectionProps) {
