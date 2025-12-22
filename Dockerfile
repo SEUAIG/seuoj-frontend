@@ -7,8 +7,8 @@ WORKDIR /app
 # 利用 Docker 缓存：只要 package.json 不变，就不会重新执行 npm install
 COPY package*.json ./
 
-# 安装依赖（如果是生产环境构建，可以考虑使用 npm ci）
-RUN npm install
+# 安装依赖（生产环境构建使用 npm ci，保证基于 lockfile 的干净安装）
+RUN npm ci
 
 # 复制项目所有源代码
 COPY . .
