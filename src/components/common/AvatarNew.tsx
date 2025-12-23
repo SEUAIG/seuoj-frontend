@@ -12,11 +12,13 @@ import { Button } from "@/components/ui/button";
 import nahida from "./../../assets/nahida.png";
 
 export default function AvatarNew({ user }: { user: User }) {
+  const username = user?.username || "Unknown";
+  const initial = username[0] ? username[0].toUpperCase() : "U";
   return (
     <div className="flex items-center space-x-2">
       <Avatar>
         <AvatarImage src={nahida} />
-        <AvatarFallback>{user.username[0]}</AvatarFallback>
+        <AvatarFallback>{initial}</AvatarFallback>
       </Avatar>
 
       <DropdownMenu modal={false}>
@@ -25,7 +27,7 @@ export default function AvatarNew({ user }: { user: User }) {
             variant="ghost"
             className="flex items-center space-x-1 text-lg font-medium hover:bg-gray-200 rounded-lg p-2"
           >
-            <span>{user.username}</span>
+            <span>{username}</span>
             <ChevronDown />
           </Button>
         </DropdownMenuTrigger>

@@ -33,7 +33,7 @@ export default function NavBar() {
           <LinkLists />
         </div>
         <div className="flex flex-nowrap items-center gap-4 pr-16">
-          {isAuthenticated?<AvatarNew user={user!}/>:<AuthButton />}
+          {isAuthenticated && user ?<AvatarNew user={user!}/>:<AuthButton />}
         </div>
       </div>
     </header>

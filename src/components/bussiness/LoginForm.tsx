@@ -1,6 +1,6 @@
 import { login_Schema, login_Values } from "@/types/login_schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,22 +27,23 @@ export default function LoginForm() {
     },
     // 一定要给初始值 这是react hook form 的要求
   });
-  const dispatch = useDispatch<AppDispatch>();
-  const {isAuthenticated} = useSelector((state:RootState)=>state.auth)
-  const [showPassword, setShowPassword] = useState(false);
-  const nav = useNavigate()
-  const { handleSubmit, register, control } = form;
-  function onSubmit(values: login_Values) {
-    dispatch(
-      login({
-        username: values.account,
-        password: values.password,
-      })
 
-    );
-    if(isAuthenticated)
-    {
-      nav("/home")
+  const dispatch = useDispatch<AppDispatch>();
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const [showPassword, setShowPassword] = useState(false);
+  const nav = useNavigate();
+  const { handleSubmit, register, control } = form;
+  async function onSubmit(values: login_Values) {
+    try {
+      await dispatch(
+        login({
+          username: values.account,
+          password: values.password,
+        })
+      ).unwrap();
+      nav("/home");
+    } catch (error) {
+      
     }
   }
   return (
@@ -85,7 +86,7 @@ export default function LoginForm() {
                 <div className="relative">
                   <Lock className="absolute top-1/2  left-2 -translate-y-1/2" />
                   <Input
-                    type={showPassword ? "" : "password"}
+                    type={showPassword ? "text" : "password"}
                     placeholder="密码"
                     {...field}
                     className="h-11 rounded-lg pl-10 border-2 text-xl"

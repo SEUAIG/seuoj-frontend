@@ -1,10 +1,10 @@
 import { signup_Schema, signup_Values } from "@/types/signup_schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User,Mail ,Lock,Eye,EyeOff} from "lucide-react";
+import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import {
   Form,
   FormField,
@@ -13,7 +13,12 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch } from "@/app/store";
+import { setError, signup } from "@/features/auth/authSlice";
+import { toast } from "sonner";
+import { RootState } from '../../app/store';
 export default function SignupForm() {
   // 我们虽然使用ShadCn组件库 但form组件是基于react hook form的 这个还是很强大的 推荐你学习一下 用于处理表单提交
   const form = useForm<signup_Values>({
@@ -27,9 +32,38 @@ export default function SignupForm() {
   });
   const [showPassword1, setShowPassword1] = useState(false);
   const [showPassword2, setShowPassword2] = useState(false);
-
+  const nav = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+  const error = useSelector((state: RootState) => state.auth.error);
+  useEffect(() => {
+    if (error) {
+      toast.error(typeof error === "string" ? error : "发生错误", {
+        position: "top-center",
+      });
+    }
+  }, [error]); 
   const { handleSubmit, register, control } = form;
-  function onSubmit(values: signup_Values) {}
+  async function onSubmit(values: signup_Values) {
+    try {
+     await dispatch(
+        signup({
+          username: values.account,
+          password: values.password,
+          email: values.email,
+        })
+      ).unwrap();
+      // 这是一个异步操作 需要等这一步完成后 再考虑执行下一步还是catch 转化为类同步 有await 就需要加上async 执行前要加await 
+      nav("/login")
+    } catch (err) {
+      if (typeof err === "string") {
+        dispatch(setError(err));
+      } else if (err instanceof Error) {
+        dispatch(setError(err.message));
+      } else {
+        dispatch(setError("注册发生未知错误，请联系管理员解决"));
+      }
+    }
+  }
   return (
     <Form {...form}>
       {/* 上下文提供者 shadcn自带组件 展开useForm返回的对象 */}
@@ -176,7 +210,7 @@ export default function SignupForm() {
             </FormItem>
           )}
         />
-  
+
         <Button
           type="submit"
           className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
