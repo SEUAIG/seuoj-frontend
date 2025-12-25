@@ -27,6 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProblemExample {
   in: string;
@@ -83,27 +84,27 @@ export default function ProblemDetailPage() {
   if (!problem) {
     return (
       <div className="min-h-screen bg-gray-50 py-4 pb-10">
-        <div className="max-w-4xl mx-auto px-6 space-y-8 animate-pulse">
+        <div className="max-w-4xl mx-auto px-6 space-y-8">
           <div className="space-y-4">
-            <div className="h-10 bg-gray-200 rounded w-1/3"></div>
+            <Skeleton className="h-10 w-1/3" />
             <div className="flex gap-3">
               {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="h-8 w-20 bg-gray-200 rounded-lg"></div>
+                <Skeleton key={i} className="h-8 w-20 rounded-lg" />
               ))}
             </div>
           </div>
           <div className="flex gap-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-10 w-24 bg-gray-200 rounded"></div>
+              <Skeleton key={i} className="h-10 w-24" />
             ))}
           </div>
           <div className="space-y-6">
             {[1, 2, 3].map((i) => (
               <div key={i} className="space-y-2">
-                <div className="h-6 w-32 bg-gray-200 rounded"></div>
-                <div className="h-4 w-full bg-gray-200 rounded"></div>
-                <div className="h-4 w-5/6 bg-gray-200 rounded"></div>
-                <div className="h-4 w-4/6 bg-gray-200 rounded"></div>
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+                <Skeleton className="h-4 w-4/6" />
               </div>
             ))}
           </div>
@@ -201,7 +202,6 @@ export default function ProblemDetailPage() {
             </div>
           </div>
 
-
           {/* === 2. 操作按钮区 === */}
           <div className="flex gap-4 justify-start">
             {isAuthenticated ? (
@@ -222,7 +222,6 @@ export default function ProblemDetailPage() {
               讨论
             </Button>
           </div>
-
           {/* === 3. 题目内容区 === */}
           <div className="space-y-6">
             {/* TODO: 预处理文本 删去空行 添加/n 保证既可以渲染 又可以保留原文形态 */}
