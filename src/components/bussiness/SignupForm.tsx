@@ -18,7 +18,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "@/app/store";
 import { setError, signup } from "@/features/auth/authSlice";
 import { toast } from "sonner";
-import { RootState } from '../../app/store';
+import { RootState } from "../../app/store";
 export default function SignupForm() {
   // 我们虽然使用ShadCn组件库 但form组件是基于react hook form的 这个还是很强大的 推荐你学习一下 用于处理表单提交
   const form = useForm<signup_Values>({
@@ -35,25 +35,31 @@ export default function SignupForm() {
   const nav = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const error = useSelector((state: RootState) => state.auth.error);
+  const { setFocus, setValue, reset } = form;
   useEffect(() => {
-    if (error) {
+    if (error && error !== "") {
       toast.error(typeof error === "string" ? error : "发生错误", {
         position: "top-center",
       });
+      reset();
+      dispatch(setError(""));
     }
-  }, [error]); 
+  }, [error]);
+  useEffect(() => {
+    setFocus("account");
+  }, [setFocus]);
   const { handleSubmit, register, control } = form;
   async function onSubmit(values: signup_Values) {
     try {
-     await dispatch(
+      await dispatch(
         signup({
           username: values.account,
           password: values.password,
           email: values.email,
         })
       ).unwrap();
-      // 这是一个异步操作 需要等这一步完成后 再考虑执行下一步还是catch 转化为类同步 有await 就需要加上async 执行前要加await 
-      nav("/login")
+      // 这是一个异步操作 需要等这一步完成后 再考虑执行下一步还是catch 转化为类同步 有await 就需要加上async 执行前要加await
+      nav("/login");
     } catch (err) {
       if (typeof err === "string") {
         dispatch(setError(err));

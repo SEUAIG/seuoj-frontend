@@ -80,7 +80,7 @@ export function ExampleSection({
                 onClick={() => {
                   toast.success("复制成功", { position: "top-center" });
                   handleCopy(output);
-                  handleClick(setShowOutputCopyCheck); 
+                  handleClick(setShowOutputCopyCheck);
                 }}
               >
                 {showOutputCopyCheck ? (
@@ -98,7 +98,7 @@ export function ExampleSection({
             </pre>
           </div>
 
-          {isAuthenticated ? (
+          {isAuthenticated && explain ? (
             <div>
               <div className="flex justify-between items-center mb-3">
                 <span className="font-semibold text-sm text-gray-800">

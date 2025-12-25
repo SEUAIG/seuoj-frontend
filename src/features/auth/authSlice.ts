@@ -3,7 +3,6 @@ import type { User, AuthState } from "./types";
 import { ENV } from "@/config/env";
 interface LoginPayload {
   username: string;
-
   password: string;
 }
 interface SignupPayload {
@@ -36,7 +35,11 @@ export const login = createAsyncThunk(
       // http请求的失败
     }
     if (result.code !== 200) {
-      return thunkAPI.rejectWithValue(result.message || "登录失败");
+      if(result.code===401)
+      {
+        return thunkAPI.rejectWithValue("用户不存在或账号密码不匹配");
+      }
+      return thunkAPI.rejectWithValue("登录失败");
     }
     result.data = {...result.data,username}
     return result;
@@ -61,6 +64,10 @@ export const signup = createAsyncThunk(
       // http请求的失败
     }
     if (result.code !== 200) {
+      if(result.code===409)
+      {
+        return thunkAPI.rejectWithValue("注册时用户名重复")
+      }
       return thunkAPI.rejectWithValue("注册失败");
     }
     return result;

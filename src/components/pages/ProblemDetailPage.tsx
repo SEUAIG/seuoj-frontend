@@ -1,23 +1,127 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProblemSection } from "@/components/bussiness/ProblemSection";
 import { ExampleSection } from "@/components/bussiness/ExampleSection";
 import { Helmet } from "react-helmet-async";
-import { Code, Clock, Cpu, FileText, BookCopy, Upload,SquarePen } from "lucide-react";
+import {
+  Code,
+  Clock,
+  Cpu,
+  FileText,
+  BookCopy,
+  Upload,
+  SquarePen,
+  Tag,
+} from "lucide-react";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../app/store";
 import CodeWrite from "../bussiness/CodeWrite";
 import FileUpload from "../bussiness/FileUpload";
+import { useParams } from "react-router-dom";
+import { ENV } from "@/config/env";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+interface ProblemExample {
+  in: string;
+  ans: string;
+  description: string;
+}
+
+interface ProblemContent {
+  pid: string;
+  description: string;
+  timeLimit: number;
+  memLimit: number;
+  type: string;
+  input: string;
+  output: string;
+  example: ProblemExample[];
+}
+
+interface ProblemData {
+  pid: string;
+  title: string;
+  content: ProblemContent;
+  tags: string[];
+  totalSubmit: number;
+  totalAccept: number;
+}
 
 export default function ProblemDetailPage() {
   const { isAuthenticated } = useSelector((store: RootState) => store.auth);
+  const { id } = useParams();
+  const [problem, setProblem] = useState<ProblemData | null>(null);
+  useEffect(() => {
+    // useEffect传入的函数本身要么不返回 要么返回一个清理函数 不能直接是异步函数 所以在函数内部声明一个异步函数
+    const fetchProblem = async () => {
+      if (!id) return;
+      try {
+        const res = await fetch(`${ENV.API_BASE_URL}/api/problem/${id}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // GET 请求不需要 body，参数已在 URL 中
+        });
+        const result = await res.json();
+        if (result.code === 0 && result.data) {
+          setProblem(result.data);
+        }
+      } catch (error) {
+      }
+    };
+    fetchProblem();
+  }, [id]);
 
+  if (!problem) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-4 pb-10">
+        <div className="max-w-4xl mx-auto px-6 space-y-8 animate-pulse">
+          <div className="space-y-4">
+            <div className="h-10 bg-gray-200 rounded w-1/3"></div>
+            <div className="flex gap-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-8 w-20 bg-gray-200 rounded-lg"></div>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-10 w-24 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+          <div className="space-y-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="space-y-2">
+                <div className="h-6 w-32 bg-gray-200 rounded"></div>
+                <div className="h-4 w-full bg-gray-200 rounded"></div>
+                <div className="h-4 w-5/6 bg-gray-200 rounded"></div>
+                <div className="h-4 w-4/6 bg-gray-200 rounded"></div>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center justify-center mt-10 text-gray-400 font-mono text-sm">
+            <span className="mr-2">&gt;</span>
+            <span>Fetching problem data...</span>
+            <span className="animate-ping ml-1 h-2 w-2 bg-indigo-500 rounded-full inline-block"></span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  const { title, content, tags } = problem;
+  const { description, timeLimit, memLimit, type, input, output, example } = content;
   return (
     <>
       <Helmet>
-        <title>#1. A + B Problem - SeuOJ</title>
+        <title>{`#${id}. ${title} - SeuOJ`}</title>
       </Helmet>
       <div className="min-h-screen bg-gray-50 py-4 pb-10">
         {/* 核心容器：限制最大宽度，居中显示 */}
@@ -25,30 +129,78 @@ export default function ProblemDetailPage() {
           {/* === 1. 头部标题与标签 === */}
           <div className="space-y-4">
             <h1 className="text-4xl font-bold text-gray-900">
-              #1. A + B Problem
+              #{id}. {title}
             </h1>
             <div className="flex flex-wrap gap-3">
-              {/* 标签区，加入 lucide 图标 */}
-              <Badge className="bg-emerald-600 hover:cursor-default hover:bg-emerald-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg">
-                <Code size={18} /> 传统
-              </Badge>
-              <Badge className="bg-pink-600 hover:bg-pink-700 hover:cursor-default text-white flex items-center gap-2 px-3 py-1 rounded-lg">
-                <Clock size={18} /> 1000 ms
-              </Badge>
-              <Badge className="bg-blue-600 hover:bg-blue-700 hover:cursor-default text-white flex items-center gap-2 px-3 py-1 rounded-lg">
-                <Cpu size={18} /> 256 MiB
-              </Badge>
-              <Badge className="bg-orange-600 hover:bg-orange-700 hover:cursor-default text-white flex items-center gap-2 px-3 py-1 rounded-lg">
-                <FileText size={18} /> 标准 IO
-              </Badge>
-              <Badge className="bg-green-600 hover:bg-green-700 hover:cursor-default text-white flex items-center gap-2 px-3 py-1 rounded-lg">
-                <BookCopy size={18} /> 文本比较
-              </Badge>
-              <Badge className="bg-indigo-600 hover:bg-indigo-700 hover:cursor-pointer text-white flex items-center gap-2 px-3 py-1 rounded-lg">
-                <Upload size={18} /> admin
-              </Badge>
+              <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={0} className="cursor-help outline-none">
+                      <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none">
+                        <Code size={18} /> {type === "Interactive" ? "交互" : "传统"}
+                      </Badge>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>题目类型: {type === "Interactive" ? "交互题" : "传统题"}</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={0} className="cursor-help outline-none">
+                      <Badge className="bg-pink-600 hover:bg-pink-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none">
+                        <Clock size={18} /> {timeLimit} ms
+                      </Badge>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>时间限制: {timeLimit} ms</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={0} className="cursor-help outline-none">
+                      <Badge className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none">
+                        <Cpu size={18} /> {(memLimit / 1024 / 1024).toFixed(0)} MiB
+                      </Badge>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>内存限制: {(memLimit / 1024 / 1024).toFixed(0)} MiB</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={0} className="cursor-help outline-none">
+                      <Badge className="bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none">
+                        <FileText size={18} /> 标准 IO
+                      </Badge>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>输入输出方式: 标准 IO</p>
+                  </TooltipContent>
+                </Tooltip>
+                {tags.map((tag, index) => (
+                  <Tooltip key={index}>
+                    <TooltipTrigger asChild>
+                      <span tabIndex={0} className="cursor-help outline-none">
+                        <Badge
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none"
+                        >
+                          <Tag size={18} /> {tag}
+                        </Badge>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{tag}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </TooltipProvider>
             </div>
           </div>
+
 
           {/* === 2. 操作按钮区 === */}
           <div className="flex gap-4 justify-start">
@@ -75,28 +227,26 @@ export default function ProblemDetailPage() {
           <div className="space-y-6">
             {/* TODO: 预处理文本 删去空行 添加/n 保证既可以渲染 又可以保留原文形态 */}
             <ProblemSection title="题目描述">
-              <MarkdownRenderer>
-                {`有 $n$ 只小猫依次坐在一张圆桌上。
-设每只小猫的位置为 $x_1, x_2, \dots, x_n$，每个位置的顺序可以表示为 $x_1, x_2, \dots, x_n$。
-    $$  \sum_{i=1}^{n} x_i = 0 $$`}
-              </MarkdownRenderer>
+              <MarkdownRenderer>{description}</MarkdownRenderer>
             </ProblemSection>
 
             <ProblemSection title="输入格式">
-              <MarkdownRenderer>
-                一行两个正整数 a, b (1 ≤ a, b ≤ 10^6)。
-              </MarkdownRenderer>
+              <MarkdownRenderer>{input}</MarkdownRenderer>
             </ProblemSection>
 
             <ProblemSection title="输出格式">
-              <MarkdownRenderer>一行一个正整数 a + b</MarkdownRenderer>
+              <MarkdownRenderer>{output}</MarkdownRenderer>
             </ProblemSection>
-            <ExampleSection
-              input="1 2"
-              output="3"
-              isAuthenticated
-              explain="这是一个解释"
-            />
+            
+            {example.map((ex, index) => (
+              <ExampleSection
+                key={index}
+                input={ex.in}
+                output={ex.ans}
+                isAuthenticated={isAuthenticated}
+                explain={ex.description}
+              />
+            ))}
             <CodeWrite />
             <div className="flex items-center justify-around">
               <FileUpload />
@@ -105,7 +255,7 @@ export default function ProblemDetailPage() {
                 className="text-md py-2 px-4 border shadow-md bg-slate-200"
                 size="lg"
               >
-                <SquarePen/>
+                <SquarePen />
                 提交
               </Button>
             </div>
