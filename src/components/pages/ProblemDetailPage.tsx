@@ -19,7 +19,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../app/store";
 import CodeWrite from "../bussiness/CodeWrite";
 import FileUpload from "../bussiness/FileUpload";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ENV } from "@/config/env";
 import {
   Tooltip,
@@ -62,7 +62,8 @@ export default function ProblemDetailPage() {
   const [problem, setProblem] = useState<ProblemData | null>(null);
   const [codeFile, setCodeFile] = useState("");
   const {language,codeFileObjectArray} = useSelector((store:RootState)=>store.code)
-
+    const nav = useNavigate();
+    // hook 要声明在函数开始
   useEffect(() => {
     // useEffect传入的函数本身要么不返回 要么返回一个清理函数 不能直接是异步函数 所以在函数内部声明一个异步函数
     const fetchProblem = async () => {
@@ -123,6 +124,7 @@ export default function ProblemDetailPage() {
   const { title, content, tags, pid } = problem;
   const { description, timeLimit, memLimit, type, input, output, example } =
     content;
+
   const handleCodeSubmit = async ()=>{
     const index = codeFileObjectArray.findIndex((i)=>i.pid===pid)
     if(index===-1)
@@ -131,7 +133,11 @@ export default function ProblemDetailPage() {
     const data = {pid,language,code}
    const res = await api.post("/api/submission",data)
    const result = res.data;
-   console.log(result)
+   const {submissionNo} = result.data
+   if(submissionNo)
+   {
+    nav(`/submission/${submissionNo}`)
+   }
   }
   return (
     <>

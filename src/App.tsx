@@ -33,7 +33,7 @@ function App() {
           </Route>
           <Route path="/submission">
             <Route index element={<SubmissionPage/>}/>
-            <Route path=":id" element={<SubmissionPage/>}/>
+            <Route path=":submissionNo" element={<SubmissionPage/>}/>
           </Route>
           <Route path="/competition" element={<CompetitionPage />} />
           <Route path="/evaluation" element={<EvaluationPage />} />

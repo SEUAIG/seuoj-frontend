@@ -9,7 +9,6 @@ export default function SubmissionPage() {
       <SubmissionRecord />
       <CodeShow>{`#include <iostream>
 using namespace std;
-
 int main() {
     int a, b;
     // 读取输入的两个整数
