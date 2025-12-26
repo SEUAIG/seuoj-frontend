@@ -1,23 +1,12 @@
-import AnswerState, { States, stateColorMap } from "../common/AnswerState";
-
-const hoverStateColorMap: Record<States, string> = {
-  "Accepted": "group-hover:text-green-500",
-  "Wrong Answer": "group-hover:text-red-500",
-  "Time Limit Exceeded": "group-hover:text-yellow-500",
-  "Compile Error": "group-hover:text-blue-500",
-  "Runtime Error": "group-hover:text-purple-500",
-  "Memory Limit Exceeded": "group-hover:text-orange-500",
-};
+import AnswerState from "../common/AnswerState";
 
 export default function TestPointOverview({
   active,
   state,
 }: {
   active: boolean;
-  state: States;
+  state: string;
 }) {
-  const stateColor = stateColorMap[state];
-
   return (
     <div
       className={[
@@ -28,12 +17,7 @@ export default function TestPointOverview({
     >
       <span>测试点 #1</span>
 
-      <AnswerState
-        state={state}
-        className={[active ? stateColor : "", hoverStateColorMap[state]].join(
-          " "
-        )}
-      />
+      <AnswerState state={state} active={active} />
 
       <span>得分：100</span>
       <span>用时：1ms</span>

@@ -4,10 +4,15 @@ import MonacoEditor from "@monaco-editor/react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/app/store";
 import { setCodeFile } from "@/features/Code/codeSlice";
-export default function CodeEditor({pid}) {
+
+interface CodeEditorProps {
+  pid: string;
+}
+
+export default function CodeEditor({pid}: CodeEditorProps) {
   const dispatch = useDispatch()
   const codeFileObjectArray = useSelector((store:RootState)=>store.code.codeFileObjectArray)
-  const index = codeFileObjectArray.findIndex((i)=>i.pid===pid)
+  const index = codeFileObjectArray.findIndex((i: {pid: string})=>i.pid===pid)
   let codeText = ""
   if(index!==-1)
   {

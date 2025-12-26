@@ -61,9 +61,11 @@ export default function ProblemDetailPage() {
   const { id } = useParams();
   const [problem, setProblem] = useState<ProblemData | null>(null);
   const [codeFile, setCodeFile] = useState("");
-  const {language,codeFileObjectArray} = useSelector((store:RootState)=>store.code)
-    const nav = useNavigate();
-    // hook 要声明在函数开始
+  const { language, codeFileObjectArray } = useSelector(
+    (store: RootState) => store.code
+  );
+  const nav = useNavigate();
+  // hook 要声明在函数开始
   useEffect(() => {
     // useEffect传入的函数本身要么不返回 要么返回一个清理函数 不能直接是异步函数 所以在函数内部声明一个异步函数
     const fetchProblem = async () => {
@@ -125,20 +127,20 @@ export default function ProblemDetailPage() {
   const { description, timeLimit, memLimit, type, input, output, example } =
     content;
 
-  const handleCodeSubmit = async ()=>{
-    const index = codeFileObjectArray.findIndex((i)=>i.pid===pid)
-    if(index===-1)
-      return;
+  const handleCodeSubmit = async () => {
+    const index = codeFileObjectArray.findIndex(
+      (i: { pid: string }) => i.pid === pid
+    );
+    if (index === -1) return;
     const code = codeFileObjectArray[index].codeFile;
-    const data = {pid,language,code}
-   const res = await api.post("/api/submission",data)
-   const result = res.data;
-   const {submissionNo} = result.data
-   if(submissionNo)
-   {
-    nav(`/submission/${submissionNo}`)
-   }
-  }
+    const data = { pid, language, code };
+    const res = await api.post("/api/submission", data);
+    const result = res.data;
+    const { submissionNo } = result.data;
+    if (submissionNo) {
+      nav(`/submission/${submissionNo}?title=${title}`);
+    }
+  };
   return (
     <>
       <Helmet>
@@ -278,7 +280,7 @@ export default function ProblemDetailPage() {
                     variant="outline"
                     className="text-md py-2 px-4 border shadow-md bg-slate-200"
                     size="lg"
-                    onClick={()=>handleCodeSubmit()}
+                    onClick={() => handleCodeSubmit()}
                   >
                     <SquarePen />
                     提交
