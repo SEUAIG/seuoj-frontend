@@ -1,4 +1,5 @@
-import authReducer from "@/features/auth/authSlice"
+import {authReducer} from "@/features/auth/authSlice"
+import { codeReducer } from "@/features/Code/codeSlice";
 import {configureStore} from "@reduxjs/toolkit"
 import { persistReducer, persistStore } from "redux-persist";
 import storage from "redux-persist/lib/storage"; 
@@ -7,10 +8,16 @@ const authPersistConfig = {
   storage, 
   whitelist: ["user","isAuthenticated","jwt"], // 只持久化 auth里的
 };
-
+const codePersistConfig = {
+  key:"code",
+  storage,
+  whitelist:["language","fontsize","codeFileObjectArray"]
+}
+// TODO 退出登录时应当清除code auth的持久化
 export const store = configureStore({
   reducer: {
     auth: persistReducer(authPersistConfig, authReducer),
+    code:persistReducer(codePersistConfig,codeReducer)
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

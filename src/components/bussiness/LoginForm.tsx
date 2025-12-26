@@ -45,8 +45,13 @@ export default function LoginForm() {
     useEffect(()=>{
       setFocus("account")
     },[setFocus])
-
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+    const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+    useEffect(()=>{
+      if(isAuthenticated)
+      {
+        nav('/home')
+      }
+    },[isAuthenticated])
   const [showPassword, setShowPassword] = useState(false);
   const nav = useNavigate();
   const { handleSubmit, register, control } = form;

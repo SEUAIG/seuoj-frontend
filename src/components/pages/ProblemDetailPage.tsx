@@ -28,6 +28,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/services/api/axios";
 
 interface ProblemExample {
   in: string;
@@ -59,6 +60,9 @@ export default function ProblemDetailPage() {
   const { isAuthenticated } = useSelector((store: RootState) => store.auth);
   const { id } = useParams();
   const [problem, setProblem] = useState<ProblemData | null>(null);
+  const [codeFile, setCodeFile] = useState("");
+  const {language,codeFileObjectArray} = useSelector((store:RootState)=>store.code)
+
   useEffect(() => {
     // useEffect传入的函数本身要么不返回 要么返回一个清理函数 不能直接是异步函数 所以在函数内部声明一个异步函数
     const fetchProblem = async () => {
@@ -75,8 +79,7 @@ export default function ProblemDetailPage() {
         if (result.code === 0 && result.data) {
           setProblem(result.data);
         }
-      } catch (error) {
-      }
+      } catch (error) {}
     };
     fetchProblem();
   }, [id]);
@@ -117,8 +120,19 @@ export default function ProblemDetailPage() {
       </div>
     );
   }
-  const { title, content, tags } = problem;
-  const { description, timeLimit, memLimit, type, input, output, example } = content;
+  const { title, content, tags, pid } = problem;
+  const { description, timeLimit, memLimit, type, input, output, example } =
+    content;
+  const handleCodeSubmit = async ()=>{
+    const index = codeFileObjectArray.findIndex((i)=>i.pid===pid)
+    if(index===-1)
+      return;
+    const code = codeFileObjectArray[index].codeFile;
+    const data = {pid,language,code}
+   const res = await api.post("/api/submission",data)
+   const result = res.data;
+   console.log(result)
+  }
   return (
     <>
       <Helmet>
@@ -138,12 +152,15 @@ export default function ProblemDetailPage() {
                   <TooltipTrigger asChild>
                     <span tabIndex={0} className="cursor-help outline-none">
                       <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none">
-                        <Code size={18} /> {type === "Interactive" ? "交互" : "传统"}
+                        <Code size={18} />{" "}
+                        {type === "Interactive" ? "交互" : "传统"}
                       </Badge>
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>题目类型: {type === "Interactive" ? "交互题" : "传统题"}</p>
+                    <p>
+                      题目类型: {type === "Interactive" ? "交互题" : "传统题"}
+                    </p>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -162,7 +179,8 @@ export default function ProblemDetailPage() {
                   <TooltipTrigger asChild>
                     <span tabIndex={0} className="cursor-help outline-none">
                       <Badge className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none">
-                        <Cpu size={18} /> {(memLimit / 1024 / 1024).toFixed(0)} MiB
+                        <Cpu size={18} /> {(memLimit / 1024 / 1024).toFixed(0)}{" "}
+                        MiB
                       </Badge>
                     </span>
                   </TooltipTrigger>
@@ -186,9 +204,7 @@ export default function ProblemDetailPage() {
                   <Tooltip key={index}>
                     <TooltipTrigger asChild>
                       <span tabIndex={0} className="cursor-help outline-none">
-                        <Badge
-                          className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none"
-                        >
+                        <Badge className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none">
                           <Tag size={18} /> {tag}
                         </Badge>
                       </span>
@@ -236,7 +252,7 @@ export default function ProblemDetailPage() {
             <ProblemSection title="输出格式">
               <MarkdownRenderer>{output}</MarkdownRenderer>
             </ProblemSection>
-            
+
             {example.map((ex, index) => (
               <ExampleSection
                 key={index}
@@ -246,18 +262,24 @@ export default function ProblemDetailPage() {
                 explain={ex.description}
               />
             ))}
-            <CodeWrite />
-            <div className="flex items-center justify-around">
-              <FileUpload />
-              <Button
-                variant="outline"
-                className="text-md py-2 px-4 border shadow-md bg-slate-200"
-                size="lg"
-              >
-                <SquarePen />
-                提交
-              </Button>
-            </div>
+            {isAuthenticated ? (
+              <>
+                <CodeWrite setCodeFile={setCodeFile} pid={pid} />
+                <div className="flex items-center justify-around">
+                  {/* TODO 补全fileupload的功能 但要注意 不要把它的值赋给codeFile 而是给一个onClick 直接提交对应内容 不要保留该文件 */}
+                  <FileUpload pid={pid} />
+                  <Button
+                    variant="outline"
+                    className="text-md py-2 px-4 border shadow-md bg-slate-200"
+                    size="lg"
+                    onClick={()=>handleCodeSubmit()}
+                  >
+                    <SquarePen />
+                    提交
+                  </Button>
+                </div>
+              </>
+            ) : null}
           </div>
         </div>
       </div>

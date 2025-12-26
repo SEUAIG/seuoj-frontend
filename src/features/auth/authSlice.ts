@@ -29,7 +29,7 @@ export const login = createAsyncThunk(
       // 要把参数序列化json发送出去
     });
     const result = await res.json();
-    // 返回response 对象 记得解析为json
+    // 返回response 对象 记得解析为json 异步解析
     if (!res.ok) {
       return thunkAPI.rejectWithValue(result.message || "http 请求失败");
       // http请求的失败
@@ -115,4 +115,4 @@ const authSlice = createSlice({
   },
 });
 export const { resetAuth, setError } = authSlice.actions;
-export default authSlice.reducer;
+export const authReducer =  authSlice.reducer;
