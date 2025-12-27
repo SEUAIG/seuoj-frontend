@@ -17,7 +17,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { login, setError } from "@/features/auth/authSlice";
 import { AppDispatch, RootState } from "@/app/store";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 export default function LoginForm() {
   // 我们虽然使用ShadCn组件库 但form组件是基于react hook form的 这个还是很强大的 推荐你学习一下 用于处理表单提交
   const form = useForm<login_Values>({
@@ -28,30 +28,29 @@ export default function LoginForm() {
     },
     // 一定要给初始值 这是react hook form 的要求
   });
-  const {setFocus,setValue,reset} = form;
+  const { setFocus, setValue, reset } = form;
   // 避免直接操作dom 尽量使用提供的函数
   const dispatch = useDispatch<AppDispatch>();
-    const error = useSelector((state: RootState) => state.auth.error);
-    useEffect(() => {
-      if (error&&error!=="") {
-        toast.error(typeof error === "string" ? error : "发生错误", {
-          position: "top-center",
-        });
-        setValue("password","");
-        dispatch(setError(""))
-        // 在if里可以设置依赖值
-      }
-    }, [error]); 
-    useEffect(()=>{
-      setFocus("account")
-    },[setFocus])
-    const { isAuthenticated } = useSelector((state: RootState) => state.auth);
-    useEffect(()=>{
-      if(isAuthenticated)
-      {
-        nav('/home')
-      }
-    },[isAuthenticated])
+  const error = useSelector((state: RootState) => state.auth.error);
+  useEffect(() => {
+    if (error && error !== "") {
+      toast.error(typeof error === "string" ? error : "发生错误", {
+        position: "top-center",
+      });
+      setValue("password", "");
+      dispatch(setError(""));
+      // 在if里可以设置依赖值
+    }
+  }, [error]);
+  useEffect(() => {
+    setFocus("account");
+  }, [setFocus]);
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  useEffect(() => {
+    if (isAuthenticated) {
+      nav("/home");
+    }
+  }, [isAuthenticated]);
   const [showPassword, setShowPassword] = useState(false);
   const nav = useNavigate();
   const { handleSubmit, register, control } = form;
@@ -64,9 +63,7 @@ export default function LoginForm() {
         })
       ).unwrap();
       nav("/home");
-    } catch (error) {
-      
-    }
+    } catch (error) {}
   }
   return (
     <Form {...form}>

@@ -10,9 +10,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import nahida from "./../../assets/nahida.png";
+import { useDispatch } from "react-redux";
+import { resetAuth } from "@/features/auth/authSlice";
 
 export default function AvatarNew({ user }: { user: User }) {
   const username = user?.username || "Unknown";
+  const dispatch = useDispatch()
+
   const initial = username[0] ? username[0].toUpperCase() : "U";
   return (
     <div className="flex items-center space-x-2">
@@ -38,7 +42,7 @@ export default function AvatarNew({ user }: { user: User }) {
           </DropdownMenuItem>
           <DropdownMenuItem className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-2 cursor-pointer">
             <LogOut size={16} />
-            <span>退出登录</span>
+            <div onClick={()=>{dispatch(resetAuth())}}>退出登录</div>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

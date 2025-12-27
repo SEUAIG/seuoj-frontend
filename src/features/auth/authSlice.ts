@@ -104,7 +104,6 @@ const authSlice = createSlice({
         } else {
           state.user.username = username;
         }
-
         // TODO 完善返回赋值 现在没有用户信息
         state.isAuthenticated = true;
       })

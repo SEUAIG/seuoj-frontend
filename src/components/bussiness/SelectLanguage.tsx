@@ -14,9 +14,9 @@ import { RootState } from "@/app/store";
 import { setLanguage } from "@/features/Code/codeSlice";
 
 export default function SelectLanguage() {
-  const dispatch = useDispatch()
-  const {language} = useSelector((store:RootState)=>store.code)
-  
+  const dispatch = useDispatch();
+  const { language } = useSelector((store: RootState) => store.code);
+
   return (
     <Select
       value={language}
@@ -29,11 +29,16 @@ export default function SelectLanguage() {
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
-          <SelectLabel>languages</SelectLabel>
+          <SelectLabel>Languages</SelectLabel>
+          <SelectItem value="C">C (gcc 9.40)</SelectItem>
           <SelectItem value="Cpp">C++ (g++ 9.40)</SelectItem>
           <SelectItem value="Cpp11">C++ 11 (g++ 9.40)</SelectItem>
           <SelectItem value="Cpp17">C++ 17 (g++ 9.40)</SelectItem>
-          <SelectItem value="Cpp20">C++ (NOI) (g++ 4.84)</SelectItem>
+          <SelectItem value="Cpp20">C++ 20 (g++ 9.40)</SelectItem>
+          <SelectItem value="Python3_12">Python 3.12</SelectItem>
+          <SelectItem value="Java17">Java 17 (OpenJDK 17)</SelectItem>
+          <SelectItem value="Go1_22">Go 1.22</SelectItem>
+          <SelectItem value="Nodejs22">Node.js 22</SelectItem>
         </SelectGroup>
       </SelectContent>
     </Select>
