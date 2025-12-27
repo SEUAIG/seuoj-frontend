@@ -133,7 +133,7 @@ export default function ProblemDetailPage() {
     );
     if (index === -1) return;
     const code = codeFileObjectArray[index].codeFile;
-    const data = { pid, language, code };
+    const data = { pid, language:"cpp", code };
     const res = await api.post("/api/submission", data);
     const result = res.data;
     const { submissionNo } = result.data;
