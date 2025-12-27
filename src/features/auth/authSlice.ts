@@ -63,7 +63,7 @@ export const signup = createAsyncThunk(
       return thunkAPI.rejectWithValue("http 请求失败");
       // http请求的失败
     }
-    if (result.code !== 200) {
+    if (result.code !== 0) {
       if(result.code===409)
       {
         return thunkAPI.rejectWithValue("注册时用户名重复")
