@@ -33,17 +33,6 @@ seuoj-frontend/
 │   │   ├── bussiness/             # 业务组件（特定功能的复杂组件）
 │   │   │
 │   │   ├── common/                # 通用组件（可复用的基础组件）
-│   │   │   ├── NavBar.tsx         # 顶部导航栏
-│   │   │   ├── NavItem.tsx        # 导航栏单项
-│   │   │   ├── LinkLists.tsx      # 导航链接列表
-│   │   │   ├── Logo.tsx           # Logo 组件
-│   │   │   ├── AuthButton.tsx     # 登录/注册按钮组
-│   │   │   ├── AvatarNew.tsx      # 用户头像及下拉菜单
-│   │   │   ├── Slogan.tsx         # 页脚标语
-│   │   │   ├── AnswerState.tsx    # 提交状态显示（AC/WA/TLE 等）
-│   │   │   ├── ScoreBadage.tsx    # 分数徽章（带渐变颜色）
-│   │   │   ├── MarkdownRenderer.tsx # Markdown 渲染器（支持 LaTeX）
-│   │   │   └── CodeShow.tsx       # 代码展示组件（带语法高亮）
 │   │   │
 │   │   ├── pages/                 # 页面组件
 │   │   │   ├── HomePage.tsx       # 首页
