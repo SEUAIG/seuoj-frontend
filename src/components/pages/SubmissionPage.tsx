@@ -69,8 +69,11 @@ export default function SubmissionPage() {
   const { submissionNo } = useParams();
   const [submission, setSubmission] = useState<SubmissionData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPolling, setIsPolling] = useState(true);
+
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
+    let intervalId: NodeJS.Timeout | null = null;
+
     const fetchSubmission = async () => {
       if (!submissionNo) return;
       try {
@@ -79,36 +82,44 @@ export default function SubmissionPage() {
         );
         const result = res.data;
         const { code, message, data } = result;
-        console.log(result);
+        console.log("Submission data:", result);
+        
         if (data) {
           setSubmission(data);
           setLoading(false);
-          // 如果状态是 Pending 或 Running继续轮询
+          
+          // 如果状态是 Finished 或 Failed，停止轮询
           if (
-            data.status === SubmissionStatus.Pending ||
-            data.status === SubmissionStatus.Running
+            data.status === SubmissionStatus.Finished ||
+            data.status === SubmissionStatus.Failed
           ) {
-          } else {
-            // 如果状态是 Finished 或 Failed 清除轮询
-            if (intervalId) clearInterval(intervalId);
+            setIsPolling(false);
           }
         }
       } catch (error) {
         console.error("Error fetching submission:", error);
         setLoading(false);
-        // 出错时也清除轮询
-        if (intervalId) clearInterval(intervalId);
+        // 出错时停止轮询
+        setIsPolling(false);
       }
     };
+
+    // 立即执行一次
     fetchSubmission();
-    // 设置轮询，每1秒执行一次
-    intervalId = setInterval(fetchSubmission, 1000);
-    // 不需要传入 可以直接使用 内部函数闭包特性
-    // 清理函数
+
+    // 只有在 isPolling 为 true 时才设置轮询
+    if (isPolling) {
+      intervalId = setInterval(fetchSubmission, 1000);
+    }
+
+    // 清理函数：组件卸载或依赖变化时清除定时器
     return () => {
-      if (intervalId) clearInterval(intervalId);
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
     };
-  }, [submissionNo]);
+  }, [submissionNo, isPolling]);
 
   if (loading && !submission) {
     return (
