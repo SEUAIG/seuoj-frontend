@@ -10,7 +10,7 @@ interface CodeSettingState {
 }
 // 每一个
 const initialState: CodeSettingState = {
-  language: "C++(g++ 9.40)",
+  language: "Cpp",
   fontsize: 12,
   codeFileObjectArray: [],
 };
