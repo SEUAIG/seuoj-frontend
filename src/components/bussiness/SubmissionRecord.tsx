@@ -30,59 +30,61 @@ export default function SubmissionRecord({
     errorDetail,
     submitTime,
     finishTime,
+    username,
   } = submission;
   const isError =
     verdict === "CompileError" ||
     verdict === "JudgeError" ||
     verdict === "SystemError";
-
-  // 计算总分、总时间和最大内存
   let totalScore = 0;
   let totalTime = 0;
   let maxMemory = 0;
-
   if (!isError && resultDetail) {
-
     totalTime = resultDetail.reduce((acc, item) => acc + item.time, 0);
     maxMemory = resultDetail.reduce((acc, item) => Math.max(acc, item.mem), 0);
     const passedCount = resultDetail.filter(
-      (item) => item.ans === "Accepted" || item.ans === "Correct"
-    ).length; 
-    if (verdict === "Accepted") {
-      totalScore = 100;
+      (item) => item.type === "Accepted"
+    ).length;
+    if (resultDetail.length > 0) {
+      totalScore = Math.round((passedCount / resultDetail.length) * 100);
+    } else {
+      totalScore = 0;
     }
   }
   const timeDisplay = isError ? "0ms" : `${totalTime}ms`;
-  const memoryDisplay = isError ? "0KB" : `${(maxMemory / 1024).toFixed(0)}KB`; 
+  const memoryDisplay = isError ? "0KB" : `${(maxMemory / 1024).toFixed(0)}KB`;
   const scoreDisplay = isError ? 0 : totalScore;
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>编号</TableHead>
-          <TableHead>题目</TableHead>
-          <TableHead>状态</TableHead>
-          <TableHead>分数</TableHead>
-          <TableHead>总时间</TableHead>
-          <TableHead>内存</TableHead>
-          <TableHead>代码/答案文件</TableHead>
-          <TableHead>提交者</TableHead>
-          <TableHead>提交时间</TableHead>
+          <TableHead className="text-center">编号</TableHead>
+          <TableHead className="text-center">题目</TableHead>
+          <TableHead className="text-center">状态</TableHead>
+          <TableHead className="text-center">分数</TableHead>
+          <TableHead className="text-center">总时间</TableHead>
+          <TableHead className="text-center">内存</TableHead>
+          <TableHead className="text-center">代码</TableHead>
+          <TableHead className="text-center">提交者</TableHead>
+          <TableHead className="text-center">提交时间</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         <TableRow>
-          <TableCell>{`#${submissionNo?.substring(0, 8) || pid}`}</TableCell>
-          <TableCell>{`#${title || pid}`}</TableCell>
-          <TableCell>{verdict && <AnswerState state={verdict} />}</TableCell>
-          <TableCell>
+          <TableCell className="text-center">{`#${pid}`}</TableCell>
+          <TableCell className="text-center">{`#${title || pid}`}</TableCell>
+          {/* 优先使用查询参数的title 否则使用pid */}
+          <TableCell className="text-center">
+            {verdict && <AnswerState state={verdict} />}
+          </TableCell>
+          <TableCell className="text-center group">
             <ScoreBadge score={scoreDisplay} />
           </TableCell>
-          <TableCell>{timeDisplay}</TableCell>
-          <TableCell>{memoryDisplay}</TableCell>
-          <TableCell>{language}</TableCell>
-          <TableCell>User</TableCell>
-          <TableCell>{submitTime}</TableCell>
+          <TableCell className="text-center">{timeDisplay}</TableCell>
+          <TableCell className="text-center">{memoryDisplay}</TableCell>
+          <TableCell className="text-center">{language}</TableCell>
+          <TableCell className="text-center">{username}</TableCell>
+          <TableCell className="text-center">{submitTime}</TableCell>
         </TableRow>
       </TableBody>
     </Table>

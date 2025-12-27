@@ -50,6 +50,8 @@ export interface SubmissionData {
   submitTime: string; // 提交时间
   finishTime: string;
   message?: string;
+  code: string; // 用户代码
+  username: string; // 提交者用户名
 }
 
 export interface SubmissionResponse {
@@ -178,33 +180,22 @@ export default function SubmissionPage() {
   return (
     <div className="flex flex-col pb-6 p-2 mx-auto w-4/5">
       <SubmissionRecord submission={submission} title={title} />
-      <CodeShow>{`#include <iostream>
-using namespace std;
-int main() {
-    int a, b;
-    // 读取输入的两个整数
-    cin >> a >> b;
-    // 输出它们的和
-    cout << a + b << endl;
-    return 0;
-}`}</CodeShow>
+      <CodeShow>{submission.code}</CodeShow>
       {(submission.verdict === "CompileError" ||
-        submission.verdict === "JudgeError" ||
-        submission.verdict === "SystemError") && (
+        submission.verdict === "JudgeError") && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
           <h3 className="text-lg font-bold text-red-700 mb-2">
             {submission.verdict === "CompileError"
               ? "编译错误信息"
-              : "错误信息"}
+              : "评测错误信息"}
           </h3>
-          <CodeShow >
-            {submission.errorDetail || "无详细错误信息"}
-          </CodeShow>
+          <CodeShow>{submission.errorDetail || "无详细错误信息"}</CodeShow>
         </div>
       )}
       {submission.verdict !== "CompileError" &&
-        submission.verdict !== "JudgeError" &&
-        submission.verdict !== "SystemError" && <TestPoints />}
+        submission.verdict !== "JudgeError" && (
+          <TestPoints resultDetail={submission.resultDetail} />
+        )}
     </div>
   );
 }
