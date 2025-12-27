@@ -34,7 +34,7 @@ export const login = createAsyncThunk(
       return thunkAPI.rejectWithValue(result.message || "http 请求失败");
       // http请求的失败
     }
-    if (result.code !== 200) {
+    if (result.code !== 0) {
       if(result.code===401)
       {
         return thunkAPI.rejectWithValue("用户不存在或账号密码不匹配");
