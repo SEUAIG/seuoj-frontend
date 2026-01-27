@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-
 export enum SubmissionStatus {
   Pending = "Pending", // 还没有发送给评测端
   Running = "Running", // 成功发送给评测端，正在判题
@@ -17,7 +16,6 @@ export enum SubmissionStatus {
   Finished = "Finished", // 评测结束
   // 左侧是标识符 右侧是值
 }
-
 export enum SubmissionVerdict {
   CompileError = "CompileError", // 具体信息看errorDetail
   JudgeError = "JudgeError", // 具体信息看errorDetail
@@ -38,7 +36,6 @@ export interface ResultDetailItem {
   mem: number;
   type: string;
 }
-
 export interface SubmissionData {
   submissionNo: string; // 提交记录uuid
   pid: string;
@@ -53,7 +50,6 @@ export interface SubmissionData {
   code: string; // 用户代码
   username: string; // 提交者用户名
 }
-
 export interface SubmissionResponse {
   code: number;
   message: string;
@@ -70,10 +66,8 @@ export default function SubmissionPage() {
   const [submission, setSubmission] = useState<SubmissionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPolling, setIsPolling] = useState(true);
-
   useEffect(() => {
     let intervalId: NodeJS.Timeout | null = null;
-
     const fetchSubmission = async () => {
       if (!submissionNo) return;
       try {
@@ -83,11 +77,9 @@ export default function SubmissionPage() {
         const result = res.data;
         const { code, message, data } = result;
         console.log("Submission data:", result);
-        
         if (data) {
           setSubmission(data);
           setLoading(false);
-          
           // 如果状态是 Finished 或 Failed，停止轮询
           if (
             data.status === SubmissionStatus.Finished ||
@@ -103,15 +95,12 @@ export default function SubmissionPage() {
         setIsPolling(false);
       }
     };
-
     // 立即执行一次
     fetchSubmission();
-
     // 只有在 isPolling 为 true 时才设置轮询
     if (isPolling) {
       intervalId = setInterval(fetchSubmission, 1000);
     }
-
     // 清理函数：组件卸载或依赖变化时清除定时器
     return () => {
       if (intervalId) {

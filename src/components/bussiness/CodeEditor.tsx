@@ -4,11 +4,9 @@ import MonacoEditor from "@monaco-editor/react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/app/store";
 import { setCodeFile } from "@/features/Code/codeSlice";
-
 interface CodeEditorProps {
   pid: string;
 }
-
 export default function CodeEditor({ pid }: CodeEditorProps) {
   const dispatch = useDispatch();
   const codeFileObjectArray = useSelector(
@@ -45,7 +43,6 @@ export default function CodeEditor({ pid }: CodeEditorProps) {
         return "cpp";
     }
   };
-
   // 当 Redux 中的代码改变时同步更新本地状态
   useEffect(() => {
     if (index !== -1) {
@@ -75,7 +72,7 @@ export default function CodeEditor({ pid }: CodeEditorProps) {
             automaticLayout: true, 
             fontSize: fontsize, 
             fontFamily:
-              "'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace", // 更丰富的等宽字体栈
+              "'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace", 
             fontLigatures: true, // 启用连字
             lineHeight: 1.6 * fontsize, 
             scrollBeyondLastLine: false, // 禁止滚动超过最后一行
