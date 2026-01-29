@@ -8,6 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/services/api/axios";
 import ProblemDetailInfo from "@/components/bussiness/ProblemDetailInfo";
 import ProblemCoding from "@/components/bussiness/ProblemCoding";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 export interface ProblemExample {
   in: string;
   ans: string;
@@ -45,6 +47,7 @@ export default function ProblemDetailPage() {
   const { id } = useParams();
   const [problem, setProblem] = useState<ProblemData | null>(null);
   const [codeFile, setCodeFile] = useState("");
+  const [hide, setHide] = useState(false);
   const { language, codeFileObjectArray } = useSelector(
     (store: RootState) => store.code
   );
@@ -123,31 +126,44 @@ export default function ProblemDetailPage() {
       <Helmet>
         <title>{`#${id}. ${title} - SeuOJ`}</title>
       </Helmet>
-      <div className="h-full overflow-x-auto overflow-y-hidden flex flex-row bg-white border-t border-gray-200">
-        <div className="w-1/2 min-w-[500px] flex-shrink-0 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent border-r border-gray-200">
+      <div className="h-full overflow-x-auto overflow-y-hidden flex flex-row bg-white border-t border-gray-200 relative">
+        <div className="fixed right-10 z-50 top-16 flex items-center space-x-2">
+          {/* fixed 相对于整个浏览器视口进行定位 */}
+          <Switch
+            id="sethide"
+            checked={hide}
+            onCheckedChange={setHide}
+            // 每一次重渲染会生成一个新的箭头函数 获取最新的hide值
+            // 如果不想渲染任何值 应该返回null/undefined 而不能返回一个（） 这也是值
+          />
+          <Label htmlFor="sethide">隐藏编辑器</Label>
+        </div>
+        <div className={`${hide?"w-full":"w-1/2"} min-w-[500px] flex-shrink-0 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent border-r border-gray-200`}>
           <ProblemDetailInfo
             problem={problem}
             isAuthenticated={isAuthenticated}
           />
         </div>
-        <div className="w-1/2 min-w-[500px] flex-shrink-0 overflow-hidden bg-gray-50 relative">
-          {isAuthenticated ? (
-            <ProblemCoding
-              pid={pid}
-              setCodeFile={setCodeFile}
-              handleCodeSubmit={handleCodeSubmit}
-            />
-          ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-gray-50">
-              <div className="p-8 text-center space-y-4">
-                <h3 className="text-xl font-semibold text-gray-700">
-                  需要登录
-                </h3>
-                <p>请登录后查看代码编辑器并提交代码。</p>
+        {hide ? null : (
+          <div className="w-1/2 min-w-[500px] flex-shrink-0 overflow-hidden bg-gray-50 relative">
+            {isAuthenticated ? (
+              <ProblemCoding
+                pid={pid}
+                setCodeFile={setCodeFile}
+                handleCodeSubmit={handleCodeSubmit}
+              />
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-gray-50">
+                <div className="p-8 text-center space-y-4">
+                  <h3 className="text-xl font-semibold text-gray-700">
+                    需要登录
+                  </h3>
+                  <p>请登录后查看代码编辑器并提交代码。</p>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </>
   );
