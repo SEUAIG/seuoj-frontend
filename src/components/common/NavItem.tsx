@@ -20,11 +20,11 @@ export default function NavItem({
               flex items-center gap-1
               px-4 py-2 rounded-full
               transition-all duration-400 relative
-              hover:bg-slate-300
+              hover:bg-muted
               ${
                 isActive
-                  ? "bg-accent ring-1 ring-border text-foreground font-medium shadow"
-                  : "text-muted-foreground hover:bg-muted/100 hover:text-foreground"
+                  ? "bg-accent text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground"
               }
             `}
           >
@@ -40,14 +40,15 @@ export default function NavItem({
             >
               {label}
             </span>
-            {isActive && (
+            {(
               <span
-                className="
+                className={`
             absolute left-2 right-2 -bottom-1
             h-0.5
             rounded-full
-            bg-primary
-          "
+            bg-primary transform transition-transform delay-0 ease-in-out duration-500 origin-center
+            ${isActive?"scale-x-100":"scale-x-0"}
+          `}
               />
             )}
           </div>
