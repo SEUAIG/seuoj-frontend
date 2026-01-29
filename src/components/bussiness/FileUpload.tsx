@@ -8,6 +8,7 @@ interface FileUploadProps {
   pid: string;
   // 对于对象的类型说明放在外部interface 否则会被当作重命名
 }
+// 只有点击确认后才会触发 onChange事件 并给出对应文件 用于安全
 export default function FileUpload({ pid }: FileUploadProps) {
   const dispatch = useDispatch();
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,17 +36,17 @@ export default function FileUpload({ pid }: FileUploadProps) {
   };
 
   return (
-    <div className="flex border-2 flex-col items-start space-y-4 p-4 bg-gray-100 rounded-lg shadow w-full max-w-md  ">
+    <div className="flex flex-row items-center space-x-2 w-full max-w-sm">
       <Label
         htmlFor="file-upload"
-        className="text-sm font-semibold text-gray-700"
+        className="text-xs font-medium text-gray-500 whitespace-nowrap"
       >
-        或者，上传代码文件
+        或上传代码:
       </Label>
       <Input
         id="file-upload"
         type="file"
-        className="border border-gray-300 rounded-md p-2 w-full text-sm text-gray-700"
+        className="cursor-pointer h-8 text-xs border-gray-200 bg-gray-50 file:mr-2 file:py-0 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300"
         accept=".js,.ts,.py,.java,.cpp,.txt,.md"
         onChange={handleFileChange}
       />

@@ -2,8 +2,8 @@ import React from 'react'
 
 export default function Slogan() {
   return (
-    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-muted-foreground">
+    <div className="flex-none h-8 flex items-center justify-center text-muted-foreground text-sm bg-gray-50">
       SeuOJ Powered By I++ Club
-    </span>
+    </div>
   );
 }

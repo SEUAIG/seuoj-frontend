@@ -8,17 +8,18 @@ interface ExampleSectionProps {
   output: string;
   isAuthenticated: boolean;
   explain: string;
+  index: number;
 }
 export function ExampleSection({
   input,
   output,
   isAuthenticated,
   explain,
+  index,
 }: ExampleSectionProps) {
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
   };
-
   const [showInputCopyCheck, setShowInputCopyCheck] = useState(false); 
   const [showOutputCopyCheck, setShowOutputCopyCheck] = useState(false);
   const handleClick = (set: React.Dispatch<React.SetStateAction<boolean>>) => {
@@ -30,7 +31,9 @@ export function ExampleSection({
   return (
     <Card className="overflow-hidden border shadow-sm">
       <CardHeader className="bg-gray-50 border-b py-3 px-4">
-        <CardTitle className="text-sm font-bold text-gray-700">样例</CardTitle>
+        <CardTitle className="text-sm font-bold text-gray-700">
+          样例 {index + 1}
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-4 text-gray-700 leading-relaxed">
         <div className="grid gap-6">
@@ -65,7 +68,6 @@ export function ExampleSection({
               {input}
             </pre>
           </div>
-
           <div>
             <div className="flex justify-between items-center mb-3">
               <span className="font-semibold text-sm text-gray-800">
