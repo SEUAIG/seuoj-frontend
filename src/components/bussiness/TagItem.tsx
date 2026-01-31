@@ -8,19 +8,36 @@ import { X } from "lucide-react";
 interface Item {
   tag_id: number;
   tag_name: string;
+  from?: "algorithm" | "source" | "time" | "special";
 }
 
-export default function TagItem({ tag_id, tag_name }: Item) {
+export default function TagItem({ tag_id, tag_name, from }: Item) {
   const { tags } = useSelector((state: RootState) => state.tags);
   const dispatch = useDispatch<AppDispatch>();
-  const isSelected = tags.some((t) => t.tag_id === tag_id);
+  const selectedTag = tags.find((t) => t.tag_id === tag_id);
+  const isSelected = !!selectedTag;
+  const currentFrom = selectedTag?.from || from || "algorithm";
   const handleClick = () => {
     if (isSelected) {
       dispatch(deleteTag({ tag_id, tag_name }));
     } else {
-      dispatch(addTag({ tag_id, tag_name }));
+      dispatch(addTag({ tag_id, tag_name, from }));
     }
   };
+  const colorMap = {
+    algorithm: "hover:bg-blue-500 hover:text-white",
+    source: "hover:bg-emerald-500 hover:text-white",
+    time: "hover:bg-amber-500 hover:text-white",
+    special: "hover:bg-purple-500 hover:text-white",
+  };
+  const selectedColorMap = {
+    algorithm: "bg-blue-500 hover:bg-blue-600",
+    source: "bg-emerald-500 hover:bg-emerald-600",
+    time: "bg-amber-500 hover:bg-amber-600",
+    special: "bg-purple-500 hover:bg-purple-600",
+  };
+  const hoverClass = colorMap[currentFrom] || colorMap.algorithm;
+  const activeClass = selectedColorMap[currentFrom] || selectedColorMap.algorithm;
   return (
     <Badge
       variant={isSelected ? "default" : "secondary"}
@@ -31,8 +48,8 @@ export default function TagItem({ tag_id, tag_name }: Item) {
         flex items-center gap-1.5
         ${
           isSelected
-            ? "hover:bg-primary/90 shadow-sm"
-            : "hover:bg-primary hover:text-primary-foreground hover:shadow-sm"
+            ? `${activeClass} shadow-sm text-white border-transparent`
+            : `${hoverClass} hover:shadow-sm`
         }
       `}
       onClick={handleClick}
