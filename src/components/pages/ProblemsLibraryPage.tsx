@@ -20,6 +20,8 @@ import TagItem from "../bussiness/TagItem";
 import { clearTags } from "@/features/Tags/tagsSlice";
 import { useSearchQueryByKeyword } from "@/hooks/useSearchQueryByKeyword";
 import { setTagIds, setTitle } from "@/features/ProblemList/problemListSlice";
+import ProblemListTable from "../bussiness/ProblemListTable";
+import ProblemListPageChoose from "../bussiness/ProblemListPageChoose";
 export default function ProblemsLibraryPage() {
   const { tags } = useSelector((state: RootState) => state.tags);
   const dispatch = useDispatch();
@@ -31,12 +33,14 @@ export default function ProblemsLibraryPage() {
   const { current, size, tag_ids, title } = useSelector(
     (state: RootState) => state.problemList
   );
-  const { data, isLoading, refetch } = useSearchQueryByKeyword(
+  const { data, isLoading, isFetching, refetch } = useSearchQueryByKeyword(
     current,
     size,
     title,
     tag_ids
   );
+  const records = data?.records || [];
+  const total = data?.total || 0;
   // 调用函数传参数时位置要11对应
   const getTagIds = () => {
     const tag_idsArray = tags.map((item) => item.tag_id);
@@ -48,8 +52,9 @@ export default function ProblemsLibraryPage() {
   useEffect(() => {
     dispatch(setTagIds(getTagIds()));
   }, [tags]);
+  const pages = Math.ceil(total / Number(size));
   return (
-    <div className="container mx-auto px-4 py-6 max-w-7xl">
+    <div className="container mx-auto px-4 py-2 max-w-7xl flex flex-col flex-1">
       <Helmet>
         <title>题库 - SeuOJ</title>
       </Helmet>
@@ -75,7 +80,7 @@ export default function ProblemsLibraryPage() {
                 <DialogHeader>
                   <DialogTitle>选择题目标签</DialogTitle>
                 </DialogHeader>
-                <TagSelector />
+                <TagSelector className="h-auto min-h-0" />
                 <DialogFooter>
                   <DialogClose asChild>
                     <Button>确认</Button>
@@ -123,7 +128,8 @@ export default function ProblemsLibraryPage() {
         </div>
         <div className="flex items-center justify-between pt-4 border-t">
           <div className="text-sm text-muted-foreground">
-            共计 <span className="font-semibold text-foreground">0</span> 条结果
+            共计 <span className="font-semibold text-foreground">{total}</span>{" "}
+            条结果
           </div>
           <div className="flex items-center gap-3">
             <Button
@@ -146,7 +152,22 @@ export default function ProblemsLibraryPage() {
           </div>
         </div>
       </div>
-      <div className="mt-6">{/* TODO: Problem List Component */}</div>
+      <div className="mt-6 flex-1">
+        <ProblemListTable
+          records={records}
+          isLoading={isLoading || isFetching}
+        />
+      </div>
+      <div className="mt-6">
+        {pages && (
+          <ProblemListPageChoose
+            pages={pages}
+            current={current}
+            dispatch={dispatch}
+            refetch={refetch}
+          />
+        )}
+      </div>
     </div>
   );
 }
