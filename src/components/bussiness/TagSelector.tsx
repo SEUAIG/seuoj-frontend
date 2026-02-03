@@ -20,8 +20,8 @@ export interface Tag {
 }
 // object 是弱类型 实际类型才是强类型
 export default function TagSelector() {
-  const { data, isLoading } = useQueryToGetTags();
-  if (isLoading) {
+  const { data, isLoading, isError } = useQueryToGetTags();
+  if (isLoading || isError || !data) {
     return null;
   }
   const { algorithm, source, time, special }: tagsData = data;
