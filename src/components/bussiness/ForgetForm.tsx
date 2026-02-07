@@ -26,7 +26,7 @@ export default function ForgetForm() {
   return( <Form {...form}>
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="space-y-6 my-10 w-2/5 mx-auto bg-white p-6 rounded shadow-xl border"
+        className="space-y-6 my-6 w-2/5 mx-auto bg-white p-6 rounded shadow-xl border"
       >               
       <FormField
           control={control}

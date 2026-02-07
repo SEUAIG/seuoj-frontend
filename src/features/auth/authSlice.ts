@@ -9,6 +9,8 @@ interface SignupPayload {
   username: string;
   email: string;
   password: string;
+  verification_id: string;
+  code: string;
 }
 const initialState: AuthState = {
   user: null,
@@ -34,39 +36,45 @@ export const login = createAsyncThunk(
       return thunkAPI.rejectWithValue(result.message || "http 请求失败");
       // http请求的失败
     }
-    if (result.code !== 0) {
-      if(result.code===401)
-      {
+    if (result.code !== 200) {
+      if (result.code === 401) {
         return thunkAPI.rejectWithValue("用户不存在或账号密码不匹配");
       }
       return thunkAPI.rejectWithValue("登录失败");
     }
-    result.data = {...result.data,username}
+    result.data = { ...result.data, username };
     return result;
     // 异步函数的返回值fulfilled会作为action payload  rejected的error。message 会是reject with value
   }
 );
 export const signup = createAsyncThunk(
   "auth/signup",
-  async ({ username, email, password }: SignupPayload, thunkAPI) => {
+  async (
+    { username, email, password, verification_id, code }: SignupPayload,
+    thunkAPI
+  ) => {
     const res = await fetch(`${ENV.API_BASE_URL}/api/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({
+        username,
+        email,
+        password,
+        verification_id,
+        code,
+      }),
     });
-    // TODO email 还未使用
     const result = await res.json();
     // 返回response 对象 记得解析为json
     if (!res.ok) {
       return thunkAPI.rejectWithValue("http 请求失败");
       // http请求的失败
     }
-    if (result.code !== 0) {
-      if(result.code===409)
-      {
-        return thunkAPI.rejectWithValue("注册时用户名重复")
+    if (result.code !== 200) {
+      if (result.code === 409) {
+        return thunkAPI.rejectWithValue("注册时用户名重复");
       }
       return thunkAPI.rejectWithValue("注册失败");
     }
@@ -91,12 +99,12 @@ const authSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(login.fulfilled, (state, action) => {
-        const { jwt,username} = action.payload.data;
+        const { jwt, username } = action.payload.data;
         state.jwt = jwt;
         // 如果 state.user 为 null 则创建一个新的 User 对象
         if (!state.user) {
           state.user = {
-            id: "1", 
+            id: "1",
             username: username,
             avatarUrl: "",
             role: "student",
@@ -114,4 +122,4 @@ const authSlice = createSlice({
   },
 });
 export const { resetAuth, setError } = authSlice.actions;
-export const authReducer =  authSlice.reducer;
+export const authReducer = authSlice.reducer;

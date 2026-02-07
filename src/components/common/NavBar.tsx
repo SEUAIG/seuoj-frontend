@@ -27,7 +27,6 @@ export default function NavBar() {
     h-14
     px-8
     flex items-center justify-between shadow-sm
-
   "
       >
         <div className="flex items-center gap-6">

@@ -16,6 +16,8 @@ import ProblemDetailPage from "./components/pages/ProblemDetailPage";
 import SubmissionPage from "./components/pages/SubmissionPage";
 import ProblemEditPage from "./components/pages/ProblemEditPage";
 
+import path from 'path';
+import PersonalPage from "./components/pages/PersonalPage";
 
 function App() {
   return (
@@ -43,6 +45,7 @@ function App() {
           <Route path="/rank" element={<RankPage />} />
           <Route path="/discussion" element={<DiscussionPage />} />
           <Route path="/help" element={<HelpPage />} />
+          <Route path="/personal" element={<PersonalPage/>} />
         </Route>
         <Route path="*" element={<NotFoundPage />}></Route>
       </Routes>

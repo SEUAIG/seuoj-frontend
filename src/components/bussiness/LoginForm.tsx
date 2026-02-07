@@ -70,7 +70,7 @@ export default function LoginForm() {
       {/* 上下文提供者 shadcn自带组件 展开useForm返回的对象 */}
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="space-y-6  w-2/5 mx-auto my-8 bg-white p-6 rounded shadow-xl border"
+        className="space-y-6  w-2/5 mx-auto my-6 bg-white p-6 rounded shadow-xl border"
       >
         {/* 账号部分 */}
         {/* control 用于将这一部分接入RHF的管理 render将RHF提供的field传递 */}
