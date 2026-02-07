@@ -14,6 +14,9 @@ import DiscussionPage from "./components/pages/DiscussionPage";
 import HelpPage from "./components/pages/HelpPage";
 import ProblemDetailPage from "./components/pages/ProblemDetailPage";
 import SubmissionPage from "./components/pages/SubmissionPage";
+import ProblemEditPage from "./components/pages/ProblemEditPage";
+
+import path from 'path';
 import PersonalPage from "./components/pages/PersonalPage";
 import UnauthorizedPage from "./components/pages/UnauthorizedPage";
 import ProtectedRoute from "./components/bussiness/ProtectedRoute";
@@ -34,6 +37,7 @@ function App() {
           <Route path="/problemsLibrary">
             <Route index element={<ProblemsLibraryPage />} />
             <Route path=":id" element={<ProblemDetailPage />} />
+            <Route path=":id/edit" element={<ProblemEditPage />} />
           </Route>
           <Route element={<ProtectedRoute allowRole="user" />}>
             <Route path="/submission">

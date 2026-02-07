@@ -1,3 +1,5 @@
+export type UserRole = "guest" | "user" | "admin" | "superadmin";
+
 export type User = {
     id:string;
     username:string;

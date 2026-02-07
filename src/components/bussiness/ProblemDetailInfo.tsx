@@ -218,6 +218,16 @@ export default function ProblemDetailInfo({
             提交
           </Button>
         ) : null}
+        {/* 这里暂时显示给所有已登录用户 */}
+        {isAuthenticated && (
+          <Button 
+            className="bg-purple-600 hover:bg-purple-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
+            onClick={() => nav(`/problemsLibrary/${pid}/edit`)}
+          >
+            <Edit className="mr-2 h-4 w-4" />
+            编辑题面
+          </Button>
+        )}
         <Button className="bg-green-600 hover:bg-green-700 text-white transition duration-300 ease-in-out transform hover:scale-105">
           提交记录
         </Button>
