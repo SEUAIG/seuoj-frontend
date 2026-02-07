@@ -9,7 +9,8 @@ import { Toaster } from 'sonner'
 import { PersistGate } from "redux-persist/integration/react";
 import { store, persistor } from "@/app/store";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from './../node_modules/@tanstack/react-query-devtools/src/production';
+
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 const queryClient = new QueryClient({
   defaultOptions:{
     queries:{

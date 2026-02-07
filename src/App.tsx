@@ -14,6 +14,8 @@ import DiscussionPage from "./components/pages/DiscussionPage";
 import HelpPage from "./components/pages/HelpPage";
 import ProblemDetailPage from "./components/pages/ProblemDetailPage";
 import SubmissionPage from "./components/pages/SubmissionPage";
+import ProblemEditPage from "./components/pages/ProblemEditPage";
+
 
 function App() {
   return (
@@ -30,6 +32,7 @@ function App() {
           <Route path="/problemsLibrary">
             <Route index element={<ProblemsLibraryPage />} />
             <Route path=":id" element={<ProblemDetailPage />} />
+            <Route path=":id/edit" element={<ProblemEditPage />} />
           </Route>
           <Route path="/submission">
             <Route index element={<SubmissionPage/>}/>
