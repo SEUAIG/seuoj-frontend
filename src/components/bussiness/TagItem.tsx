@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/store";
 import { addTag, deleteTag } from "@/features/Tags/tagsSlice";
 import { X } from "lucide-react";
+import { Tag } from "./TagSelector";
 
 interface Item {
   tag_id: number;
@@ -14,9 +15,10 @@ interface Item {
 export default function TagItem({ tag_id, tag_name, from }: Item) {
   const { tags } = useSelector((state: RootState) => state.tags);
   const dispatch = useDispatch<AppDispatch>();
-  const selectedTag = tags.find((t) => t.tag_id === tag_id);
+  const selectedTag = tags.find((t: Tag) => t.tag_id === tag_id);
   const isSelected = !!selectedTag;
-  const currentFrom = selectedTag?.from || from || "algorithm";
+  const currentFrom: "algorithm" | "source" | "time" | "special" =
+    selectedTag?.from || from || "algorithm";
   const handleClick = () => {
     if (isSelected) {
       dispatch(deleteTag({ tag_id, tag_name }));
@@ -24,13 +26,16 @@ export default function TagItem({ tag_id, tag_name, from }: Item) {
       dispatch(addTag({ tag_id, tag_name, from }));
     }
   };
-  const colorMap = {
+  const colorMap: Record<"algorithm" | "source" | "time" | "special", string> = {
     algorithm: "hover:bg-blue-500 hover:text-white",
     source: "hover:bg-emerald-500 hover:text-white",
     time: "hover:bg-amber-500 hover:text-white",
     special: "hover:bg-purple-500 hover:text-white",
   };
-  const selectedColorMap = {
+  const selectedColorMap: Record<
+    "algorithm" | "source" | "time" | "special",
+    string
+  > = {
     algorithm: "bg-blue-500 hover:bg-blue-600",
     source: "bg-emerald-500 hover:bg-emerald-600",
     time: "bg-amber-500 hover:bg-amber-600",

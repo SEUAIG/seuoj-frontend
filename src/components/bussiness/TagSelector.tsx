@@ -19,14 +19,17 @@ export interface Tag {
   from?: "algorithm" | "source" | "time" | "special";
 }
 // object 是弱类型 实际类型才是强类型
-export default function TagSelector() {
+type TagSelectorProps = {
+  className?: string;
+};
+export default function TagSelector({ className }: TagSelectorProps) {
   const { data, isLoading, isError } = useQueryToGetTags();
   if (isLoading || isError || !data) {
     return null;
   }
   const { algorithm, source, time, special }: tagsData = data;
   return (
-    <div className="flex flex-col h-[60vh] gap-4">
+    <div className={`flex flex-col h-[60vh] gap-4 ${className || ""}`}>
       <div className="flex-none">
         <SelectedTags />
       </div>

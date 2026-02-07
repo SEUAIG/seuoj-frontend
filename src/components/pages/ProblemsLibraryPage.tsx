@@ -11,7 +11,7 @@ import {
 } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import TagSelector from "../bussiness/TagSelector";
+import TagSelector, { Tag } from "../bussiness/TagSelector";
 import SelectedTags from "../bussiness/SelectedTags";
 import { Search, RotateCcw, Filter } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
@@ -20,7 +20,7 @@ import TagItem from "../bussiness/TagItem";
 import { clearTags } from "@/features/Tags/tagsSlice";
 import { useSearchQueryByKeyword } from "@/hooks/useSearchQueryByKeyword";
 import { setTagIds, setTitle } from "@/features/ProblemList/problemListSlice";
-import ProblemListTable from "../bussiness/ProblemListTable";
+import ProblemListTable, { ProblemRecord } from "../bussiness/ProblemListTable";
 import ProblemListPageChoose from "../bussiness/ProblemListPageChoose";
 export default function ProblemsLibraryPage() {
   const { tags } = useSelector((state: RootState) => state.tags);
@@ -33,17 +33,13 @@ export default function ProblemsLibraryPage() {
   const { current, size, tag_ids, title } = useSelector(
     (state: RootState) => state.problemList
   );
-  const { data, isLoading, isFetching, refetch } = useSearchQueryByKeyword(
-    current,
-    size,
-    title,
-    tag_ids
-  );
+  const { data, isLoading, isFetching, refetch } =
+    useSearchQueryByKeyword<ProblemRecord>(current, size, title, tag_ids);
   const records = data?.records || [];
   const total = data?.total || 0;
   // 调用函数传参数时位置要11对应
   const getTagIds = () => {
-    const tag_idsArray = tags.map((item) => item.tag_id);
+    const tag_idsArray = tags.map((item: Tag) => item.tag_id);
     return tag_idsArray;
   };
   useEffect(() => {
@@ -110,7 +106,7 @@ export default function ProblemsLibraryPage() {
           <div className="flex-1 min-h-[2rem] flex items-center">
             {tags.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {tags.map((tag, idx) => (
+                {tags.map((tag: Tag, idx: number) => (
                   <TagItem
                     key={idx}
                     tag_id={tag.tag_id}

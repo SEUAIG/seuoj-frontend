@@ -9,13 +9,22 @@ import {
   PaginationEllipsis,
 } from "../ui/pagination";
 import { setCurrent } from "@/features/ProblemList/problemListSlice";
+import { ActionCreatorWithPayload } from "@reduxjs/toolkit";
+import { AppDispatch } from "@/app/store";
+type ProblemListPageChooseProps = {
+  pages: number;
+  current: number | string;
+  dispatch: AppDispatch;
+  refetch: () => void;
+  setCurrentAction?: ActionCreatorWithPayload<any, string>;
+};
 export default function ProblemListPageChoose({
   pages,
   current,
   dispatch,
   refetch,
   setCurrentAction = setCurrent,
-}) {
+}: ProblemListPageChooseProps) {
   const currentPage = Number(current);
   const handlePageChange = (newPage: number) => {
     dispatch(setCurrentAction(newPage));

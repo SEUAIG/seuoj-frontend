@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,7 @@ import {
   Monitor,
   ListChecks,
   Database,
+  Edit,
 } from "lucide-react";
 import { ProblemSection } from "./ProblemSection";
 import { ExampleSection } from "./ExampleSection";
@@ -31,6 +33,7 @@ export default function ProblemDetailInfo({
   problem,
   isAuthenticated,
 }: ProblemDetailInfoProps) {
+  const nav = useNavigate();
   const { title, content, tags, pid, totalSubmit, totalAccept } = problem;
   const { description, info = {}, input, output, example } = content;
   const {

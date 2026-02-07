@@ -11,7 +11,7 @@ import TagItem from "./TagItem";
 import { Loader2 } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { useNavigate } from "react-router-dom";
-interface ProblemRecord {
+export interface ProblemRecord {
   pid: string;
   title: string;
   total_submit: number;
