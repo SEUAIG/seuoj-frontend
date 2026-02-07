@@ -2,7 +2,7 @@ export type User = {
     id:string;
     username:string;
     avatarUrl:string;
-    role?:"student"|"admin"|"teacher";
+    role?:"guest"|"admin"|"superadmin"|"user";
 
 }
 export type AuthState = {

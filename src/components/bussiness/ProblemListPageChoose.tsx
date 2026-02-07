@@ -14,10 +14,11 @@ export default function ProblemListPageChoose({
   current,
   dispatch,
   refetch,
+  setCurrentAction = setCurrent,
 }) {
   const currentPage = Number(current);
   const handlePageChange = (newPage: number) => {
-    dispatch(setCurrent(newPage));
+    dispatch(setCurrentAction(newPage));
     setTimeout(() => {
       refetch();
     }, 100);

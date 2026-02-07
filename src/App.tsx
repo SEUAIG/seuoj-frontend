@@ -1,4 +1,4 @@
-import { Routes, Route, Link, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./components/pages/LoginPage";
 import SignupPage from "./components/pages/SignupPage";
 import ForgetPage from "./components/pages/ForgetPage";
@@ -14,8 +14,9 @@ import DiscussionPage from "./components/pages/DiscussionPage";
 import HelpPage from "./components/pages/HelpPage";
 import ProblemDetailPage from "./components/pages/ProblemDetailPage";
 import SubmissionPage from "./components/pages/SubmissionPage";
-import path from 'path';
 import PersonalPage from "./components/pages/PersonalPage";
+import UnauthorizedPage from "./components/pages/UnauthorizedPage";
+import ProtectedRoute from "./components/bussiness/ProtectedRoute";
 
 function App() {
   return (
@@ -29,20 +30,23 @@ function App() {
         </Route>
         <Route element={<MainLayout />}>
           <Route path="/home" element={<HomePage />} />
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route path="/problemsLibrary">
             <Route index element={<ProblemsLibraryPage />} />
             <Route path=":id" element={<ProblemDetailPage />} />
           </Route>
-          <Route path="/submission">
-            <Route index element={<SubmissionPage/>}/>
-            <Route path=":submissionNo" element={<SubmissionPage/>}/>
+          <Route element={<ProtectedRoute allowRole="user" />}>
+            <Route path="/submission">
+              <Route index element={<SubmissionPage />} />
+              <Route path=":submissionNo" element={<SubmissionPage />} />
+            </Route>
+            <Route path="/personal" element={<PersonalPage />} />
           </Route>
           <Route path="/competition" element={<CompetitionPage />} />
           <Route path="/evaluation" element={<EvaluationPage />} />
           <Route path="/rank" element={<RankPage />} />
           <Route path="/discussion" element={<DiscussionPage />} />
           <Route path="/help" element={<HelpPage />} />
-          <Route path="/personal" element={<PersonalPage/>} />
         </Route>
         <Route path="*" element={<NotFoundPage />}></Route>
       </Routes>

@@ -1,6 +1,7 @@
 import { authReducer } from "@/features/auth/authSlice";
 import { codeReducer } from "@/features/Code/codeSlice";
 import { problemListReducer } from "@/features/ProblemList/problemListSlice";
+import { submissionListReducer } from "@/features/SubmissionList/submissionListSlice";
 import { tagsReducer } from "@/features/Tags/tagsSlice";
 import { configureStore } from "@reduxjs/toolkit";
 import { persistReducer, persistStore } from "redux-persist";
@@ -26,6 +27,11 @@ const problemListPersistConfig = {
   storage,
   whitelist: [],
 };
+const submissionListPersistConfig = {
+  key: "submissionList",
+  storage,
+  whitelist: [],
+};
 const verificationPersistConfig = {
   key: "verification",
   storage,
@@ -38,6 +44,10 @@ export const store = configureStore({
     code: persistReducer(codePersistConfig, codeReducer),
     tags: persistReducer(tagsPersistConfig, tagsReducer),
     problemList:persistReducer(problemListPersistConfig,problemListReducer),
+    submissionList: persistReducer(
+      submissionListPersistConfig,
+      submissionListReducer
+    ),
     verification:persistReducer(verificationPersistConfig,verificationReducer)
   },
   middleware: (getDefaultMiddleware) =>

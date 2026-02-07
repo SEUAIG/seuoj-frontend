@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { User, AuthState } from "./types";
 import { ENV } from "@/config/env";
 interface LoginPayload {
-  username: string;
+  email: string;
   password: string;
 }
 interface SignupPayload {
@@ -19,15 +19,16 @@ const initialState: AuthState = {
   error: undefined,
   jwt: undefined,
 };
+const isSuccessCode = (code: number) => code === 0 || code === 200;
 export const login = createAsyncThunk(
   "auth/login",
-  async ({ username, password }: LoginPayload, thunkAPI) => {
+  async ({ email, password }: LoginPayload, thunkAPI) => {
     const res = await fetch(`${ENV.API_BASE_URL}/api/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email, password }),
       // 要把参数序列化json发送出去
     });
     const result = await res.json();
@@ -36,13 +37,13 @@ export const login = createAsyncThunk(
       return thunkAPI.rejectWithValue(result.message || "http 请求失败");
       // http请求的失败
     }
-    if (result.code !== 200) {
+    if (!isSuccessCode(result.code)) {
       if (result.code === 401) {
         return thunkAPI.rejectWithValue("用户不存在或账号密码不匹配");
       }
       return thunkAPI.rejectWithValue("登录失败");
     }
-    result.data = { ...result.data, username };
+    result.data = { ...result.data, email };
     return result;
     // 异步函数的返回值fulfilled会作为action payload  rejected的error。message 会是reject with value
   }
@@ -72,7 +73,7 @@ export const signup = createAsyncThunk(
       return thunkAPI.rejectWithValue("http 请求失败");
       // http请求的失败
     }
-    if (result.code !== 200) {
+    if (!isSuccessCode(result.code)) {
       if (result.code === 409) {
         return thunkAPI.rejectWithValue("注册时用户名重复");
       }
@@ -105,9 +106,9 @@ const authSlice = createSlice({
         if (!state.user) {
           state.user = {
             id: "1",
-            username: username,
+            username: "nahida",
             avatarUrl: "",
-            role: "student",
+            role: "user",
           };
         } else {
           state.user.username = username;
