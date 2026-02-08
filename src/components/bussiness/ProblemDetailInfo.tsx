@@ -216,11 +216,6 @@ export default function ProblemDetailInfo({
       </div>
       {/* === 2. 操作按钮区 === */}
       <div className="flex flex-wrap gap-4 justify-start">
-        {isAuthenticated ? (
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white transition duration-300 ease-in-out transform hover:scale-105">
-            提交
-          </Button>
-        ) : null}
         {/* 这里暂时显示给所有已登录用户 */}
         {isAuthenticated && (
           <Button 

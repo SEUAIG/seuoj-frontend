@@ -23,9 +23,9 @@ export default function NavBar() {
     >
       <div
         className="
-    mx-10
+    w-full
     h-14
-    px-8
+    px-10
     flex items-center justify-between shadow-sm
   "
       >

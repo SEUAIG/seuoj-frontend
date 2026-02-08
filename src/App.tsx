@@ -15,7 +15,6 @@ import HelpPage from "./components/pages/HelpPage";
 import ProblemDetailPage from "./components/pages/ProblemDetailPage";
 import SubmissionPage from "./components/pages/SubmissionPage";
 import ProblemEditPage from "./components/pages/ProblemEditPage";
-
 import path from 'path';
 import PersonalPage from "./components/pages/PersonalPage";
 import UnauthorizedPage from "./components/pages/UnauthorizedPage";

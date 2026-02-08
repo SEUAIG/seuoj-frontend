@@ -1,6 +1,8 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useSelector } from "react-redux";
+import { RootState } from "@/app/store";
 import {
   Card,
   CardContent,
@@ -25,8 +27,9 @@ export default function UnauthorizedPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state as UnauthorizedState) || {};
+  const { user } = useSelector((store: RootState) => store.auth);
   const perm = state.perm ?? "admin";
-  const role = state.role ?? "unknown";
+  const role = user?.role ?? "guest";
   const allowedRoles = state.allowedRoles ?? ["admin"];
   const fallbackPath = state.fallbackPath ?? "/home";
   return (

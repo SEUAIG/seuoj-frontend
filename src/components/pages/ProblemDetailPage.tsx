@@ -126,7 +126,7 @@ export default function ProblemDetailPage() {
       <Helmet>
         <title>{`#${id}. ${title} - SeuOJ`}</title>
       </Helmet>
-      <div className="h-full overflow-x-auto overflow-y-hidden flex flex-row bg-white border-t border-gray-200 relative">
+      <div className="h-[calc(100vh-5.5rem)] w-full max-w-full overflow-x-hidden overflow-y-hidden flex flex-col lg:flex-row bg-white border-t border-gray-200 relative">
         <div className="fixed right-10 z-50 top-16 flex items-center space-x-2">
           {/* fixed 相对于整个浏览器视口进行定位 */}
           <Switch
@@ -138,14 +138,18 @@ export default function ProblemDetailPage() {
           />
           <Label htmlFor="sethide">隐藏编辑器</Label>
         </div>
-        <div className={`${hide?"w-full":"w-1/2"} min-w-[500px] flex-shrink-0 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent border-r border-gray-200`}>
+        <div
+          className={`${
+            hide ? "w-full" : "w-full lg:w-1/2"
+          } h-full w-full max-w-full min-w-0 flex-shrink overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent border-r border-gray-200`}
+        >
           <ProblemDetailInfo
             problem={problem}
             isAuthenticated={isAuthenticated}
           />
         </div>
         {hide ? null : (
-          <div className="w-1/2 min-w-[500px] flex-shrink-0 overflow-hidden bg-gray-50 relative">
+          <div className="w-full lg:w-1/2 h-full max-w-full min-w-0 flex-shrink overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent bg-gray-50 relative">
             {isAuthenticated ? (
               <ProblemCoding
                 pid={pid}

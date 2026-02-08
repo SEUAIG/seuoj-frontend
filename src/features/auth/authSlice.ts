@@ -111,7 +111,7 @@ const authSlice = createSlice({
             role: "user",
           };
         } else {
-          state.user.username = username;
+          state.user.username = username||"nahida";
         }
         // TODO 完善返回赋值 现在没有用户信息
         state.isAuthenticated = true;
