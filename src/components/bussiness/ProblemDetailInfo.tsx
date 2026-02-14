@@ -20,6 +20,7 @@ import {
   ListChecks,
   Database,
   Edit,
+  MessageCircle,
 } from "lucide-react";
 import { ProblemSection } from "./ProblemSection";
 import { ExampleSection } from "./ExampleSection";
@@ -136,10 +137,12 @@ export default function ProblemDetailInfo({
               <TooltipContent>
                 <div className="space-y-1 text-xs">
                   <p className="flex items-center gap-2">
-                    <Clock size={14} /> CPU 时间限制: {formatTime(max_cpu_time_ms)}
+                    <Clock size={14} /> CPU 时间限制:{" "}
+                    {formatTime(max_cpu_time_ms)}
                   </p>
                   <p className="flex items-center gap-2">
-                    <Zap size={14} /> 实际时间限制: {formatTime(max_real_time_ms)}
+                    <Zap size={14} /> 实际时间限制:{" "}
+                    {formatTime(max_real_time_ms)}
                   </p>
                 </div>
               </TooltipContent>
@@ -218,7 +221,7 @@ export default function ProblemDetailInfo({
       <div className="flex flex-wrap gap-4 justify-start">
         {/* 这里暂时显示给所有已登录用户 */}
         {isAuthenticated && (
-          <Button 
+          <Button
             className="bg-purple-600 hover:bg-purple-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
             onClick={() => nav(`/problemsLibrary/${pid}/edit`)}
           >
@@ -227,15 +230,24 @@ export default function ProblemDetailInfo({
           </Button>
         )}
         <Button className="bg-green-600 hover:bg-green-700 text-white transition duration-300 ease-in-out transform hover:scale-105">
+          <ListChecks className="mr-2 h-4 w-4" />
           提交记录
         </Button>
         <Button className="bg-orange-600 hover:bg-orange-700 text-white transition duration-300 ease-in-out transform hover:scale-105">
+          <Activity className="mr-2 h-4 w-4" />
           统计
         </Button>
-        <Button className="bg-yellow-600 hover:bg-yellow-700 text-white transition duration-300 ease-in-out transform hover:scale-105">
-          测试数据
+        <Button
+          onClick={() => {
+            nav("testfile");
+          }}
+          className="bg-yellow-600 hover:bg-yellow-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
+        >
+          <BookCopy className="mr-2 h-4 w-4" />
+          文件
         </Button>
         <Button className="bg-amber-600 hover:bg-amber-700 text-white transition duration-300 ease-in-out transform hover:scale-105">
+          <MessageCircle className="mr-2 h-4 w-4" />
           讨论
         </Button>
       </div>
