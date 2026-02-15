@@ -20,6 +20,7 @@ import PersonalPage from "./components/pages/PersonalPage";
 import UnauthorizedPage from "./components/pages/UnauthorizedPage";
 import ProtectedRoute from "./components/bussiness/ProtectedRoute";
 import ProblemTestFilePage from "./components/pages/ProblemTestFilePage";
+import ProblemConfigPage from "./components/pages/ProblemConfigPage";
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
             <Route path=":id" element={<ProblemDetailPage />} />
             <Route path=":id/edit" element={<ProblemEditPage />} />
             <Route path=":id/testfile" element={<ProblemTestFilePage/>} />
+            <Route path=":id/config" element={<ProblemConfigPage />} />
           </Route>
           <Route element={<ProtectedRoute allowRole="user" />}>
             <Route path="/submission">
