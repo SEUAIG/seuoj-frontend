@@ -1,6 +1,7 @@
 import { authReducer } from "@/features/auth/authSlice";
 import { codeReducer } from "@/features/Code/codeSlice";
 import { problemListReducer } from "@/features/ProblemList/problemListSlice";
+import { contestListReducer } from "@/features/ContestList/contestListSlice";
 import { submissionListReducer } from "@/features/SubmissionList/submissionListSlice";
 import { tagsReducer } from "@/features/Tags/tagsSlice";
 import { configureStore } from "@reduxjs/toolkit";
@@ -27,6 +28,11 @@ const problemListPersistConfig = {
   storage,
   whitelist: [],
 };
+const contestListPersistConfig = {
+  key: "contestList",
+  storage,
+  whitelist: [],
+};
 const submissionListPersistConfig = {
   key: "submissionList",
   storage,
@@ -44,6 +50,7 @@ export const store = configureStore({
     code: persistReducer(codePersistConfig, codeReducer),
     tags: persistReducer(tagsPersistConfig, tagsReducer),
     problemList:persistReducer(problemListPersistConfig,problemListReducer),
+    contestList: persistReducer(contestListPersistConfig, contestListReducer),
     submissionList: persistReducer(
       submissionListPersistConfig,
       submissionListReducer
