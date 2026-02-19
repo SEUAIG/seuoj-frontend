@@ -1,36 +1,21 @@
 import { api } from "../api/axios";
+import { Info, ProblemExample } from "@/components/pages/ProblemDetailPage";
 
-export type ContestProblemType = "Standard" | "Interactive";
-export type ContestCheckerType = "Standard" | "Special";
-export type ContestProblemDetailInfo = {
-  max_cpu_time_ms: number;
-  max_real_time_ms: number;
-  max_memory_byte: number;
-  max_stack_byte: number;
-  max_process_number: number;
-  max_output_size: number;
-  test_case_number: number;
-  problem_type: ContestProblemType;
-  checker_type: ContestCheckerType;
-};
-export type ContestProblemDetailExample = {
-  in?: string;
-  ans?: string;
-  description?: string;
-};
-export type ContestProblemDetailContent = {
+export type ContestProblemContent = {
   pid: string;
   description: string;
-  info: ContestProblemDetailInfo;
+  info: Info;
   input: string;
   output: string;
-  example: ContestProblemDetailExample[];
+  example: ProblemExample[];
 };
+
 export type ContestProblemDetailData = {
   pid: string;
   title: string;
-  content: ContestProblemDetailContent;
+  content: ContestProblemContent;
 };
+
 export type ContestProblemDetailResponse = {
   code: number;
   message: string;

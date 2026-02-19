@@ -1,28 +1,28 @@
 import { api } from "../api/axios";
 
-export type ContestRuleType = "NOI" | "IOI" | "ACM";
-export type UpdateContestRequest = {
+export interface UpdateContestRequest {
   title?: string;
   subtitle?: string;
   description?: string;
   start_time?: string;
   end_time?: string;
-  rule_type?: ContestRuleType;
+  rule_type?: "NOI" | "IOI" | "ACM";
   is_public?: boolean;
   hide_statistics?: boolean;
-};
-export type UpdateContestResponse = {
+}
+
+export interface UpdateContestResponse {
   code: number;
   message: string;
-};
+}
 
 export const updateContest = async (
   contest_public_id: string,
-  payload: UpdateContestRequest
+  data: UpdateContestRequest
 ): Promise<UpdateContestResponse> => {
   const res = await api.put<UpdateContestResponse>(
     `/api/contest/${contest_public_id}`,
-    payload
+    data
   );
   return res.data;
 };

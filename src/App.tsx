@@ -15,12 +15,17 @@ import HelpPage from "./components/pages/HelpPage";
 import ProblemDetailPage from "./components/pages/ProblemDetailPage";
 import SubmissionPage from "./components/pages/SubmissionPage";
 import ProblemEditPage from "./components/pages/ProblemEditPage";
-import path from 'path';
+import path from "path";
 import PersonalPage from "./components/pages/PersonalPage";
 import UnauthorizedPage from "./components/pages/UnauthorizedPage";
 import ProtectedRoute from "./components/bussiness/ProtectedRoute";
 import ProblemTestFilePage from "./components/pages/ProblemTestFilePage";
 import ProblemConfigPage from "./components/pages/ProblemConfigPage";
+import ContestListDetailPage from "./components/pages/ContestListDetailPage";
+import ContestProblemDetailPage from "./components/pages/ContestProblemDetailPage";
+import ContestSubmissionPage from "./components/pages/ContestSubmissionPage";
+import ContestEditPage from "./components/pages/ContestEditPage";
+import CreateContestPage from "./components/pages/CreateContestPage";
 
 function App() {
   return (
@@ -39,7 +44,7 @@ function App() {
             <Route index element={<ProblemsLibraryPage />} />
             <Route path=":id" element={<ProblemDetailPage />} />
             <Route path=":id/edit" element={<ProblemEditPage />} />
-            <Route path=":id/testfile" element={<ProblemTestFilePage/>} />
+            <Route path=":id/testfile" element={<ProblemTestFilePage />} />
             <Route path=":id/config" element={<ProblemConfigPage />} />
           </Route>
           <Route element={<ProtectedRoute allowRole="user" />}>
@@ -50,6 +55,23 @@ function App() {
             <Route path="/personal" element={<PersonalPage />} />
           </Route>
           <Route path="/competition" element={<CompetitionPage />} />
+          <Route path="/contest/create" element={<CreateContestPage />} />
+          <Route
+            path="/contest/:contest_public_id"
+            element={<ContestListDetailPage />}
+          />
+          <Route
+            path="/contest/:contest_public_id/edit"
+            element={<ContestEditPage />}
+          />
+          <Route
+            path="/contest/:contest_public_id/:id"
+            element={<ContestProblemDetailPage />}
+          />
+          <Route
+            path="/contest/:contest_public_id/submission/:submission_no"
+            element={<ContestSubmissionPage />}
+          />
           <Route path="/evaluation" element={<EvaluationPage />} />
           <Route path="/rank" element={<RankPage />} />
           <Route path="/discussion" element={<DiscussionPage />} />

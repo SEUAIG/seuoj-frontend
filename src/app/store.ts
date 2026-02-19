@@ -1,5 +1,6 @@
 import { authReducer } from "@/features/auth/authSlice";
 import { codeReducer } from "@/features/Code/codeSlice";
+import { contestCodeReducer } from "@/features/Code/contestCodeSlice";
 import { problemListReducer } from "@/features/ProblemList/problemListSlice";
 import { contestListReducer } from "@/features/ContestList/contestListSlice";
 import { submissionListReducer } from "@/features/SubmissionList/submissionListSlice";
@@ -15,6 +16,11 @@ const authPersistConfig = {
 };
 const codePersistConfig = {
   key: "code",
+  storage,
+  whitelist: ["language", "fontsize", "codeFileObjectArray"],
+};
+const contestCodePersistConfig = {
+  key: "contestCode",
   storage,
   whitelist: ["language", "fontsize", "codeFileObjectArray"],
 };
@@ -48,6 +54,7 @@ export const store = configureStore({
   reducer: {
     auth: persistReducer(authPersistConfig, authReducer),
     code: persistReducer(codePersistConfig, codeReducer),
+    contestCode: persistReducer(contestCodePersistConfig, contestCodeReducer),
     tags: persistReducer(tagsPersistConfig, tagsReducer),
     problemList:persistReducer(problemListPersistConfig,problemListReducer),
     contestList: persistReducer(contestListPersistConfig, contestListReducer),

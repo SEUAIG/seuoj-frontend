@@ -17,6 +17,9 @@ import ProblemListPageChoose from "@/components/bussiness/ProblemListPageChoose"
 import useQueryToGetContestList from "@/hooks/useQueryToGetContestList";
 import ContestFilterPanel from "@/components/bussiness/ContestFilterPanel";
 import ContestListTable from "@/components/bussiness/ContestListTable";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+
 export default function CompetitionPage() {
   const dispatch = useDispatch();
   const nav = useNavigate();
@@ -269,6 +272,13 @@ export default function CompetitionPage() {
               <span className="font-semibold text-foreground">{total}</span>{" "}
               条结果
             </div>
+            <Button
+              onClick={() => nav("/contest/create")}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              创建比赛
+            </Button>
           </div>
           <ContestListTable
             records={records}
@@ -278,7 +288,7 @@ export default function CompetitionPage() {
             statusLabelMap={statusLabelMap}
             getOutlineTagClass={getOutlineTagClass}
             onOpenContest={(contestPublicId) =>
-              nav(`/competition/${contestPublicId}`)
+              nav(`/contest/${contestPublicId}`)
             }
           />
           {!!pages && (

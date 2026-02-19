@@ -10,7 +10,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { ContestRecord } from "@/services/Contest/getContestPage";
-
 type ContestListTableProps = {
   records: ContestRecord[];
   isLoading: boolean;
@@ -20,7 +19,6 @@ type ContestListTableProps = {
   getOutlineTagClass: (value: string) => string;
   onOpenContest: (contestPublicId: string) => void;
 };
-
 export default function ContestListTable({
   records,
   isLoading,
