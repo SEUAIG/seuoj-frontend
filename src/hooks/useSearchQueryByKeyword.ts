@@ -9,7 +9,6 @@ export function useSearchQueryByKeyword<T = unknown>(
   return useQuery<SearchResult<T>>({
     queryKey: ["search", current, size, title, tag_ids],
     queryFn: () => search<T>(current, size, title, tag_ids),
-    enabled: false,
     placeholderData: keepPreviousData,
   });
 }
