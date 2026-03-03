@@ -1,5 +1,5 @@
 import { useFileList } from "@/hooks/useFileList";
-import { getTestFile } from "@/services/getTestFile";
+import { getTestFile, downloadProblemFile } from "@/services/getTestFile";
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -24,6 +24,8 @@ export default function ProblemTestFilePage() {
   const nav = useNavigate();
   const { id } = useParams();
   const [tree, setTree] = useState<FileNode[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const fileListAll = useFileList(tree);
   const fileList = useMemo(
     () =>
@@ -36,35 +38,61 @@ export default function ProblemTestFilePage() {
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const allcount = fileList.length;
   const selectedcount = selectedRows.size;
-  const handleSingleDownload = (filename: string) => {
-    window.location.href = `/api/problem/file/${id}/data/${encodeURIComponent(
-      filename
-    )}`;
+  const triggerBlobDownload = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
-  const downloadAll = (urls: string[]) => {
-    urls.forEach((url, index) => {
-      setTimeout(() => {
-        const a = document.createElement("a");
-        a.href = url;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      }, index * 200);
-    });
+
+  const handleSingleDownload = async (filename: string) => {
+    if (!id) return;
+    try {
+      const blob = await downloadProblemFile(id, `data/${filename}`);
+      triggerBlobDownload(blob, filename);
+    } catch (e) {
+      console.error("下载失败", e);
+    }
   };
-  const handleMuiltipleDownload = () => {
+
+  const handleMuiltipleDownload = async () => {
     if (!id || selectedRows.size === 0) return;
-    const urls = Array.from(selectedRows).map(
-      (item) => `/api/problem/file/${id}/data/${encodeURIComponent(item)}`
-    );
-    downloadAll(urls);
+    for (const item of Array.from(selectedRows)) {
+      try {
+        const blob = await downloadProblemFile(id, `data/${item}`);
+        triggerBlobDownload(blob, item);
+      } catch (e) {
+        console.error(`下载 ${item} 失败`, e);
+      }
+      // 间隔 200ms 避免浏览器限流
+      await new Promise((r) => setTimeout(r, 200));
+    }
   };
 
   useEffect(() => {
     if (!id) return;
     const fetchTree = async () => {
-      const result = await getTestFile(id);
-      setTree(Array.isArray(result) ? result : []);
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await getTestFile(id);
+        setTree(Array.isArray(result) ? result : []);
+      } catch (e: any) {
+        const status = e?.response?.status;
+        if (status === 401) {
+          setError("未登录，请先登录管理员账号");
+        } else if (status === 403) {
+          setError("权限不足，需要管理员角色");
+        } else {
+          setError("加载文件树失败");
+        }
+      } finally {
+        setLoading(false);
+      }
     };
     fetchTree();
   }, [id]);
@@ -94,6 +122,17 @@ export default function ProblemTestFilePage() {
             返回上一页
           </Button>
         </div>
+        {loading && (
+          <div className="flex items-center justify-center py-16 text-muted-foreground">
+            加载中...
+          </div>
+        )}
+        {error && (
+          <div className="flex items-center justify-center py-16 text-red-500">
+            {error}
+          </div>
+        )}
+        {!loading && !error && (
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/40">
@@ -171,6 +210,7 @@ export default function ProblemTestFilePage() {
             </TableRow>
           </TableFooter>
         </Table>
+        )}
       </div>
     </div>
   );
