@@ -33,7 +33,7 @@ export default function TestPointOverview({
         用时：{item.time}ms
       </span>
       <span className="whitespace-nowrap tabular-nums">
-        内存：{item.mem.toFixed(0)}KB
+        内存：{(item.mem / 1024).toFixed(0)}KB
       </span>
     </div>
   );
