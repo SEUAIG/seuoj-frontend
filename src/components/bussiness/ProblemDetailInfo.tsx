@@ -22,6 +22,8 @@ import {
   Edit,
   MessageCircle,
 } from "lucide-react";
+import { useSelector } from "react-redux";
+import { RootState } from "@/app/store";
 import { ProblemSection } from "./ProblemSection";
 import { ExampleSection } from "./ExampleSection";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
@@ -35,6 +37,7 @@ export default function ProblemDetailInfo({
   isAuthenticated,
 }: ProblemDetailInfoProps) {
   const nav = useNavigate();
+  const role = useSelector((state: RootState) => state.auth.user?.role ?? "guest");
   const { title, content, tags, pid, totalSubmit, totalAccept } = problem;
   const { description, info = {}, input, output, example } = content;
   const {
@@ -219,8 +222,8 @@ export default function ProblemDetailInfo({
       </div>
       {/* === 2. 操作按钮区 === */}
       <div className="flex flex-wrap gap-4 justify-start">
-        {/* 这里暂时显示给所有已登录用户 */}
-        {isAuthenticated && (
+        {/* 仅管理员可见 */}
+        {isAuthenticated && (role === "admin" || role === "superadmin") && (
           <Button
             className="bg-purple-600 hover:bg-purple-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
             onClick={() => nav(`/problemsLibrary/${pid}/edit`)}

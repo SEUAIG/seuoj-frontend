@@ -43,9 +43,11 @@ function App() {
           <Route path="/problemsLibrary">
             <Route index element={<ProblemsLibraryPage />} />
             <Route path=":id" element={<ProblemDetailPage />} />
-            <Route path=":id/edit" element={<ProblemEditPage />} />
-            <Route path=":id/testfile" element={<ProblemTestFilePage />} />
-            <Route path=":id/config" element={<ProblemConfigPage />} />
+            <Route element={<ProtectedRoute allowRole="admin" />}>
+              <Route path=":id/edit" element={<ProblemEditPage />} />
+              <Route path=":id/testfile" element={<ProblemTestFilePage />} />
+              <Route path=":id/config" element={<ProblemConfigPage />} />
+            </Route>
           </Route>
           <Route element={<ProtectedRoute allowRole="user" />}>
             <Route path="/submission">

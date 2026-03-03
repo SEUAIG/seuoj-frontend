@@ -100,20 +100,14 @@ const authSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(login.fulfilled, (state, action) => {
-        const { jwt, username } = action.payload.data;
+        const { jwt, username, role } = action.payload.data;
         state.jwt = jwt;
-        // 如果 state.user 为 null 则创建一个新的 User 对象
-        if (!state.user) {
-          state.user = {
-            id: "1",
-            username: "nahida",
-            avatarUrl: "",
-            role: "user",
-          };
-        } else {
-          state.user.username = username||"nahida";
-        }
-        // TODO 完善返回赋值 现在没有用户信息
+        state.user = {
+          id: "1",
+          username: username || "user",
+          avatarUrl: "",
+          role: role || "user",
+        };
         state.isAuthenticated = true;
       })
       .addCase(login.rejected, (state, action) => {
