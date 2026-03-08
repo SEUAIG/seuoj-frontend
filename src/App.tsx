@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import LoginPage from "./components/pages/LoginPage";
 import SignupPage from "./components/pages/SignupPage";
 import ForgetPage from "./components/pages/ForgetPage";
@@ -30,6 +30,12 @@ import ContestSubmissionPage from "./components/pages/ContestSubmissionPage";
 import ContestEditPage from "./components/pages/ContestEditPage";
 import CreateContestPage from "./components/pages/CreateContestPage";
 
+function LegacyCompetitionRedirect() {
+  const { "*": rest } = useParams();
+  const targetPath = rest ? `/contest/${rest}` : "/contest";
+  return <Navigate to={targetPath} replace />;
+}
+
 function App() {
   return (
     <>
@@ -59,24 +65,30 @@ function App() {
             </Route>
             <Route path="/personal" element={<PersonalPage />} />
           </Route>
-          <Route path="/competition" element={<CompetitionPage />} />
-          <Route path="/contest/create" element={<CreateContestPage />} />
           <Route
-            path="/contest/:contest_public_id"
-            element={<ContestListDetailPage />}
+            path="/competition/*"
+            element={<LegacyCompetitionRedirect />}
           />
-          <Route
-            path="/contest/:contest_public_id/edit"
-            element={<ContestEditPage />}
-          />
-          <Route
-            path="/contest/:contest_public_id/:id"
-            element={<ContestProblemDetailPage />}
-          />
-          <Route
-            path="/contest/:contest_public_id/submission/:submission_no"
-            element={<ContestSubmissionPage />}
-          />
+          <Route path="/contest">
+            <Route index element={<CompetitionPage />} />
+            <Route path="create" element={<CreateContestPage />} />
+            <Route
+              path=":contest_public_id"
+              element={<ContestListDetailPage />}
+            />
+            <Route
+              path=":contest_public_id/edit"
+              element={<ContestEditPage />}
+            />
+            <Route
+              path=":contest_public_id/:id"
+              element={<ContestProblemDetailPage />}
+            />
+            <Route
+              path=":contest_public_id/submission/:submission_no"
+              element={<ContestSubmissionPage />}
+            />
+          </Route>
           <Route path="/evaluation" element={<EvaluationPage />} />
           <Route path="/problemset" element={<ProblemSetListPage />} />
           <Route path="/problemset/create" element={<ProblemSetCreatePage />} />

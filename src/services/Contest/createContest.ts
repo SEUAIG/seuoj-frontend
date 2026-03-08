@@ -14,6 +14,9 @@ export type CreateContestRequest = {
 export type CreateContestResponse = {
   code: number;
   message: string;
+  data?: {
+    contest_public_id: string;
+  };
 };
 
 export const createContest = async (

@@ -1,6 +1,7 @@
 import { api } from "../api/axios";
 
 export type ContestRuleType = "NOI" | "IOI" | "ACM";
+export type ContestStatus = "NOT_STARTED" | "IN_PROGRESS" | "FINISHED";
 export type ContestProblemOverview = {
   sort_order: number;
   pid: string;
@@ -12,6 +13,8 @@ export type ContestDetailData = {
   description?: string;
   start_time?: string;
   end_time?: string;
+  status?: ContestStatus;
+  is_registered?: boolean;
   rule_type?: ContestRuleType;
   is_public?: boolean;
   hide_statistics?: boolean;

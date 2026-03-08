@@ -16,13 +16,15 @@ export interface ProblemExample {
   description: string;
 }
 export interface Info {
-  max_cpu_time_ms: string;
-  max_real_time_ms: string;
-  max_memory_byte: string;
-  max_stack_byte: string;
-  max_process_number: string;
-  max_output_size: string;
-  test_case_number: string;
+  max_cpu_time_ms: string | number;
+  max_real_time_ms: string | number;
+  max_memory_byte: string | number;
+  max_stack_byte: string | number;
+  max_process_number: string | number;
+  max_output_size: string | number;
+  min_cpu_time_ms?: string | number;
+  min_memory_byte?: string | number;
+  test_case_number: string | number;
   problem_type: string;
   checker_type: string;
 }
@@ -33,6 +35,7 @@ export interface ProblemContent {
   input: string;
   output: string;
   example: ProblemExample[];
+  hint?: string;
 }
 export interface ProblemData {
   pid: string;

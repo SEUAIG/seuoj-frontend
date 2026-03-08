@@ -8,6 +8,7 @@ export type ContestProblemContent = {
   input: string;
   output: string;
   example: ProblemExample[];
+  hint?: string;
 };
 
 export type ContestProblemDetailData = {

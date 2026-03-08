@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate } from "react-router-dom";
 import { format, isValid, parseISO } from "date-fns";
@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,8 +23,7 @@ import {
 } from "lucide-react";
 import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
-import { useSelector } from "react-redux";
-import { RootState } from "@/app/store";
+import { ContestStatus } from "@/services/Contest/getContestDetail";
 import {
   registerContest,
   unregisterContest,
@@ -35,11 +34,9 @@ import { useState } from "react";
 export default function ContestListDetailPage() {
   const { contest_public_id } = useParams();
   const nav = useNavigate();
-  const { user } = useSelector((state: RootState) => state.auth);
   const [isRegistering, setIsRegistering] = useState(false);
-  const { data, isLoading, isError, error } = useQueryToGetContestDetail(
-    contest_public_id || ""
-  );
+  const { data, isLoading, isError, error, refetch } =
+    useQueryToGetContestDetail(contest_public_id || "");
   const canEdit = true;
 
   const handleRegister = async () => {
@@ -47,12 +44,13 @@ export default function ContestListDetailPage() {
     setIsRegistering(true);
     try {
       const res = await registerContest(contest_public_id);
-      if (res.code === 0) {
+      if (res.code === 200 || res.code === 0) {
         toast.success("报名成功");
+        refetch();
       } else {
         toast.error(res.message || "报名失败");
       }
-    } catch (error) {
+    } catch {
       toast.error("报名请求出错");
     } finally {
       setIsRegistering(false);
@@ -63,12 +61,13 @@ export default function ContestListDetailPage() {
     setIsRegistering(true);
     try {
       const res = await unregisterContest(contest_public_id);
-      if ( res.code === 0) {
+      if (res.code === 200 || res.code === 0) {
         toast.success("取消报名成功");
+        refetch();
       } else {
         toast.error(res.message || "取消报名失败");
       }
-    } catch (error) {
+    } catch {
       toast.error("取消报名请求出错");
     } finally {
       setIsRegistering(false);
@@ -88,26 +87,25 @@ export default function ContestListDetailPage() {
     }
     return startText || endText || "-";
   };
-  const getStatus = (start?: string, end?: string) => {
-    if (!start || !end) return "UNKNOWN";
+  const getStatus = (start?: string, end?: string): ContestStatus => {
+    if (!start || !end) return "NOT_STARTED";
     const now = new Date();
     const startDate = parseISO(start);
     const endDate = parseISO(end);
+    if (!isValid(startDate) || !isValid(endDate)) return "NOT_STARTED";
     if (now < startDate) return "NOT_STARTED";
     if (now > endDate) return "FINISHED";
     return "IN_PROGRESS";
   };
-  const statusLabelMap = {
+  const statusLabelMap: Record<ContestStatus, string> = {
     NOT_STARTED: "未开始",
     IN_PROGRESS: "进行中",
     FINISHED: "已结束",
-    UNKNOWN: "未知",
   };
-  const statusColorMap = {
+  const statusColorMap: Record<ContestStatus, string> = {
     NOT_STARTED: "bg-blue-50 text-blue-700 border-blue-200",
     IN_PROGRESS: "bg-emerald-50 text-emerald-700 border-emerald-200",
     FINISHED: "bg-slate-50 text-slate-700 border-slate-200",
-    UNKNOWN: "bg-gray-50 text-gray-700 border-gray-200",
   };
   const ruleTypeClassMap: Record<string, string> = {
     NOI: "bg-blue-500 hover:bg-blue-600 text-white border-transparent shadow-sm",
@@ -138,7 +136,8 @@ export default function ContestListDetailPage() {
       </div>
     );
   }
-  const status = getStatus(data.start_time, data.end_time);
+  const status = data.status ?? getStatus(data.start_time, data.end_time);
+  const isRegistered = data.is_registered ?? false;
   return (
     <div className="w-4/5 mx-auto py-6 space-y-6 min-h-screen">
       <Helmet>
@@ -166,24 +165,27 @@ export default function ContestListDetailPage() {
           </Button>
         )}
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100"
-            onClick={handleRegister}
-            disabled={isRegistering}
-          >
-            <UserPlus className="mr-2 h-4 w-4" />
-            报名比赛
-          </Button>
-          <Button
-            variant="outline"
-            className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
-            onClick={handleUnregister}
-            disabled={isRegistering}
-          >
-            <UserMinus className="mr-2 h-4 w-4" />
-            取消报名
-          </Button>
+          {isRegistered ? (
+            <Button
+              variant="outline"
+              className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+              onClick={handleUnregister}
+              disabled={isRegistering}
+            >
+              <UserMinus className="mr-2 h-4 w-4" />
+              取消报名
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              className="bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100"
+              onClick={handleRegister}
+              disabled={isRegistering}
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              报名比赛
+            </Button>
+          )}
         </div>
       </div>
       <Card>
@@ -195,11 +197,9 @@ export default function ContestListDetailPage() {
                 {formatContestTime(data.start_time, data.end_time)}
                 <Badge
                   variant="outline"
-                  className={`${
-                    statusColorMap[status as keyof typeof statusColorMap]
-                  } text-base px-3 py-1`}
+                  className={`${statusColorMap[status]} text-base px-3 py-1`}
                 >
-                  {statusLabelMap[status as keyof typeof statusLabelMap]}
+                  {statusLabelMap[status]}
                 </Badge>
               </div>
             </div>

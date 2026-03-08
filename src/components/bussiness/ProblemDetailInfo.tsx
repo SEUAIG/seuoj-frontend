@@ -39,7 +39,7 @@ export default function ProblemDetailInfo({
   const nav = useNavigate();
   const role = useSelector((state: RootState) => state.auth.user?.role ?? "guest");
   const { title, content, tags, pid, totalSubmit, totalAccept } = problem;
-  const { description, info = {}, input, output, example } = content;
+  const { description, info = {}, input, output, example, hint } = content;
   const {
     max_cpu_time_ms = "1000",
     max_real_time_ms = "2000",
@@ -47,19 +47,21 @@ export default function ProblemDetailInfo({
     max_stack_byte = "33554432",
     max_process_number = "1",
     max_output_size = "10000",
+    min_cpu_time_ms,
+    min_memory_byte,
     test_case_number = "1",
     problem_type = "Standard",
     checker_type = "Standard",
   } = info as Info;
-  const formatTime = (val: string) => (val === "-1" ? "∞" : `${val} ms`);
-  const formatMemory = (val: string) => {
-    if (val === "-1") return "∞";
+  const formatTime = (val: string | number) => (String(val) === "-1" ? "∞" : `${val} ms`);
+  const formatMemory = (val: string | number) => {
+    if (String(val) === "-1") return "∞";
     const bytes = Number(val);
     return `${(bytes / 1024 / 1024).toFixed(0)} MiB`;
   };
-  const formatCount = (val: string) => (val === "-1" ? "∞" : val);
-  const formatSize = (val: string) => {
-    if (val === "-1") return "∞";
+  const formatCount = (val: string | number) => (String(val) === "-1" ? "∞" : val);
+  const formatSize = (val: string | number) => {
+    if (String(val) === "-1") return "∞";
     const bytes = Number(val);
     if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KiB`;
     return `${bytes} B`;
@@ -143,6 +145,12 @@ export default function ProblemDetailInfo({
                     <Clock size={14} /> CPU 时间限制:{" "}
                     {formatTime(max_cpu_time_ms)}
                   </p>
+                  {min_cpu_time_ms && (
+                    <p className="flex items-center gap-2">
+                      <Clock size={14} /> 最小 CPU 时间:{" "}
+                      {formatTime(min_cpu_time_ms)}
+                    </p>
+                  )}
                   <p className="flex items-center gap-2">
                     <Zap size={14} /> 实际时间限制:{" "}
                     {formatTime(max_real_time_ms)}
@@ -164,6 +172,12 @@ export default function ProblemDetailInfo({
                     <Database size={14} /> 内存限制:{" "}
                     {formatMemory(max_memory_byte)}
                   </p>
+                  {min_memory_byte && (
+                    <p className="flex items-center gap-2">
+                      <Database size={14} /> 最小内存限制:{" "}
+                      {formatMemory(min_memory_byte)}
+                    </p>
+                  )}
                   <p className="flex items-center gap-2">
                     <Layers size={14} /> 栈空间限制:{" "}
                     {formatMemory(max_stack_byte)}
@@ -275,6 +289,11 @@ export default function ProblemDetailInfo({
             explain={ex.description}
           />
         ))}
+        {hint && (
+          <ProblemSection title="数据范围与提示">
+            <MarkdownRenderer>{hint}</MarkdownRenderer>
+          </ProblemSection>
+        )}
       </div>
     </div>
   );

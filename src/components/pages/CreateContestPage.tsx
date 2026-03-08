@@ -33,7 +33,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { createContest, CreateContestRequest } from "@/services/Contest/createContest";
+import {
+  createContest,
+  CreateContestRequest,
+} from "@/services/Contest/createContest";
 const contestFormSchema = z.object({
   title: z.string().min(1, "标题不能为空"),
   subtitle: z.string().optional(),
@@ -72,13 +75,17 @@ export default function CreateContestPage() {
       const res = await createContest(payload);
       if (res.code === 200 || res.code === 0) {
         toast.success("比赛创建成功");
-        nav("/competition"); // 跳转回比赛列表页
+        if (res.data?.contest_public_id) {
+          nav(`/contest/${res.data.contest_public_id}/edit`);
+        } else {
+          nav("/contest");
+        }
       } else {
         toast.error(res.message || "创建失败");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      toast.error(error.message || "创建请求发生错误");
+      toast.error(error instanceof Error ? error.message : "创建请求发生错误");
     } finally {
       setIsSubmitting(false);
     }
@@ -162,9 +169,7 @@ export default function CreateContestPage() {
                             const [hours, minutes] = e.target.value
                               .split(":")
                               .map(Number);
-                            const newDate = new Date(
-                              field.value || new Date()
-                            );
+                            const newDate = new Date(field.value || new Date());
                             newDate.setHours(hours);
                             newDate.setMinutes(minutes);
                             field.onChange(newDate);
@@ -219,9 +224,7 @@ export default function CreateContestPage() {
                             const [hours, minutes] = e.target.value
                               .split(":")
                               .map(Number);
-                            const newDate = new Date(
-                              field.value || new Date()
-                            );
+                            const newDate = new Date(field.value || new Date());
                             newDate.setHours(hours);
                             newDate.setMinutes(minutes);
                             field.onChange(newDate);
@@ -327,7 +330,7 @@ export default function CreateContestPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => nav("/competition")}
+              onClick={() => nav("/contest")}
             >
               取消
             </Button>

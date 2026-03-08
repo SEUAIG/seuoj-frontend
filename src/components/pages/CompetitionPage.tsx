@@ -43,21 +43,13 @@ export default function CompetitionPage() {
   );
   const minuteOptions = useMemo(() => ["00", "15", "30", "45"], []);
   const statusOptions = useMemo(
-    () => [
-      "NOT_STARTED",
-      "IN_PROGRESS",
-      "PENDING_FINAL_PROCESSING",
-      "TESTING",
-      "FINISHED",
-    ],
+    () => ["NOT_STARTED", "IN_PROGRESS", "FINISHED"],
     []
   );
   const ruleTypeOptions = useMemo(() => ["NOI", "IOI", "ACM"], []);
   const statusLabelMap = new Map<string, string>([
     ["NOT_STARTED", "未开始"],
     ["IN_PROGRESS", "进行中"],
-    ["PENDING_FINAL_PROCESSING", "等待结算"],
-    ["TESTING", "测试中"],
     ["FINISHED", "已结束"],
   ]);
   const statusClassMap = new Map<
@@ -81,26 +73,6 @@ export default function CompetitionPage() {
         idle: "hover:bg-emerald-500 hover:text-white",
         outline:
           "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100",
-      },
-    ],
-    [
-      "PENDING_FINAL_PROCESSING",
-      {
-        selected:
-          "bg-amber-500 hover:bg-amber-600 text-white border-transparent shadow-sm",
-        idle: "hover:bg-amber-500 hover:text-white",
-        outline:
-          "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100",
-      },
-    ],
-    [
-      "TESTING",
-      {
-        selected:
-          "bg-purple-500 hover:bg-purple-600 text-white border-transparent shadow-sm",
-        idle: "hover:bg-purple-500 hover:text-white",
-        outline:
-          "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100",
       },
     ],
     [

@@ -40,10 +40,8 @@ import {
 } from "@/services/Contest/updateContest";
 import { updateContestProblemList } from "@/services/Contest/updateContestProblemList";
 import { useQueryContestProblemListInEditPage } from "@/hooks/useQueryContestProblemListInEditPage";
-import ContestProblemListInEdit from "@/components/bussiness/ContestProblemListInEdit";
-import { Switch } from "@/components/ui/switch";
 import { ContestProblemOverviewInEditPage } from "@/services/Contest/getContestProblemListInEditPage";
-import { api } from "@/services/api/axios";
+import SortListTable from "../common/SortListTable";
 const contestFormSchema = z.object({
   title: z.string().min(1, "标题不能为空"),
   subtitle: z.string().optional(),
@@ -68,7 +66,6 @@ export default function ContestEditPage() {
   const [problems, setProblems] = React.useState<
     ContestProblemOverviewInEditPage[]
   >([]);
-  const [isDragEnabled, setIsDragEnabled] = React.useState(false);
   useEffect(() => {
     if (problemList?.problem_list) {
       setProblems(
@@ -416,29 +413,14 @@ export default function ContestEditPage() {
       </Form>
 
       <div className="mt-12 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">题目列表</h2>
-            <p className="text-muted-foreground mt-2">
-              当前比赛包含的题目列表。
-            </p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="drag-mode"
-              checked={isDragEnabled}
-              onCheckedChange={setIsDragEnabled}
-            />
-            <label htmlFor="drag-mode" className="text-sm font-medium">
-              启用拖拽排序
-            </label>
-          </div>
+        <div>
+          <h2 className="text-2xl font-bold">题目列表</h2>
+          <p className="text-muted-foreground mt-2">当前比赛包含的题目列表。</p>
         </div>
-        <ContestProblemListInEdit
-          isFetchingProblems={isFetchingProblems}
+        <SortListTable
           problems={problems}
+          isFetching={isFetchingProblems}
           setProblems={setProblems}
-          isDragEnabled={isDragEnabled}
         />
       </div>
     </div>

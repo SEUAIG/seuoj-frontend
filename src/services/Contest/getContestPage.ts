@@ -1,12 +1,7 @@
 import { api } from "../api/axios";
 
 export type ContestRuleType = "NOI" | "IOI" | "ACM";
-export type ContestStatus =
-  | "NOT_STARTED"
-  | "IN_PROGRESS"
-  | "PENDING_FINAL_PROCESSING"
-  | "TESTING"
-  | "FINISHED";
+export type ContestStatus = "NOT_STARTED" | "IN_PROGRESS" | "FINISHED";
 export type ContestListQuery = {
   current?: number;
   size?: number;
