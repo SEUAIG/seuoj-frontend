@@ -9,7 +9,10 @@ import HomePage from "./components/pages/HomePage";
 import ProblemsLibraryPage from "./components/pages/ProblemsLibraryPage";
 import CompetitionPage from "./components/pages/CompetitionPage";
 import EvaluationPage from "./components/pages/EvaluationPage";
-import RankPage from "./components/pages/RankPage";
+import ProblemSetListPage from "./components/pages/ProblemSetListPage";
+import ProblemSetCreatePage from "./components/pages/ProblemSetCreatePage";
+import ProblemSetDetailPage from "./components/pages/ProblemSetDetailPage";
+import ProblemSetUpdatePage from "./components/pages/ProblemSetUpdatePage";
 import DiscussionPage from "./components/pages/DiscussionPage";
 import HelpPage from "./components/pages/HelpPage";
 import ProblemDetailPage from "./components/pages/ProblemDetailPage";
@@ -75,7 +78,10 @@ function App() {
             element={<ContestSubmissionPage />}
           />
           <Route path="/evaluation" element={<EvaluationPage />} />
-          <Route path="/rank" element={<RankPage />} />
+          <Route path="/problemset" element={<ProblemSetListPage />} />
+          <Route path="/problemset/create" element={<ProblemSetCreatePage />} />
+          <Route path="/problemset/:id" element={<ProblemSetDetailPage />} />
+          <Route path="/problemset/:id/edit" element={<ProblemSetUpdatePage />} />
           <Route path="/discussion" element={<DiscussionPage />} />
           <Route path="/help" element={<HelpPage />} />
         </Route>

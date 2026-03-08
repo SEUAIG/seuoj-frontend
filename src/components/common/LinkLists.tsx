@@ -3,7 +3,7 @@ import {
   List,
   Trophy,
   ListCheck,
-  Signal,
+  ClipboardList,
   MessagesSquare,
   CircleQuestionMark,
 } from "lucide-react";
@@ -17,7 +17,7 @@ export default function LinkLists() {
       <NavItem to="/problemsLibrary" icon={List} label="题库" />
       <NavItem to="/competition" icon={Trophy} label="比赛" />
       <NavItem to="/evaluation" icon={ListCheck} label="评测" />
-      <NavItem to="/rank" icon={Signal} label="排名" />
+      <NavItem to="/problemset" icon={ClipboardList} label="题单" />
       <NavItem to="/discussion" icon={MessagesSquare} label="讨论" />
       <NavItem to="/help" icon={CircleQuestionMark} label="帮助" />
     </ul>
