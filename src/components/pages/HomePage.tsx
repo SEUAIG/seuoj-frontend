@@ -1,6 +1,7 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 import Fortune from "@/components/bussiness/Fortune";
+import SubmissionHeatmap from "@/components/profile/SubmissionHeatmap";
 import { useSelector } from "react-redux";
 import { RootState } from "@/app/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,13 +9,19 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 export default function HomePage() {
-  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { user, isAuthenticated } = useSelector(
+    (state: RootState) => state.auth
+  );
+  const currentYear = new Date().getFullYear();
+
   return (
     <div className="container mx-auto py-8 px-4">
       <Helmet>
         <title>首页 - SeuOJ</title>
       </Helmet>
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Main Content Area - 3/4 width on large screens */}
         <div className="lg:col-span-3 space-y-6">
           <section className="space-y-4">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -23,8 +30,8 @@ export default function HomePage() {
                   Welcome to SeuOJ
                 </h1>
                 <p className="text-muted-foreground mt-2">
-                  {isAuthenticated 
-                    ? `欢迎回来, ${user?.username}!` 
+                  {isAuthenticated
+                    ? `欢迎回来, ${user?.username}!`
                     : "开启你的算法之旅。"}
                 </p>
               </div>
@@ -38,6 +45,8 @@ export default function HomePage() {
               </div>
             </div>
           </section>
+
+          {/* Announcements / News Placeholder */}
           <Card>
             <CardHeader>
               <CardTitle>公告</CardTitle>
@@ -48,7 +57,9 @@ export default function HomePage() {
               </div>
             </CardContent>
           </Card>
-           <Card>
+
+          {/* Recommended Problems Placeholder */}
+          <Card>
             <CardHeader>
               <CardTitle>推荐题目</CardTitle>
             </CardHeader>
@@ -59,27 +70,14 @@ export default function HomePage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Sidebar Area - 1/4 width on large screens */}
         <div className="space-y-6">
+          {/* Fortune Component */}
           <Fortune />
-          {isAuthenticated && (
-             <Card>
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-md font-medium">个人统计</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-sm text-muted-foreground">
-                        <div className="flex justify-between py-1">
-                            <span>Rating</span>
-                            <span className="font-mono text-foreground">1500</span>
-                        </div>
-                         <div className="flex justify-between py-1">
-                            <span>解决题目</span>
-                            <span className="font-mono text-foreground">0</span>
-                        </div>
-                    </div>
-                </CardContent>
-             </Card>
-          )}
+
+          {/* Daily Streak / Stats Placeholder */}
+          {isAuthenticated && <SubmissionHeatmap year={currentYear} />}
         </div>
       </div>
     </div>

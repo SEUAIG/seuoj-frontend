@@ -22,6 +22,8 @@ import { setCurrent as setSubmissionCurrent } from "@/features/SubmissionList/su
 import nahida from "@/assets/nahida.png";
 import seu from "@/assets/seu.png";
 import useQueryToGetSubmission from "@/hooks/useQueryToGetSubmission";
+import SubmissionHeatmap from "@/components/profile/SubmissionHeatmap";
+
 export default function PersonalPage() {
   const dispatch = useDispatch();
   const { current, size } = useSelector(
@@ -112,6 +114,7 @@ export default function PersonalPage() {
             </Card>
           </aside>
           <section className="space-y-4">
+            <SubmissionHeatmap year={new Date().getFullYear()} />
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
