@@ -10,6 +10,7 @@ import ProblemDetailInfo from "@/components/bussiness/ProblemDetailInfo";
 import ProblemCoding from "@/components/bussiness/ProblemCoding";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import AIChatWidget from "../common/AIChatWidget";
 export interface ProblemExample {
   in: string;
   ans: string;
@@ -51,6 +52,7 @@ export default function ProblemDetailPage() {
   const [problem, setProblem] = useState<ProblemData | null>(null);
   const [codeFile, setCodeFile] = useState("");
   const [hide, setHide] = useState(false);
+  const [showChat, setShowChat] = useState(true);
   const { language, codeFileObjectArray } = useSelector(
     (store: RootState) => store.code
   );
@@ -76,6 +78,7 @@ export default function ProblemDetailPage() {
   if (!problem) {
     return (
       <div className="min-h-screen bg-gray-50 py-4 pb-10">
+        <AIChatWidget />
         <div className="max-w-4xl mx-auto px-6 space-y-8">
           <div className="space-y-4">
             <Skeleton className="h-10 w-1/3" />
@@ -129,17 +132,28 @@ export default function ProblemDetailPage() {
       <Helmet>
         <title>{`#${id}. ${title} - SeuOJ`}</title>
       </Helmet>
+      {showChat && <AIChatWidget />}
       <div className="h-[calc(100vh-5.5rem)] w-full max-w-full overflow-x-hidden overflow-y-hidden flex flex-col lg:flex-row bg-white border-t border-gray-200 relative">
-        <div className="fixed right-10 z-50 top-16 flex items-center space-x-2">
-          {/* fixed 相对于整个浏览器视口进行定位 */}
-          <Switch
-            id="sethide"
-            checked={hide}
-            onCheckedChange={setHide}
-            // 每一次重渲染会生成一个新的箭头函数 获取最新的hide值
-            // 如果不想渲染任何值 应该返回null/undefined 而不能返回一个（） 这也是值
-          />
-          <Label htmlFor="sethide">隐藏编辑器</Label>
+        <div className="fixed right-10 z-50 top-16 flex items-center space-x-6 bg-white/80 backdrop-blur-sm p-2 rounded-lg border border-gray-100 shadow-sm">
+          {/* AI 助手开关 */}
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="show-chat"
+              checked={showChat}
+              onCheckedChange={setShowChat}
+            />
+            <Label htmlFor="show-chat" className="cursor-pointer">
+              AI 助手
+            </Label>
+          </div>
+
+          {/* 隐藏编辑器开关 */}
+          <div className="flex items-center space-x-2">
+            <Switch id="sethide" checked={hide} onCheckedChange={setHide} />
+            <Label htmlFor="sethide" className="cursor-pointer">
+              隐藏编辑器
+            </Label>
+          </div>
         </div>
         <div
           className={`${

@@ -68,7 +68,9 @@ export default function AIChat() {
   }, [messages]);
   return (
     <div className="flex h-[500px] w-[360px] flex-col rounded-xl border bg-white shadow">
-      <div className="border-b px-4 py-3 font-semibold">AI 助手</div>
+      <div className="chat-handle border-b px-4 py-3 font-semibold cursor-move select-none bg-gray-50 rounded-t-xl">
+        AI 助手
+      </div>
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.map((message, index) => (
           <div
