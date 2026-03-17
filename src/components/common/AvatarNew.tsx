@@ -36,13 +36,19 @@ export default function AvatarNew({ user }: { user: User }) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-40 mt-2">
-          <DropdownMenuItem className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-2 cursor-pointer">
+          <DropdownMenuItem 
+            className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-2 cursor-pointer"
+            onClick={() => nav("/personal")}
+          >
             <UserIcon size={16} />
-            <span onClick={()=>{nav("/personal")}}>个人中心</span>
+            <span>个人中心</span>
           </DropdownMenuItem>
-          <DropdownMenuItem className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-2 cursor-pointer">
+          <DropdownMenuItem 
+            className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-2 cursor-pointer"
+            onClick={() => dispatch(resetAuth())}
+          >
             <LogOut size={16} />
-            <div onClick={()=>{dispatch(resetAuth())}}>退出登录</div>
+            <div>退出登录</div>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

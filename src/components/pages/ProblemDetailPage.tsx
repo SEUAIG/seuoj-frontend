@@ -61,13 +61,8 @@ export default function ProblemDetailPage() {
     const fetchProblem = async () => {
       if (!id) return;
       try {
-        const res = await fetch(`${ENV.API_BASE_URL}/api/problem/${id}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        const result = await res.json();
+        const res = await api.get(`/api/problem/${id}`);
+        const result = res.data;
         if (result.code === 0 && result.data) {
           setProblem(result.data);
         }

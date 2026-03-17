@@ -22,18 +22,24 @@ import { api } from "@/services/api/axios";
 import { toast } from "sonner";
 import { getTags } from "@/services/getTags";
 import { updateProblem, uploadProblemTestcases } from "@/services/problemEdit";
+import { createProblem } from "@/services/Problem/createProblem";
 import TestcaseUploadCard from "./TestcaseUploadCard";
 import { useNavigate } from "react-router-dom";
+import { Switch } from "@/components/ui/switch";
+
 const exampleSchema = z.object({
   in: z.string().min(1, "示例输入不能为空"),
   ans: z.string().optional(),
   description: z.string().optional(),
 });
 const problemEditSchema = z.object({
+  pid: z.string().optional(),
   title: z.string().min(1, "题目标题不能为空"),
+  is_public: z.boolean().default(true),
   description: z.string().min(1, "题目描述不能为空"),
   input: z.string().min(1, "输入格式不能为空"),
   output: z.string().min(1, "输出格式不能为空"),
+  hint: z.string().optional(),
   example: z.array(exampleSchema).min(1, "至少添加一个示例"),
   max_cpu_time_ms: z.string().min(1, "CPU时间限制不能为空"),
   max_real_time_ms: z.string().min(1, "实际时间限制不能为空"),
@@ -51,9 +57,10 @@ const problemEditSchema = z.object({
 });
 type ProblemEditValues = z.infer<typeof problemEditSchema>;
 interface ProblemEditFormProps {
-  pid: string;
+  pid?: string;
 }
-export default function ProblemEditForm({ pid }: ProblemEditFormProps) {
+export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
+  const isCreateMode = !pid;
   const dispatch = useDispatch<AppDispatch>();
   const { tags } = useSelector((state: RootState) => state.tags);
   const nav = useNavigate();
@@ -84,10 +91,13 @@ export default function ProblemEditForm({ pid }: ProblemEditFormProps) {
   const form = useForm<ProblemEditValues>({
     resolver: zodResolver(problemEditSchema),
     defaultValues: {
+      pid: "",
       title: "",
+      is_public: true,
       description: "",
       input: "",
       output: "",
+      hint: "",
       example: [
         {
           in: "",
@@ -155,10 +165,13 @@ export default function ProblemEditForm({ pid }: ProblemEditFormProps) {
             ? checker?.type
             : "Source";
         form.reset({
+          pid: data.pid || "",
           title: data.title || "",
+          is_public: data.is_public ?? true,
           description: content.description || "",
           input: content.input || "",
           output: content.output || "",
+          hint: content.hint || "",
           example: normalizedExamples,
           max_cpu_time_ms: String(info.max_cpu_time_ms ?? "1000"),
           max_real_time_ms: String(info.max_real_time_ms ?? "2000"),
@@ -223,6 +236,56 @@ export default function ProblemEditForm({ pid }: ProblemEditFormProps) {
   // 暂时置空，后续添加前后端交互
   const onSubmit = async (values: ProblemEditValues) => {
     const tagIds = tags.map((item: { tag_id: number }) => item.tag_id);
+
+    if (isCreateMode) {
+      if (!values.pid) {
+        form.setError("pid", { message: "PID不能为空" });
+        return;
+      }
+      try {
+        const res = await createProblem({
+          pid: values.pid,
+          title: values.title,
+          is_public: values.is_public ?? true,
+          tags: tagIds,
+          description: values.description,
+          input: values.input,
+          output: values.output,
+          example: values.example.map((item) => ({
+            in: item.in,
+            ans: item.ans || null,
+            description: item.description || null,
+          })),
+          hint: values.hint || "",
+        });
+        if (res.code === 0) {
+          toast.success("创建成功");
+          if (testcaseFile) {
+            try {
+              const uploadRes = await uploadProblemTestcases(
+                res.data.pid,
+                testcaseFile,
+                testcaseFormat
+              );
+              if (uploadRes.code === 0) {
+                toast.success("测试用例上传成功");
+              } else {
+                toast.error(uploadRes.message || "测试用例上传失败");
+              }
+            } catch (err) {
+              toast.error("测试用例上传请求失败");
+            }
+          }
+          nav(`/problemsLibrary/${res.data.pid}/config`);
+        } else {
+          toast.error(res.message || "创建失败");
+        }
+      } catch (error: any) {
+        toast.error(error.message || "创建请求发生错误");
+      }
+      return;
+    }
+
     const dirty = formState.dirtyFields;
     const infoDirty = Boolean(
       dirty.max_cpu_time_ms ||
@@ -387,6 +450,25 @@ export default function ProblemEditForm({ pid }: ProblemEditFormProps) {
             <CardTitle className="text-lg font-semibold">基本信息</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5 pt-6">
+            {isCreateMode && (
+              <FormField
+                control={control}
+                name="pid"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>题目ID</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="请输入题目ID"
+                        className="bg-background/50"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <FormField
               control={control}
               name="title"
@@ -401,6 +483,27 @@ export default function ProblemEditForm({ pid }: ProblemEditFormProps) {
                     />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={control}
+              name="is_public"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">公开题目</FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      公开后所有用户可见
+                    </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
                 </FormItem>
               )}
             />
@@ -451,6 +554,24 @@ export default function ProblemEditForm({ pid }: ProblemEditFormProps) {
                     <Textarea
                       placeholder="请输入输出格式说明（支持 Markdown）"
                       className="min-h-[100px] bg-background/50"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={control}
+              name="hint"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>提示</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="请输入提示（支持 Markdown）"
+                      className="min-h-[80px] bg-background/50"
                       {...field}
                     />
                   </FormControl>

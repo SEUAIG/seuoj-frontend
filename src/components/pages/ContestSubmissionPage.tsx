@@ -97,7 +97,23 @@ export default function ContestSubmissionPage() {
   }
   if (submission.status === SubmissionStatus.Pending) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6 w-full max-w-4xl mx-auto p-8">
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6 w-full max-w-4xl mx-auto p-8 relative">
+        <div className="absolute top-0 right-0 mt-4 mr-4 flex space-x-4">
+          <Button
+            variant="outline"
+            onClick={() =>
+              nav(`/contest/${contest_public_id}/${submission.pid}`)
+            }
+          >
+            返回题目
+          </Button>
+          <Button
+            variant="default"
+            onClick={() => nav(`/contest/${contest_public_id}`)}
+          >
+            返回比赛
+          </Button>
+        </div>
         <div className="bg-yellow-50 border border-yellow-200 rounded-full p-8 animate-pulse">
           <Clock className="w-16 h-16 text-yellow-600" />
         </div>
@@ -111,7 +127,23 @@ export default function ContestSubmissionPage() {
   }
   if (submission.status === SubmissionStatus.Running) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6 w-full max-w-4xl mx-auto p-8">
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6 w-full max-w-4xl mx-auto p-8 relative">
+        <div className="absolute top-0 right-0 mt-4 mr-4 flex space-x-4">
+          <Button
+            variant="outline"
+            onClick={() =>
+              nav(`/contest/${contest_public_id}/${submission.pid}`)
+            }
+          >
+            返回题目
+          </Button>
+          <Button
+            variant="default"
+            onClick={() => nav(`/contest/${contest_public_id}`)}
+          >
+            返回比赛
+          </Button>
+        </div>
         <div className="bg-blue-50 border border-blue-200 rounded-full p-8">
           <Loader2 className="w-16 h-16 text-blue-600 animate-spin" />
         </div>
@@ -123,9 +155,16 @@ export default function ContestSubmissionPage() {
       </div>
     );
   }
-  if (submission.status === SubmissionStatus.Failed) {
+  if (
+    submission.status === SubmissionStatus.Failed &&
+    submission.verdict === SubmissionVerdict.SystemError
+  ) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6 w-full max-w-4xl mx-auto p-8">
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6 w-full max-w-4xl mx-auto p-8 relative">
+        <div className="absolute top-0 right-0 mt-4 mr-4 flex space-x-4">
+          <Button variant="outline" onClick={() => nav(`/contest/${contest_public_id}/${submission.pid}`)}>返回题目</Button>
+          <Button variant="default" onClick={() => nav(`/contest/${contest_public_id}`)}>返回比赛</Button>
+        </div>
         <div className="bg-red-50 border border-red-200 rounded-full p-8">
           <AlertCircle className="w-16 h-16 text-red-600" />
         </div>
@@ -135,7 +174,7 @@ export default function ContestSubmissionPage() {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>错误详情</AlertTitle>
           <AlertDescription>
-            {submission.message || "发生了未知错误。"}
+            {submission.errorDetail || "发生了未知错误。"}
           </AlertDescription>
         </Alert>
       </div>
@@ -143,9 +182,15 @@ export default function ContestSubmissionPage() {
   }
   return (
     <div className="flex flex-col pb-6 p-2 mx-auto w-4/5">
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end mb-4 space-x-4">
         <Button
           variant="outline"
+          onClick={() => nav(`/contest/${contest_public_id}/${submission.pid}`)}
+        >
+          返回题目
+        </Button>
+        <Button
+          variant="default"
           onClick={() => nav(`/contest/${contest_public_id}`)}
         >
           返回比赛

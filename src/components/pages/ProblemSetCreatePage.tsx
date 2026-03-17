@@ -31,7 +31,7 @@ export default function ProblemSetCreatePage() {
                 discription: discription.trim(),
                 is_public: isPublic ? "true" : "false",
             });
-            if (res.code === 0 || res.code === 200) {
+            if (res.code === 0) {
                 toast.success("题单创建成功");
                 nav("/problemset");
             } else {

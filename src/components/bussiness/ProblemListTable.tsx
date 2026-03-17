@@ -26,7 +26,7 @@ export default function ProblemListTable({
   records = [],
   isLoading = false,
 }: ProblemListTableProps) {
-    const nav = useNavigate()
+  const nav = useNavigate();
   if (records.length === 0 && isLoading) {
     return (
       <div className="flex justify-center items-center py-10 text-muted-foreground">
@@ -66,15 +66,15 @@ export default function ProblemListTable({
         isLoading ? "opacity-60 transition-opacity" : ""
       }`}
     >
-      <Table>
+      <Table className="table-fixed">
         <TableHeader>
           <TableRow className="bg-muted/50">
             <TableHead className="w-[100px]">编号</TableHead>
             <TableHead>题目名称</TableHead>
             <TableHead className="w-[300px]">标签</TableHead>
-            <TableHead className="text-right">通过</TableHead>
-            <TableHead className="text-right">提交</TableHead>
-            <TableHead className="text-right">通过率</TableHead>
+            <TableHead className="w-[100px] text-right">通过</TableHead>
+            <TableHead className="w-[100px] text-right">提交</TableHead>
+            <TableHead className="w-[120px] text-right">通过率</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -89,7 +89,12 @@ export default function ProblemListTable({
               <TableRow key={problem.pid} className="hover:bg-muted/50">
                 <TableCell className="font-medium">{problem.pid}</TableCell>
                 <TableCell>
-                  <span onClick={()=>{nav(`/problemsLibrary/${problem.pid}`)}} className="font-medium text-primary hover:underline cursor-pointer">
+                  <span
+                    onClick={() => {
+                      nav(`/problemsLibrary/${problem.pid}`);
+                    }}
+                    className="font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer transition-colors"
+                  >
                     {problem.title}
                   </span>
                 </TableCell>

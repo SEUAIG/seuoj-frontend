@@ -11,6 +11,7 @@ import {
   setStartTime,
   setStatus,
   setTitleKeyword,
+  clear,
 } from "@/features/ContestList/contestListSlice";
 import { format, isValid, parseISO } from "date-fns";
 import ProblemListPageChoose from "@/components/bussiness/ProblemListPageChoose";
@@ -42,6 +43,18 @@ export default function CompetitionPage() {
     []
   );
   const minuteOptions = useMemo(() => ["00", "15", "30", "45"], []);
+
+  // 进入页面时重置筛选条件
+  useEffect(() => {
+    dispatch(clear());
+    dispatch(setCurrent(1));
+    setRange(undefined);
+    setStartHour("");
+    setStartMinute("");
+    setEndHour("");
+    setEndMinute("");
+  }, []);
+
   const statusOptions = useMemo(
     () => ["NOT_STARTED", "IN_PROGRESS", "FINISHED"],
     []

@@ -130,8 +130,8 @@ export default function ContestEditPage() {
         updateProblemListPromise,
       ]);
       if (
-        (resInfo.code === 200 || resInfo.code === 0) &&
-        (resProblems.code === 200 || resProblems.code === 0)
+        resInfo.code === 0 &&
+        resProblems.code === 0
       ) {
         toast.success("比赛信息及题目列表更新成功");
         nav(`/contest/${contest_public_id}`);

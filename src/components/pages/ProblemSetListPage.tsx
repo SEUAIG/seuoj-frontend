@@ -60,7 +60,7 @@ export default function ProblemSetListPage() {
             </PaginationItem>
         );
         let startPage = Math.max(2, current - Math.floor(maxVisiblePages / 2));
-        let endPage = Math.min(pages - 1, startPage + maxVisiblePages - 1);
+        const endPage = Math.min(pages - 1, startPage + maxVisiblePages - 1);
         if (endPage === pages - 1) {
             startPage = Math.max(2, endPage - maxVisiblePages + 1);
         }
@@ -135,10 +135,14 @@ export default function ProblemSetListPage() {
                         创建题单
                     </Button>
                 </div>
-                <div className="rounded-md border">
+                <div
+                    className={`rounded-xl border bg-card shadow-sm ${
+                        isLoading || isFetching ? "opacity-60 transition-opacity" : ""
+                    }`}
+                >
                     <Table>
                         <TableHeader>
-                            <TableRow>
+                            <TableRow className="bg-muted/60">
                                 <TableHead className="w-[200px]">题单ID</TableHead>
                                 <TableHead>标题</TableHead>
                                 <TableHead>描述</TableHead>
@@ -151,54 +155,56 @@ export default function ProblemSetListPage() {
                             {isLoading ? (
                                 Array.from({ length: 5 }).map((_, i) => (
                                     <TableRow key={i}>
-                                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                                        <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                                        <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-                                        <TableCell><Skeleton className="h-4 w-8" /></TableCell>
-                                        <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                                        <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                                        <TableCell className="py-4"><Skeleton className="h-4 w-24" /></TableCell>
+                                        <TableCell className="py-4"><Skeleton className="h-4 w-32" /></TableCell>
+                                        <TableCell className="py-4"><Skeleton className="h-4 w-48" /></TableCell>
+                                        <TableCell className="py-4"><Skeleton className="h-4 w-8" /></TableCell>
+                                        <TableCell className="py-4"><Skeleton className="h-4 w-12" /></TableCell>
+                                        <TableCell className="py-4"><Skeleton className="h-4 w-12" /></TableCell>
                                     </TableRow>
                                 ))
                             ) : records.length > 0 ? (
                                 records.map((record) => (
                                     <TableRow
                                         key={record.problem_set_public_id}
-                                        className={`cursor-pointer hover:bg-muted/50 transition-colors ${isFetching ? "opacity-60" : ""
-                                            }`}
+                                        className="cursor-pointer hover:bg-muted/50 transition-colors"
                                         onClick={() =>
                                             nav(`/problemset/${record.problem_set_public_id}`)
                                         }
                                     >
-                                        <TableCell className="font-mono text-sm">
+                                        <TableCell className="font-mono text-sm py-4 text-muted-foreground">
                                             {record.problem_set_public_id}
                                         </TableCell>
-                                        <TableCell className="font-medium">
-                                            {record.title}
+                                        <TableCell className="font-medium py-4">
+                                            <span className="text-blue-600 hover:text-blue-700 hover:underline font-semibold">
+                                                {record.title}
+                                            </span>
                                         </TableCell>
-                                        <TableCell className="text-muted-foreground max-w-[300px] truncate">
+                                        <TableCell className="text-muted-foreground max-w-[320px] truncate py-4">
                                             {record.description || "-"}
                                         </TableCell>
-                                        <TableCell>
-                                            <Badge variant="secondary">
+                                        <TableCell className="py-4">
+                                            <Badge variant="secondary" className="h-6 px-2.5 text-xs font-medium">
                                                 {record.problem_count ?? 0}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell className="py-4">
                                             <Badge
                                                 variant={record.is_public ? "outline" : "secondary"}
-                                                className={
+                                                className={`h-6 px-2.5 text-xs font-medium ${
                                                     record.is_public
                                                         ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                                         : ""
-                                                }
+                                                }`}
                                             >
                                                 {record.is_public ? "公开" : "私有"}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right py-4">
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
+                                                className="text-muted-foreground hover:text-primary"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     nav(
@@ -214,7 +220,7 @@ export default function ProblemSetListPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-24 text-center">
+                                    <TableCell colSpan={6} className="py-10 text-center">
                                         暂无题单
                                     </TableCell>
                                 </TableRow>

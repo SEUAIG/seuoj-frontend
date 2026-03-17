@@ -158,7 +158,10 @@ export default function SubmissionPage() {
       </div>
     );
   }
-  if (submission.status === SubmissionStatus.Failed) {
+  if (
+    submission.status === SubmissionStatus.Failed &&
+    submission.verdict === SubmissionVerdict.SystemError
+  ) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6 w-full max-w-4xl mx-auto p-8">
         <div className="bg-red-50 border border-red-200 rounded-full p-8">

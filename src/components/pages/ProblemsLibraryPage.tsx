@@ -12,17 +12,23 @@ import {
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import TagSelector, { Tag } from "../bussiness/TagSelector";
-import SelectedTags from "../bussiness/SelectedTags";
-import { Search, RotateCcw, Filter } from "lucide-react";
+import { Search, RotateCcw, Filter, Plus } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/app/store";
 import TagItem from "../bussiness/TagItem";
 import { clearTags } from "@/features/Tags/tagsSlice";
 import { useSearchQueryByKeyword } from "@/hooks/useSearchQueryByKeyword";
-import { setTagIds, setTitle } from "@/features/ProblemList/problemListSlice";
+import {
+  setTagIds,
+  setTitle,
+  setCurrent,
+} from "@/features/ProblemList/problemListSlice";
 import ProblemListTable, { ProblemRecord } from "../bussiness/ProblemListTable";
 import ProblemListPageChoose from "../bussiness/ProblemListPageChoose";
+import { useNavigate } from "react-router-dom";
+
 export default function ProblemsLibraryPage() {
+  const nav = useNavigate();
   const { tags } = useSelector((state: RootState) => state.tags);
   const dispatch = useDispatch();
   const [keyword, setKeyword] = useState("");
@@ -33,6 +39,15 @@ export default function ProblemsLibraryPage() {
   const { current, size, tag_ids, title } = useSelector(
     (state: RootState) => state.problemList
   );
+
+  // 进入页面时重置筛选条件
+  useEffect(() => {
+    dispatch(clearTags());
+    dispatch(setTitle(""));
+    dispatch(setCurrent(1));
+    setKeyword("");
+  }, []);
+
   const { data, isLoading, isFetching, refetch } =
     useSearchQueryByKeyword<ProblemRecord>(current, size, title, tag_ids);
   const records = data?.records || [];
@@ -50,10 +65,24 @@ export default function ProblemsLibraryPage() {
   }, [tags]);
   const pages = Math.ceil(total / Number(size));
   return (
-    <div className="container mx-auto px-4 py-2 max-w-7xl flex flex-col flex-1">
+    <div className="w-4/5 mx-auto py-6 space-y-6 min-h-screen overflow-x-hidden">
       <Helmet>
         <title>题库 - SeuOJ</title>
       </Helmet>
+
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-2xl font-semibold">题库</div>
+          <div className="text-sm text-muted-foreground mt-1">
+            浏览和管理题目列表
+          </div>
+        </div>
+        <Button onClick={() => nav("/problemsLibrary/create")}>
+          <Plus className="mr-2 h-4 w-4" />
+          新建题目
+        </Button>
+      </div>
+
       <div className="bg-card rounded-xl border shadow-sm p-6 space-y-6">
         <div className="flex flex-col md:flex-row gap-4 md:items-center">
           <div className="flex items-center gap-3 min-w-fit">

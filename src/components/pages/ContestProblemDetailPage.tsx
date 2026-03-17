@@ -100,7 +100,7 @@ export default function ContestProblemDetailPage() {
         data
       );
       const result = res.data;
-      if (result.code === "0") {
+      if (result.code === 0 || result.code === "0") {
         toast.success("提交成功");
         const submission_no = result.data.submission_no;
         nav(

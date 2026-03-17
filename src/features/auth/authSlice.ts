@@ -19,7 +19,7 @@ const initialState: AuthState = {
   error: undefined,
   jwt: undefined,
 };
-const isSuccessCode = (code: number) => code === 0 || code === 200;
+const isSuccessCode = (code: number) => code === 0;
 export const login = createAsyncThunk(
   "auth/login",
   async ({ email, password }: LoginPayload, thunkAPI) => {

@@ -44,7 +44,7 @@ export default function ContestListDetailPage() {
     setIsRegistering(true);
     try {
       const res = await registerContest(contest_public_id);
-      if (res.code === 200 || res.code === 0) {
+      if (res.code === 0) {
         toast.success("报名成功");
         refetch();
       } else {
@@ -61,7 +61,7 @@ export default function ContestListDetailPage() {
     setIsRegistering(true);
     try {
       const res = await unregisterContest(contest_public_id);
-      if (res.code === 200 || res.code === 0) {
+      if (res.code === 0) {
         toast.success("取消报名成功");
         refetch();
       } else {
@@ -186,6 +186,13 @@ export default function ContestListDetailPage() {
               报名比赛
             </Button>
           )}
+          <Button
+            variant="outline"
+            className="ml-2"
+            onClick={() => nav(`/contest/${contest_public_id}/submissions`)}
+          >
+            提交记录
+          </Button>
         </div>
       </div>
       <Card>
@@ -267,7 +274,16 @@ export default function ContestListDetailPage() {
                         </TableCell>
                         <TableCell>{problem.pid}</TableCell>
                         <TableCell>
-                          <span className="font-medium">{problem.title}</span>
+                          <span
+                            className="font-medium cursor-pointer hover:text-blue-600 hover:underline transition-colors"
+                            onClick={() =>
+                              nav(
+                                `/contest/${contest_public_id}/${problem.pid}`
+                              )
+                            }
+                          >
+                            {problem.title}
+                          </span>
                         </TableCell>
                         <TableCell className="text-right">
                           <Button

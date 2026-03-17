@@ -28,7 +28,10 @@ export const getContestProblemDetail = async (
   pid: string
 ): Promise<ContestProblemDetailData | undefined> => {
   const res = await api.get<ContestProblemDetailResponse>(
-    `/api/contest/${contest_public_id}/problem/${pid}`
+    `/api/problem/${pid}`,
+    {
+      params: { contest_public_id },
+    }
   );
   return res.data.data;
 };

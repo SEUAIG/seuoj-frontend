@@ -8,6 +8,8 @@ import {
   Cpu,
   Gavel,
   ServerCrash,
+  Loader2,
+  MoreHorizontal
 } from "lucide-react";
 
 export type States =
@@ -56,6 +58,34 @@ interface AnswerStateProps {
   state: string;
   active?: boolean;
 }
+export function AnswerStateNew({ status, verdict }: { status: string; verdict?: string }) {
+  if (status === "Pending") {
+    return (
+      <span className="inline-flex items-center gap-1 text-gray-500">
+        <MoreHorizontal className="h-4 w-4" />
+        Pending
+      </span>
+    );
+  }
+  if (status === "Running") {
+    return (
+      <span className="inline-flex items-center gap-1 text-blue-500">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Running
+      </span>
+    );
+  }
+  if ((status === "Finished" || status === "Failed") && verdict) {
+    return <AnswerState state={verdict} />;
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-gray-500">
+      <AlertCircle className="h-4 w-4" />
+      Unknown
+    </span>
+  );
+}
+
 export default function AnswerState({ state, active }: AnswerStateProps) {
   // 确保state是有效的键 如果不是则默认显示 AlertCircle
   const Icon = iconMap[state] || AlertCircle;

@@ -73,7 +73,7 @@ export default function CreateContestPage() {
         end_time: values.end_time.toISOString(),
       };
       const res = await createContest(payload);
-      if (res.code === 200 || res.code === 0) {
+      if (res.code === 0) {
         toast.success("比赛创建成功");
         if (res.data?.contest_public_id) {
           nav(`/contest/${res.data.contest_public_id}/edit`);

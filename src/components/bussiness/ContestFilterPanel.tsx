@@ -4,13 +4,6 @@ import DatePicker from "@/components/common/DatePicker";
 import SearchInput from "@/components/common/SearchInput";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Search } from "lucide-react";
 
 type ContestFilterPanelProps = {
@@ -148,81 +141,57 @@ export default function ContestFilterPanel({
           <div className="grid gap-3">
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground w-16">开始</span>
-              <Select
-                value={startHour === "" ? "__empty__" : startHour}
-                onValueChange={(value) =>
-                  onStartHourChange(value === "__empty__" ? "" : value)
-                }
+              <select
+                value={startHour}
+                onChange={(e) => onStartHourChange(e.target.value)}
+                className="flex h-10 w-[88px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
               >
-                <SelectTrigger className="h-10 w-[88px]">
-                  <SelectValue placeholder="小时" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[50vh]">
-                  <SelectItem value="__empty__">小时</SelectItem>
-                  {hourOptions.map((hour) => (
-                    <SelectItem key={`start-hour-${hour}`} value={hour}>
-                      {hour}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={startMinute === "" ? "__empty__" : startMinute}
-                onValueChange={(value) =>
-                  onStartMinuteChange(value === "__empty__" ? "" : value)
-                }
+                <option value="">小时</option>
+                {hourOptions.map((hour) => (
+                  <option key={`start-hour-${hour}`} value={hour}>
+                    {hour}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={startMinute}
+                onChange={(e) => onStartMinuteChange(e.target.value)}
+                className="flex h-10 w-[88px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
               >
-                <SelectTrigger className="h-10 w-[88px]">
-                  <SelectValue placeholder="分钟" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[50vh]">
-                  <SelectItem value="__empty__">分钟</SelectItem>
-                  {minuteOptions.map((minute) => (
-                    <SelectItem key={`start-minute-${minute}`} value={minute}>
-                      {minute}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">分钟</option>
+                {minuteOptions.map((minute) => (
+                  <option key={`start-minute-${minute}`} value={minute}>
+                    {minute}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground w-16">结束</span>
-              <Select
-                value={endHour === "" ? "__empty__" : endHour}
-                onValueChange={(value) =>
-                  onEndHourChange(value === "__empty__" ? "" : value)
-                }
+              <select
+                value={endHour}
+                onChange={(e) => onEndHourChange(e.target.value)}
+                className="flex h-10 w-[88px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
               >
-                <SelectTrigger className="h-10 w-[88px]">
-                  <SelectValue placeholder="小时" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[50vh]">
-                  <SelectItem value="__empty__">小时</SelectItem>
-                  {hourOptions.map((hour) => (
-                    <SelectItem key={`end-hour-${hour}`} value={hour}>
-                      {hour}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={endMinute === "" ? "__empty__" : endMinute}
-                onValueChange={(value) =>
-                  onEndMinuteChange(value === "__empty__" ? "" : value)
-                }
+                <option value="">小时</option>
+                {hourOptions.map((hour) => (
+                  <option key={`end-hour-${hour}`} value={hour}>
+                    {hour}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={endMinute}
+                onChange={(e) => onEndMinuteChange(e.target.value)}
+                className="flex h-10 w-[88px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
               >
-                <SelectTrigger className="h-10 w-[88px]">
-                  <SelectValue placeholder="分钟" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[50vh]">
-                  <SelectItem value="__empty__">分钟</SelectItem>
-                  {minuteOptions.map((minute) => (
-                    <SelectItem key={`end-minute-${minute}`} value={minute}>
-                      {minute}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">分钟</option>
+                {minuteOptions.map((minute) => (
+                  <option key={`end-minute-${minute}`} value={minute}>
+                    {minute}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

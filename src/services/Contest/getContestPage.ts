@@ -21,7 +21,6 @@ export type ContestRecord = {
   status?: ContestStatus;
   rule_type?: ContestRuleType;
   is_public?: boolean;
-  hide_statistics?: boolean;
 };
 export type ContestPageData = {
   total?: number;
