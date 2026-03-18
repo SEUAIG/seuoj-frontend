@@ -8,11 +8,7 @@ export interface SubmissionPageRequest {
 export interface SubmissionListItem {
   pid: string;
   language: string;
-  status:
-    | "Pending"
-    | "Running"
-    | "Failed"
-    | "Finished";
+  status: "Pending" | "Running" | "Failed" | "Finished";
   verdict:
     | "CompileError"
     | "JudgeError"
@@ -22,6 +18,8 @@ export interface SubmissionListItem {
     | "MemoryLimitExceeded"
     | "RuntimeError"
     | "SystemError"
+    | "PartiallyAccepted"
+    | "Skipped"
     | null;
   username: string;
   submission_no: string;

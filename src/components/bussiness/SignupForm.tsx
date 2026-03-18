@@ -112,24 +112,26 @@ export default function SignupForm() {
   return (
     <Form {...form}>
       {/* 上下文提供者 shadcn自带组件 展开useForm返回的对象 */}
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="space-y-4  w-2/5 mx-auto my-6 bg-white p-6 rounded shadow-xl border"
-      >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 w-full">
         {/* 账号部分 */}
         {/* control 用于将这一部分接入RHF的管理 render将RHF提供的field传递 */}
         <FormField
           control={control}
           name="account"
           render={({ field }) => (
-            <FormItem className="space-y-1">
-              <FormLabel>用户名</FormLabel>
+            <FormItem className="space-y-1.5">
+              <FormLabel className="text-gray-700 font-medium">
+                用户名
+              </FormLabel>
               <FormControl>
-                <div className="relative">
-                  <User className="absolute top-1/2  left-2 -translate-y-1/2" />
+                <div className="relative group">
+                  <User
+                    className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors"
+                    size={20}
+                  />
                   <Input
-                    placeholder="用户名"
-                    className="h-8 rounded-lg pl-10 border-2"
+                    placeholder="请输入用户名"
+                    className="h-12 rounded-lg pl-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all bg-gray-50/50 hover:bg-white focus:bg-white"
                     {...field}
                   />
                 </div>
@@ -142,22 +144,25 @@ export default function SignupForm() {
           control={control}
           name="email"
           render={({ field }) => (
-            <FormItem className="space-y-1">
-              <FormLabel>邮箱</FormLabel>
+            <FormItem className="space-y-1.5">
+              <FormLabel className="text-gray-700 font-medium">邮箱</FormLabel>
               <FormControl>
                 <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <Mail className="absolute top-1/2  left-2 -translate-y-1/2" />
+                  <div className="relative flex-1 group">
+                    <Mail
+                      className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors"
+                      size={20}
+                    />
                     <Input
-                      placeholder="邮箱"
+                      placeholder="请输入邮箱"
                       {...field}
-                      className="h-8 rounded-lg pl-10 border-2"
+                      className="h-12 rounded-lg pl-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all bg-gray-50/50 hover:bg-white focus:bg-white"
                     />
                   </div>
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-8 shrink-0 px-4"
+                    className="h-12 w-[120px] shrink-0 border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 transition-colors font-medium"
                     disabled={sendStatus === "loading" || resendLeft > 0}
                     onClick={async () => {
                       // @ts-ignore: 暂时忽略 Zod v4 + RHF 类型推断导致的参数错误
@@ -196,15 +201,20 @@ export default function SignupForm() {
           control={control}
           name="verificationCode"
           render={({ field }) => (
-            <FormItem className="space-y-1">
-              <FormLabel>验证码</FormLabel>
+            <FormItem className="space-y-1.5">
+              <FormLabel className="text-gray-700 font-medium">
+                验证码
+              </FormLabel>
               <FormControl>
-                <div className="relative">
-                  <KeyRound className="absolute top-1/2  left-2 -translate-y-1/2" />
+                <div className="relative group">
+                  <KeyRound
+                    className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors"
+                    size={20}
+                  />
                   <Input
-                    placeholder="验证码"
+                    placeholder="请输入验证码"
                     {...field}
-                    className="h-8 rounded-lg pl-10 border-2"
+                    className="h-12 rounded-lg pl-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all bg-gray-50/50 hover:bg-white focus:bg-white tracking-widest"
                   />
                 </div>
               </FormControl>
@@ -217,42 +227,39 @@ export default function SignupForm() {
           control={control}
           name="password"
           render={({ field }) => (
-            <FormItem className="space-y-1">
-              <FormLabel>密码</FormLabel>
+            <FormItem className="space-y-1.5">
+              <FormLabel className="text-gray-700 font-medium">密码</FormLabel>
               <FormControl>
-                <div className="relative">
-                  <Lock className="absolute top-1/2  left-2 -translate-y-1/2" />
+                <div className="relative group">
+                  <Lock
+                    className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors"
+                    size={20}
+                  />
                   <Input
-                    type={showPassword1 ? "" : "password"}
-                    placeholder="密码"
-                    className="h-8 rounded-lg pl-10 border-2"
+                    type={showPassword1 ? "text" : "password"}
+                    placeholder="请输入密码"
+                    className="h-12 rounded-lg pl-10 pr-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all bg-gray-50/50 hover:bg-white focus:bg-white text-lg tracking-wider"
                     {...field}
                   />
                   {showPassword1 ? (
                     <Button
                       type="button"
-                      className="absolute top-1/2  right-2 -translate-y-1/2"
+                      className="absolute top-1/2 right-1 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       size="icon"
                       variant="ghost"
-                      onClick={() => {
-                        setShowPassword1(false);
-                      }}
+                      onClick={() => setShowPassword1(false)}
                     >
-                      {/* 注意这里 我为了让它只显示Icon 必须设置size 为 icon variant为ghost */}
-                      {<Eye />}
+                      <Eye size={20} />
                     </Button>
                   ) : (
                     <Button
                       type="button"
-                      className="absolute top-1/2  right-2 -translate-y-1/2"
+                      className="absolute top-1/2 right-1 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       size="icon"
                       variant="ghost"
-                      onClick={() => {
-                        setShowPassword1(true);
-                      }}
+                      onClick={() => setShowPassword1(true)}
                     >
-                      {/* 注意这里 我为了让它只显示Icon 必须设置size 为 icon variant为ghost */}
-                      {<EyeOff />}
+                      <EyeOff size={20} />
                     </Button>
                   )}
                 </div>
@@ -265,42 +272,41 @@ export default function SignupForm() {
           control={control}
           name="confirmPassword"
           render={({ field }) => (
-            <FormItem className="space-y-1">
-              <FormLabel>确认密码</FormLabel>
+            <FormItem className="space-y-1.5">
+              <FormLabel className="text-gray-700 font-medium">
+                确认密码
+              </FormLabel>
               <FormControl>
-                <div className="relative">
-                  <Lock className="absolute top-1/2  left-2 -translate-y-1/2" />
+                <div className="relative group">
+                  <Lock
+                    className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors"
+                    size={20}
+                  />
                   <Input
-                    type={showPassword2 ? "" : "password"}
-                    placeholder="确认密码"
-                    className="h-8 rounded-lg pl-10 border-2"
+                    type={showPassword2 ? "text" : "password"}
+                    placeholder="请再次输入密码"
+                    className="h-12 rounded-lg pl-10 pr-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all bg-gray-50/50 hover:bg-white focus:bg-white text-lg tracking-wider"
                     {...field}
                   />
                   {showPassword2 ? (
                     <Button
                       type="button"
-                      className="absolute top-1/2  right-2 -translate-y-1/2"
+                      className="absolute top-1/2 right-1 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       size="icon"
                       variant="ghost"
-                      onClick={() => {
-                        setShowPassword2(false);
-                      }}
+                      onClick={() => setShowPassword2(false)}
                     >
-                      {/* 注意这里 我为了让它只显示Icon 必须设置size 为 icon variant为ghost */}
-                      {<Eye />}
+                      <Eye size={20} />
                     </Button>
                   ) : (
                     <Button
                       type="button"
-                      className="absolute top-1/2  right-2 -translate-y-1/2"
+                      className="absolute top-1/2 right-1 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       size="icon"
                       variant="ghost"
-                      onClick={() => {
-                        setShowPassword2(true);
-                      }}
+                      onClick={() => setShowPassword2(true)}
                     >
-                      {/* 注意这里 我为了让它只显示Icon 必须设置size 为 icon variant为ghost */}
-                      {<EyeOff />}
+                      <EyeOff size={20} />
                     </Button>
                   )}
                 </div>
@@ -311,10 +317,18 @@ export default function SignupForm() {
         />
         <Button
           type="submit"
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+          className="w-full h-12 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors shadow-md hover:shadow-lg"
         >
           注册
         </Button>
+        <div className="text-center mt-4">
+          <Link
+            to="/login"
+            className="text-sm text-indigo-600 hover:text-indigo-800 hover:underline font-medium transition-colors"
+          >
+            已有账号？返回登录
+          </Link>
+        </div>
       </form>
     </Form>
   );

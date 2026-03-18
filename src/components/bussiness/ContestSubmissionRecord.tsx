@@ -10,6 +10,8 @@ import React from "react";
 import AnswerState from "../common/AnswerState";
 import ScoreBadge from "../common/ScoreBadage";
 import { SubmissionData } from "../pages/SubmissionPage";
+import { format } from "date-fns";
+
 interface ContestSubmissionRecordProps {
   submission: SubmissionData;
 }
@@ -25,6 +27,9 @@ export default function ContestSubmissionRecord({
     submitTime,
     username,
   } = submission;
+  
+  const formattedTime = submitTime ? format(new Date(submitTime), "yyyy-MM-dd HH:mm:ss") : "";
+
   return (
     <Table>
       <TableHeader>
@@ -50,7 +55,7 @@ export default function ContestSubmissionRecord({
              <ScoreBadge score={score ?? 0} />
           </TableCell>
           <TableCell className="text-center">{language}</TableCell>
-          <TableCell className="text-center">{new Date(submitTime).toLocaleString()}</TableCell>
+          <TableCell className="text-center">{formattedTime}</TableCell>
         </TableRow>
       </TableBody>
     </Table>

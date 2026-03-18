@@ -2,6 +2,7 @@ import React from 'react'
 import TestPointOverview from './TestPointOverview';
 import { ResultDetailItem } from "../pages/SubmissionPage";
 import { Card } from '../ui/card';
+
 export default function ContestTestPoints({
   resultDetail,
 }: {
@@ -10,6 +11,7 @@ export default function ContestTestPoints({
   if (!resultDetail || resultDetail.length === 0) {
       return null;
   }
+
   return (
     <div className="space-y-2">
       {resultDetail.map((item, index) => (

@@ -2,13 +2,14 @@ import React, { useEffect, useState } from "react";
 import SubmissionRecord from "../bussiness/SubmissionRecord";
 import CodeShow from "../common/CodeShow";
 import TestPoints from "../bussiness/TestPoints";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { api } from "@/services/api/axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 export enum SubmissionStatus {
   Pending = "Pending", // 还没有发送给评测端
   Running = "Running", // 成功发送给评测端，正在判题
@@ -25,9 +26,11 @@ export enum SubmissionVerdict {
   MemoryLimitExceeded = "MemoryLimitExceeded",
   RuntimeError = "RuntimeError",
   SystemError = "SystemError",
+  PartiallyAccepted = "PartiallyAccepted",
+  Skipped = "Skipped",
 }
 export interface ResultDetailItem {
-  cnt: number;
+  id?: number;
   in: string;
   out: string;
   ans: string;
@@ -35,6 +38,14 @@ export interface ResultDetailItem {
   time: number;
   mem: number;
   type: string;
+  score?: number;
+}
+export interface SubtaskItem {
+  id: number;
+  cases: number[];
+  pre_subtasks: number[];
+  score: number;
+  type: "min" | "sum";
 }
 export interface SubmissionData {
   submissionNo: string; // 提交记录uuid
@@ -50,6 +61,7 @@ export interface SubmissionData {
   code: string; // 用户代码
   username: string; // 提交者用户名
   score?: number; // 分数
+  subtasks?: SubtaskItem[];
 }
 export interface SubmissionResponse {
   code: number;
@@ -61,6 +73,7 @@ export interface SubmissionResponse {
 export default function SubmissionPage() {
   const [searchParams] = useSearchParams();
   const title = searchParams.get("title");
+  const nav = useNavigate();
   // 获取查询参数 使用数组进行解构 因为他返回了一个长度为2的数组 但本身是一个对象
   // 这不是一个普通对象 不能直接获取值 而是一个实例 使用get
   const { submissionNo } = useParams();
@@ -183,8 +196,21 @@ export default function SubmissionPage() {
   // Finished 状态
   return (
     <div className="flex flex-col pb-6 p-2 mx-auto w-4/5">
+      <div className="flex justify-end mb-4 space-x-4">
+        <Button
+          variant="outline"
+          onClick={() => nav(`/problemsLibrary/${submission.pid}`)}
+        >
+          返回题目
+        </Button>
+        <Button variant="default" onClick={() => nav(`/evaluation`)}>
+          返回评测
+        </Button>
+      </div>
       <SubmissionRecord submission={submission} title={title} />
-      <CodeShow>{submission.code}</CodeShow>
+      {submission.code && (
+        <CodeShow language={submission.language}>{submission.code}</CodeShow>
+      )}
       {(submission.verdict === "CompileError" ||
         submission.verdict === "JudgeError") && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
@@ -198,7 +224,10 @@ export default function SubmissionPage() {
       )}
       {submission.verdict !== "CompileError" &&
         submission.verdict !== "JudgeError" && (
-          <TestPoints resultDetail={submission.resultDetail} />
+          <TestPoints
+            resultDetail={submission.resultDetail}
+            subtasks={submission.subtasks}
+          />
         )}
     </div>
   );

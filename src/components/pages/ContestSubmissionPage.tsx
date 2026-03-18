@@ -217,7 +217,9 @@ export default function ContestSubmissionPage() {
         </Button>
       </div>
       <ContestSubmissionRecord submission={submission} />
-      <CodeShow>{submission.code}</CodeShow>
+      {submission.code && (
+        <CodeShow language={submission.language}>{submission.code}</CodeShow>
+      )}
       {(submission.verdict === "CompileError" ||
         submission.verdict === "JudgeError") && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">

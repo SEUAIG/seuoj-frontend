@@ -11,7 +11,7 @@ export default function TestPointOverview({
   item: ResultDetailItem;
   index: number;
 }) {
-  const score = item.type === "Accepted" ? 100 : 0;
+  const score = item.score !== undefined ? item.score : (item.type === "Accepted" ? 100 : 0);
   return (
     <div
       className={[

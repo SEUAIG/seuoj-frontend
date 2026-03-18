@@ -53,7 +53,7 @@ export default function CompetitionPage() {
     setStartMinute("");
     setEndHour("");
     setEndMinute("");
-  }, []);
+  }, [dispatch]);
 
   const statusOptions = useMemo(
     () => ["NOT_STARTED", "IN_PROGRESS", "FINISHED"],
@@ -154,9 +154,10 @@ export default function CompetitionPage() {
     }),
     [current, size, status, title_keyword, start_time, end_time, rule_type]
   );
+
   const { data, refetch, isFetching, isLoading } = useQueryToGetContestList(
     queryParams,
-    false
+    true // 改为 true，让 React Query 在组件挂载时默认发起一次请求
   );
   const records = data?.records ?? [];
   const total = data?.total ?? 0;

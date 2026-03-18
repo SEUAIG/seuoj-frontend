@@ -12,6 +12,8 @@ import React from "react";
 import AnswerState from "../common/AnswerState";
 import ScoreBadge from "../common/ScoreBadage";
 import { SubmissionData } from "../pages/SubmissionPage";
+import { format } from "date-fns";
+
 interface SubmissionRecordProps {
   submission: SubmissionData;
   title?: string | null;
@@ -31,29 +33,37 @@ export default function SubmissionRecord({
     submitTime,
     finishTime,
     username,
+    score,
   } = submission;
   const isError =
     verdict === "CompileError" ||
     verdict === "JudgeError" ||
     verdict === "SystemError";
-  let totalScore = 0;
+  let totalScore = score !== undefined ? score : 0;
   let totalTime = 0;
   let maxMemory = 0;
+  
   if (!isError && resultDetail) {
     totalTime = resultDetail.reduce((acc, item) => acc + item.time, 0);
     maxMemory = resultDetail.reduce((acc, item) => Math.max(acc, item.mem), 0);
-    const passedCount = resultDetail.filter(
-      (item) => item.type === "Accepted"
-    ).length;
-    if (resultDetail.length > 0) {
-      totalScore = Math.round((passedCount / resultDetail.length) * 100);
-    } else {
-      totalScore = 0;
+    
+    // 如果没有返回总分，则回退到通过点比例计算
+    if (score === undefined || score === null) {
+      const passedCount = resultDetail.filter(
+        (item) => item.type === "Accepted"
+      ).length;
+      if (resultDetail.length > 0) {
+        totalScore = Math.round((passedCount / resultDetail.length) * 100);
+      }
     }
   }
+  
   const timeDisplay = isError ? "0ms" : `${totalTime}ms`;
   const memoryDisplay = isError ? "0KB" : `${(maxMemory / 1024).toFixed(0)}KB`;
   const scoreDisplay = isError ? 0 : totalScore;
+  
+  const formattedTime = submitTime ? format(new Date(submitTime), "yyyy-MM-dd HH:mm:ss") : "";
+
   return (
     <Table>
       <TableHeader>
@@ -84,7 +94,7 @@ export default function SubmissionRecord({
           <TableCell className="text-center">{memoryDisplay}</TableCell>
           <TableCell className="text-center">{language}</TableCell>
           <TableCell className="text-center">{username}</TableCell>
-          <TableCell className="text-center">{submitTime}</TableCell>
+          <TableCell className="text-center">{formattedTime}</TableCell>
         </TableRow>
       </TableBody>
     </Table>

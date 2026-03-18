@@ -9,7 +9,7 @@ import {
   Gavel,
   ServerCrash,
   Loader2,
-  MoreHorizontal
+  MoreHorizontal,
 } from "lucide-react";
 
 export type States =
@@ -20,7 +20,9 @@ export type States =
   | "RuntimeError"
   | "MemoryLimitExceeded"
   | "JudgeError"
-  | "SystemError";
+  | "SystemError"
+  | "PartiallyAccepted"
+  | "Skipped";
 
 const iconMap: Record<string, LucideIcon> = {
   Accepted: CheckCircle,
@@ -31,6 +33,8 @@ const iconMap: Record<string, LucideIcon> = {
   MemoryLimitExceeded: Cpu,
   JudgeError: Gavel,
   SystemError: ServerCrash,
+  PartiallyAccepted: CheckCircle, // Uses CheckCircle but will have different color
+  Skipped: MoreHorizontal,
 };
 
 export const stateColorMap: Record<string, string> = {
@@ -42,6 +46,8 @@ export const stateColorMap: Record<string, string> = {
   MemoryLimitExceeded: "text-orange-500",
   JudgeError: "text-rose-600",
   SystemError: "text-red-700",
+  PartiallyAccepted: "text-lime-500",
+  Skipped: "text-gray-400",
 };
 
 const hoverStateColorMap: Record<string, string> = {
@@ -53,12 +59,20 @@ const hoverStateColorMap: Record<string, string> = {
   MemoryLimitExceeded: "group-hover:text-orange-500",
   JudgeError: "group-hover:text-rose-600",
   SystemError: "group-hover:text-red-700",
+  PartiallyAccepted: "group-hover:text-lime-500",
+  Skipped: "group-hover:text-gray-400",
 };
 interface AnswerStateProps {
   state: string;
   active?: boolean;
 }
-export function AnswerStateNew({ status, verdict }: { status: string; verdict?: string }) {
+export function AnswerStateNew({
+  status,
+  verdict,
+}: {
+  status: string;
+  verdict?: string;
+}) {
   if (status === "Pending") {
     return (
       <span className="inline-flex items-center gap-1 text-gray-500">

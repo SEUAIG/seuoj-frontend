@@ -70,7 +70,7 @@ export default function LoginForm() {
       {/* 上下文提供者 shadcn自带组件 展开useForm返回的对象 */}
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="space-y-6  w-2/5 mx-auto my-6 bg-white p-6 rounded shadow-xl border"
+        className="space-y-6 w-full"
       >
         {/* 账号部分 */}
         {/* control 用于将这一部分接入RHF的管理 render将RHF提供的field传递 */}
@@ -79,14 +79,14 @@ export default function LoginForm() {
           name="email"
           render={({ field }) => (
             <FormItem className="space-y-1.5">
-              <FormLabel>邮箱</FormLabel>
+              <FormLabel className="text-gray-700 font-medium">邮箱</FormLabel>
               <FormControl>
-                <div className="relative">
-                  <Mail className="absolute top-1/2  left-2 -translate-y-1/2" />
+                <div className="relative group">
+                  <Mail className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
                   <Input
-                    placeholder="邮箱"
+                    placeholder="请输入您的邮箱"
                     {...field}
-                    className="h-11 rounded-lg pl-10 border-2"
+                    className="h-12 rounded-lg pl-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all bg-gray-50/50 hover:bg-white focus:bg-white"
                   />
                 </div>
               </FormControl>
@@ -100,41 +100,35 @@ export default function LoginForm() {
           name="password"
           render={({ field }) => (
             <FormItem className="space-y-1.5">
-              <FormLabel>密码</FormLabel>
+              <FormLabel className="text-gray-700 font-medium">密码</FormLabel>
               <FormControl>
-                <div className="relative">
-                  <Lock className="absolute top-1/2  left-2 -translate-y-1/2" />
+                <div className="relative group">
+                  <Lock className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
                   <Input
                     type={showPassword ? "text" : "password"}
-                    placeholder="密码"
+                    placeholder="请输入密码"
                     {...field}
-                    className="h-11 rounded-lg pl-10 border-2 text-xl"
+                    className="h-12 rounded-lg pl-10 pr-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all bg-gray-50/50 hover:bg-white focus:bg-white text-lg tracking-wider"
                   />
                   {showPassword ? (
                     <Button
                       type="button"
-                      className="absolute top-1/2  right-2 -translate-y-1/2"
+                      className="absolute top-1/2 right-1 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       size="icon"
                       variant="ghost"
-                      onClick={() => {
-                        setShowPassword(false);
-                      }}
+                      onClick={() => setShowPassword(false)}
                     >
-                      {/* 注意这里 我为了让它只显示Icon 必须设置size 为 icon variant为ghost */}
-                      {<Eye />}
+                      <Eye size={20} />
                     </Button>
                   ) : (
                     <Button
                       type="button"
-                      className="absolute top-1/2  right-2 -translate-y-1/2"
+                      className="absolute top-1/2 right-1 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       size="icon"
                       variant="ghost"
-                      onClick={() => {
-                        setShowPassword(true);
-                      }}
+                      onClick={() => setShowPassword(true)}
                     >
-                      {/* 注意这里 我为了让它只显示Icon 必须设置size 为 icon variant为ghost */}
-                      {<EyeOff />}
+                      <EyeOff size={20} />
                     </Button>
                   )}
                 </div>
@@ -143,18 +137,17 @@ export default function LoginForm() {
             </FormItem>
           )}
         />
-        <div className="flex items-center justify-between">
-          <Button variant="link" asChild className="px-0 text-sm">
+        <div className="flex items-center justify-between pt-2">
+          <Button variant="link" asChild className="px-0 text-sm text-gray-500 hover:text-indigo-600 font-normal">
             <Link to="/signup">注册账号</Link>
           </Button>
-          {/* aschild 相当于只把这个样式传递给儿子 而不实际生成对用的dom button本身不支持内部包裹a或link */}
-          <Button variant="link" asChild className="px-0 text-sm">
+          <Button variant="link" asChild className="px-0 text-sm text-gray-500 hover:text-indigo-600 font-normal">
             <Link to="/forget">忘记密码？</Link>
           </Button>
         </div>
         <Button
           type="submit"
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+          className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors shadow-md hover:shadow-lg"
         >
           登录
         </Button>
