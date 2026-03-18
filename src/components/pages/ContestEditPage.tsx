@@ -46,11 +46,9 @@ const contestFormSchema = z.object({
   title: z.string().min(1, "标题不能为空"),
   subtitle: z.string().optional(),
   description: z.string().optional(),
-  start_time: z.date({ required_error: "开始时间不能为空" }),
-  end_time: z.date({ required_error: "结束时间不能为空" }),
-  rule_type: z.enum(["NOI", "IOI", "ACM"], {
-    required_error: "请选择规则类型",
-  }),
+  start_time: z.coerce.date(),
+  end_time: z.coerce.date(),
+  rule_type: z.enum(["ACM", "NOI", "IOI"]),
   is_public: z.boolean().default(false),
   hide_statistics: z.boolean().default(false),
 });
@@ -76,7 +74,7 @@ export default function ContestEditPage() {
     }
   }, [problemList]);
   const form = useForm<ContestFormValues>({
-    resolver: zodResolver(contestFormSchema),
+    resolver: zodResolver(contestFormSchema) as any,
     defaultValues: {
       title: "",
       subtitle: "",
@@ -86,6 +84,7 @@ export default function ContestEditPage() {
       hide_statistics: false,
     },
   });
+
   useEffect(() => {
     if (contestDetail) {
       form.reset({
@@ -129,10 +128,7 @@ export default function ContestEditPage() {
         updateInfoPromise,
         updateProblemListPromise,
       ]);
-      if (
-        resInfo.code === 0 &&
-        resProblems.code === 0
-      ) {
+      if (resInfo.code === 0 && resProblems.code === 0) {
         toast.success("比赛信息及题目列表更新成功");
         nav(`/contest/${contest_public_id}`);
       } else {
@@ -224,7 +220,19 @@ export default function ContestEditPage() {
                       <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={field.onChange}
+                        onSelect={(date) => {
+                          if (!date) {
+                            field.onChange(date);
+                            return;
+                          }
+                          const newDate = new Date(date);
+                          if (field.value) {
+                            newDate.setHours(field.value.getHours());
+                            newDate.setMinutes(field.value.getMinutes());
+                            newDate.setSeconds(field.value.getSeconds());
+                          }
+                          field.onChange(newDate);
+                        }}
                         initialFocus
                       />
                       <div className="p-3 border-t">
@@ -279,7 +287,19 @@ export default function ContestEditPage() {
                       <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={field.onChange}
+                        onSelect={(date) => {
+                          if (!date) {
+                            field.onChange(date);
+                            return;
+                          }
+                          const newDate = new Date(date);
+                          if (field.value) {
+                            newDate.setHours(field.value.getHours());
+                            newDate.setMinutes(field.value.getMinutes());
+                            newDate.setSeconds(field.value.getSeconds());
+                          }
+                          field.onChange(newDate);
+                        }}
                         initialFocus
                       />
                       <div className="p-3 border-t">

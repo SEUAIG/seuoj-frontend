@@ -51,7 +51,7 @@ export default function UpdateClassModal({
   const queryClient = useQueryClient();
 
   const form = useForm<ClassFormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any,
     values: {
       name: classItem?.name || "",
       description: classItem?.description || "",
@@ -82,7 +82,7 @@ export default function UpdateClassModal({
     },
   });
 
-  const onSubmit = (values: ClassFormValues) => {
+  const onSubmit: any = (values: ClassFormValues) => {
     updateMutation.mutate(values);
   };
 

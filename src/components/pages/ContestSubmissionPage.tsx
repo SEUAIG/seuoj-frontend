@@ -41,13 +41,21 @@ export default function ContestSubmissionPage() {
             language: data.language || "Unknown",
             status: data.status as SubmissionStatus,
             verdict: data.verdict as SubmissionVerdict | null,
-            resultDetail: data.result_detail,
+            resultDetail: data.result_detail
+              ? data.result_detail.map((item: any) => ({
+                  ...item,
+                  in: item.in || "",
+                  out: item.out || "",
+                  ans: item.ans || "",
+                  sys: item.sys || "",
+                }))
+              : data.result_detail,
             errorDetail: data.error_detail,
             submitTime: data.submit_time,
             finishTime: "", // API 中未提供 finish_time，设为空字符串或根据需要处理
             code: data.code || "",
             username: data.username,
-            score: data.score, // 比赛特有的分数
+            score: data.score ?? undefined, // 比赛特有的分数
           };
           setSubmission(submissionData);
           setLoading(false);
@@ -162,8 +170,20 @@ export default function ContestSubmissionPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6 w-full max-w-4xl mx-auto p-8 relative">
         <div className="absolute top-0 right-0 mt-4 mr-4 flex space-x-4">
-          <Button variant="outline" onClick={() => nav(`/contest/${contest_public_id}/${submission.pid}`)}>返回题目</Button>
-          <Button variant="default" onClick={() => nav(`/contest/${contest_public_id}`)}>返回比赛</Button>
+          <Button
+            variant="outline"
+            onClick={() =>
+              nav(`/contest/${contest_public_id}/${submission.pid}`)
+            }
+          >
+            返回题目
+          </Button>
+          <Button
+            variant="default"
+            onClick={() => nav(`/contest/${contest_public_id}`)}
+          >
+            返回比赛
+          </Button>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-full p-8">
           <AlertCircle className="w-16 h-16 text-red-600" />

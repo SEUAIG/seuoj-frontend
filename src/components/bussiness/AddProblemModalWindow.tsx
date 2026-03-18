@@ -5,7 +5,25 @@ import ModalWindow from '../common/ModalWindow'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 
-export default function AddProblemModalWindow({isOpen,onClose,problems,setProblems}) {
+interface Problem {
+  sort_order: number;
+  pid: string;
+  title: string;
+}
+
+interface AddProblemModalWindowProps {
+  isOpen: boolean;
+  onClose: () => void;
+  problems: Problem[];
+  setProblems: React.Dispatch<React.SetStateAction<Problem[]>>;
+}
+
+export default function AddProblemModalWindow({
+  isOpen,
+  onClose,
+  problems,
+  setProblems,
+}: AddProblemModalWindowProps) {
   const [pid,setPid] = useState("")
   async function handleAdd(){
     if(!pid.trim())

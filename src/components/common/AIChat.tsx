@@ -1,4 +1,4 @@
-import { deepseekStream } from "@/services/ai/deepseek";
+import { deepseekStream, DeepSeekMessage } from "@/services/ai/deepseek";
 import React, { useEffect, useRef, useState } from "react";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 
@@ -20,7 +20,7 @@ export default function AIChat() {
     }
 
     const userInput = input.trim();
-    const userMessage = {
+    const userMessage: DeepSeekMessage = {
       role: "user",
       content: userInput,
     };
@@ -30,8 +30,12 @@ export default function AIChat() {
       { role: "assistant", content: "" },
     ]);
     setInput("");
-    const response = await deepseekStream([...messages, userMessage]);
+    const response = await deepseekStream([
+      ...messages,
+      userMessage,
+    ] as DeepSeekMessage[]);
     const reader = response.body?.getReader();
+    if (!reader) return;
     const decoder = new TextDecoder();
     let assistantText = "";
     while (true) {

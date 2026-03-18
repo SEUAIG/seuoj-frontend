@@ -1,16 +1,23 @@
 import React from 'react'
-
-export default function ModalWindow({isOpen,onClose,children}) {
-    if(!isOpen)
-    {
-        return null;
-    }
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+  } from "@/components/ui/dialog"
+interface ModalWindowProps{
+    isOpen:boolean;
+    onClose:()=>void;
+    children:React.ReactNode;
+}
+export default function ModalWindow({isOpen,onClose,children}:ModalWindowProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-lg shadow-lg w-[420px] p-6">
-        {children}
-      </div>
-    </div>
-  );
+    <Dialog open={isOpen} onOpenChange={onClose}>
+    <DialogContent>
+      {children}
+    </DialogContent>
+  </Dialog>
+  )
 }

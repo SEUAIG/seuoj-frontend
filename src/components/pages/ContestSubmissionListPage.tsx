@@ -26,7 +26,8 @@ export default function ContestSubmissionListPage() {
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["contestSubmissions", contest_public_id, page],
-    queryFn: () => getContestSubmissionPage(contest_public_id!, { current: page, size }),
+    queryFn: () =>
+      getContestSubmissionPage(contest_public_id!, { current: page, size }),
     enabled: !!contest_public_id,
   });
 
@@ -77,33 +78,47 @@ export default function ContestSubmissionListPage() {
                   </TableRow>
                 ) : records.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                    <TableCell
+                      colSpan={7}
+                      className="h-24 text-center text-muted-foreground"
+                    >
                       暂无提交记录
                     </TableCell>
                   </TableRow>
                 ) : (
                   records.map((record) => (
-                    <TableRow key={record.submission_no} className="hover:bg-muted/50">
+                    <TableRow
+                      key={record.submission_no}
+                      className="hover:bg-muted/50"
+                    >
                       <TableCell className="font-mono text-sm pl-6">
-                        <span 
+                        <span
                           className="text-blue-600 hover:underline cursor-pointer"
-                          onClick={() => nav(`/contest/${contest_public_id}/submission/${record.submission_no}`)}
+                          onClick={() =>
+                            nav(
+                              `/contest/${contest_public_id}/submission/${record.submission_no}`
+                            )
+                          }
                         >
                           {record.submission_no}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <span 
+                        <span
                           className="hover:underline cursor-pointer text-blue-600"
-                          onClick={() => nav(`/contest/${contest_public_id}/${record.problem.pid}`)}
+                          onClick={() =>
+                            nav(
+                              `/contest/${contest_public_id}/${record.problem.pid}`
+                            )
+                          }
                         >
                           {record.problem.title}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <AnswerStateNew 
-                          status={record.status} 
-                          verdict={record.verdict || undefined} 
+                        <AnswerStateNew
+                          status={record.status}
+                          verdict={record.verdict || undefined}
                         />
                       </TableCell>
                       <TableCell className="font-mono">
@@ -128,15 +143,20 @@ export default function ContestSubmissionListPage() {
           <ProblemListPageChoose
             pages={pages}
             current={page}
-            dispatch={(action: any) => {
-              if (typeof action === 'function') {
+            dispatch={((action: any) => {
+              if (typeof action === "function") {
                 action((newPage: number) => setPage(newPage));
               } else if (action?.payload) {
                 setPage(action.payload);
               }
-            }}
+              return { type: "", payload: 0 };
+            }) as any}
             refetch={() => {}}
-            setCurrentAction={(val: number) => ({ type: 'SET_CURRENT', payload: val })}
+            setCurrentAction={((val: number) => ({
+              type: "SET_CURRENT",
+              payload: val,
+              match: (action: any) => action.type === "SET_CURRENT",
+            })) as any}
           />
         </div>
       )}

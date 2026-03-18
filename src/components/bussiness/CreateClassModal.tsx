@@ -50,7 +50,7 @@ export default function CreateClassModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<ClassFormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       name: "",
       description: "",
@@ -58,7 +58,7 @@ export default function CreateClassModal({
     },
   });
 
-  const onSubmit = async (values: ClassFormValues) => {
+  const onSubmit: any = async (values: ClassFormValues) => {
     setIsSubmitting(true);
     try {
       const payload: CreateClassRequest = {

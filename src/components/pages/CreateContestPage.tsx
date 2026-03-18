@@ -37,24 +37,27 @@ import {
   createContest,
   CreateContestRequest,
 } from "@/services/Contest/createContest";
-const contestFormSchema = z.object({
-  title: z.string().min(1, "标题不能为空"),
-  subtitle: z.string().optional(),
-  description: z.string().optional(),
-  start_time: z.date({ required_error: "开始时间不能为空" }),
-  end_time: z.date({ required_error: "结束时间不能为空" }),
-  rule_type: z.enum(["NOI", "IOI", "ACM"], {
-    required_error: "请选择规则类型",
-  }),
-  is_public: z.boolean().default(false),
-  hide_statistics: z.boolean().default(false),
-});
+const contestFormSchema = z
+  .object({
+    title: z.string().min(1, "标题不能为空"),
+    subtitle: z.string().optional(),
+    description: z.string().optional(),
+    start_time: z.coerce.date(),
+    end_time: z.coerce.date(),
+    rule_type: z.enum(["ACM", "NOI", "IOI"]),
+    is_public: z.boolean().default(false),
+    hide_statistics: z.boolean().default(false),
+  })
+  .refine((data) => data.end_time > data.start_time, {
+    message: "结束时间必须晚于开始时间",
+    path: ["end_time"],
+  });
 type ContestFormValues = z.infer<typeof contestFormSchema>;
 export default function CreateContestPage() {
   const nav = useNavigate();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const form = useForm<ContestFormValues>({
-    resolver: zodResolver(contestFormSchema),
+    resolver: zodResolver(contestFormSchema) as any,
     defaultValues: {
       title: "",
       subtitle: "",
@@ -64,13 +67,18 @@ export default function CreateContestPage() {
       hide_statistics: false,
     },
   });
-  const onSubmit = async (values: ContestFormValues) => {
+  const onSubmit: any = async (values: ContestFormValues) => {
     setIsSubmitting(true);
     try {
       const payload: CreateContestRequest = {
-        ...values,
+        title: values.title,
+        description: values.description || "",
+        subtitle: values.subtitle,
         start_time: values.start_time.toISOString(),
         end_time: values.end_time.toISOString(),
+        rule_type: values.rule_type,
+        is_public: values.is_public,
+        hide_statistics: values.hide_statistics,
       };
       const res = await createContest(payload);
       if (res.code === 0) {
@@ -244,11 +252,7 @@ export default function CreateContestPage() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>规则类型</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  value={field.value}
-                >
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="选择比赛规则" />

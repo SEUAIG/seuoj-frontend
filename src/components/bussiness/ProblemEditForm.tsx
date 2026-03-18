@@ -89,7 +89,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
     setTestcaseFormat(detected);
   };
   const form = useForm<ProblemEditValues>({
-    resolver: zodResolver(problemEditSchema),
+    resolver: zodResolver(problemEditSchema) as any,
     defaultValues: {
       pid: "",
       title: "",
@@ -443,7 +443,10 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-8">
+      <form
+        onSubmit={handleSubmit(onSubmit as any, onInvalid)}
+        className="space-y-8"
+      >
         {/* 基本信息 */}
         <Card className="border shadow-sm bg-white/80 backdrop-blur">
           <CardHeader className="border-b bg-muted/30">
@@ -452,7 +455,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
           <CardContent className="space-y-5 pt-6">
             {isCreateMode && (
               <FormField
-                control={control}
+                control={control as any}
                 name="pid"
                 render={({ field }) => (
                   <FormItem>
@@ -470,7 +473,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
               />
             )}
             <FormField
-              control={control}
+              control={control as any}
               name="title"
               render={({ field }) => (
                 <FormItem>
@@ -488,7 +491,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
             />
 
             <FormField
-              control={control}
+              control={control as any}
               name="is_public"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
@@ -509,7 +512,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
             />
 
             <FormField
-              control={control}
+              control={control as any}
               name="description"
               render={({ field }) => (
                 <FormItem>
@@ -527,7 +530,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
             />
 
             <FormField
-              control={control}
+              control={control as any}
               name="input"
               render={({ field }) => (
                 <FormItem>
@@ -545,7 +548,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
             />
 
             <FormField
-              control={control}
+              control={control as any}
               name="output"
               render={({ field }) => (
                 <FormItem>
@@ -563,7 +566,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
             />
 
             <FormField
-              control={control}
+              control={control as any}
               name="hint"
               render={({ field }) => (
                 <FormItem>
@@ -616,7 +619,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                   </Button>
                 </div>
                 <FormField
-                  control={control}
+                  control={control as any}
                   name={`example.${index}.in`}
                   render={({ field }) => (
                     <FormItem>
@@ -633,7 +636,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                   )}
                 />
                 <FormField
-                  control={control}
+                  control={control as any}
                   name={`example.${index}.ans`}
                   render={({ field }) => (
                     <FormItem>
@@ -650,7 +653,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                   )}
                 />
                 <FormField
-                  control={control}
+                  control={control as any}
                   name={`example.${index}.description`}
                   render={({ field }) => (
                     <FormItem>
@@ -679,7 +682,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
           <CardContent className="space-y-5 pt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
-                control={control}
+                control={control as any}
                 name="max_cpu_time_ms"
                 render={({ field }) => (
                   <FormItem>
@@ -697,7 +700,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
               />
 
               <FormField
-                control={control}
+                control={control as any}
                 name="max_real_time_ms"
                 render={({ field }) => (
                   <FormItem>
@@ -715,7 +718,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
               />
 
               <FormField
-                control={control}
+                control={control as any}
                 name="max_memory_byte"
                 render={({ field }) => (
                   <FormItem>
@@ -733,7 +736,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
               />
 
               <FormField
-                control={control}
+                control={control as any}
                 name="max_stack_byte"
                 render={({ field }) => (
                   <FormItem>
@@ -751,7 +754,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
               />
 
               <FormField
-                control={control}
+                control={control as any}
                 name="max_process_number"
                 render={({ field }) => (
                   <FormItem>
@@ -769,7 +772,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
               />
 
               <FormField
-                control={control}
+                control={control as any}
                 name="max_output_size"
                 render={({ field }) => (
                   <FormItem>
@@ -787,7 +790,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
               />
 
               <FormField
-                control={control}
+                control={control as any}
                 name="test_case_number"
                 render={({ field }) => (
                   <FormItem>
@@ -805,7 +808,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                 )}
               />
               <FormField
-                control={control}
+                control={control as any}
                 name="problem_type"
                 render={({ field }) => (
                   <FormItem>
@@ -825,7 +828,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                 )}
               />
               <FormField
-                control={control}
+                control={control as any}
                 name="checker_type"
                 render={({ field }) => (
                   <FormItem>
@@ -851,7 +854,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
-                      control={control}
+                      control={control as any}
                       name="interactor_type"
                       render={({ field }) => (
                         <FormItem>
@@ -871,7 +874,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                       )}
                     />
                     <FormField
-                      control={control}
+                      control={control as any}
                       name="interactor_data"
                       render={({ field }) => (
                         <FormItem className="md:col-span-2">
@@ -897,7 +900,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
-                      control={control}
+                      control={control as any}
                       name="checker_file_type"
                       render={({ field }) => (
                         <FormItem>
@@ -917,7 +920,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                       )}
                     />
                     <FormField
-                      control={control}
+                      control={control as any}
                       name="checker_data"
                       render={({ field }) => (
                         <FormItem className="md:col-span-2">
