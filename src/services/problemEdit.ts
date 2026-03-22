@@ -11,6 +11,6 @@ export async function uploadProblemTestcases(
   const formData = new FormData();
   formData.append("file", file);
   formData.append("format", format);
-  const res = await api.post(`/api/problem/testcases/${pid}`, formData);
+  const res = await api.post(`/api/problem/data/${pid}`, formData);
   return res.data;
 }

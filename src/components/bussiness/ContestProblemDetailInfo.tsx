@@ -24,11 +24,13 @@ export default function ContestProblemDetailInfo({
   const {
     max_cpu_time_ms = "1000",
     max_real_time_ms = "2000",
+    max_memory_kb,
     max_memory_byte = "134217728",
     max_stack_byte = "33554432",
     max_process_number = "1",
     max_output_size = "10000",
     min_cpu_time_ms,
+    min_memory_kb,
     min_memory_byte,
     test_case_number = "1",
     problem_type = "Standard",
@@ -38,8 +40,9 @@ export default function ContestProblemDetailInfo({
     String(val) === "-1" ? "∞" : `${val} ms`;
   const formatMemory = (val: string | number) => {
     if (String(val) === "-1") return "∞";
-    const bytes = Number(val);
-    return `${(bytes / 1024 / 1024).toFixed(0)} MiB`;
+    const kb = Number(val);
+    if (kb >= 1024) return `${(kb / 1024).toFixed(0)} MiB`;
+    return `${kb} KiB`;
   };
   const formatCount = (val: string | number) =>
     String(val) === "-1" ? "∞" : val;
@@ -49,6 +52,13 @@ export default function ContestProblemDetailInfo({
     if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KiB`;
     return `${bytes} B`;
   };
+  const maxMemoryValue =
+    max_memory_kb ?? (Number(max_memory_byte) / 1024).toString();
+  const minMemoryValue =
+    min_memory_kb ??
+    (min_memory_byte !== undefined
+      ? (Number(min_memory_byte) / 1024).toString()
+      : undefined);
   return (
     <div className="space-y-8 p-4 md:p-6">
       {/* === 1. 头部标题与标签 === */}
@@ -134,7 +144,7 @@ export default function ContestProblemDetailInfo({
               <TooltipTrigger asChild>
                 <span tabIndex={0} className="cursor-help outline-none">
                   <Badge className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none">
-                    MEM: {formatMemory(max_memory_byte)}
+                    MEM: {formatMemory(maxMemoryValue)}
                   </Badge>
                 </span>
               </TooltipTrigger>
@@ -142,12 +152,12 @@ export default function ContestProblemDetailInfo({
                 <div className="space-y-1 text-xs">
                   <p className="flex items-center gap-2">
                     <Database size={14} /> 内存限制:{" "}
-                    {formatMemory(max_memory_byte)}
+                    {formatMemory(maxMemoryValue)}
                   </p>
-                  {min_memory_byte && (
+                  {minMemoryValue && (
                     <p className="flex items-center gap-2">
                       <Database size={14} /> 最小内存限制:{" "}
-                      {formatMemory(min_memory_byte)}
+                      {formatMemory(minMemoryValue)}
                     </p>
                   )}
                   <p className="flex items-center gap-2">

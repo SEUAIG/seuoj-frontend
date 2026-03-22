@@ -3,6 +3,8 @@ import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Table,
@@ -22,10 +24,14 @@ import { setCurrent as setSubmissionCurrent } from "@/features/SubmissionList/su
 import nahida from "@/assets/nahida.png";
 import seu from "@/assets/seu.png";
 import useQueryToGetSubmission from "@/hooks/useQueryToGetSubmission";
+import useQueryToGetUserPage from "@/hooks/useQueryToGetUserPage";
 import SubmissionHeatmap from "@/components/profile/SubmissionHeatmap";
 
 export default function PersonalPage() {
   const dispatch = useDispatch();
+  const { user, isAuthenticated } = useSelector(
+    (state: RootState) => state.auth
+  );
   const { current, size } = useSelector(
     (state: RootState) => state.submissionList
   );
@@ -44,11 +50,53 @@ export default function PersonalPage() {
     if (!total) return 0;
     return Math.ceil(total / Number(size));
   }, [total, size]);
+  const canViewUserPage = isAuthenticated && user?.role !== "guest" && user?.role !== "user";
+  const [userPageCurrent, setUserPageCurrent] = useState(1);
+  const userPageSize = 10;
+  const [usernameInput, setUsernameInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
+  const [userFilters, setUserFilters] = useState<{
+    username?: string;
+    email?: string;
+  }>({});
+  const isUserTabActive = activeTab === "users";
+  const {
+    data: userPageData,
+    isLoading: isUserPageLoading,
+    isFetching: isUserPageFetching,
+    isError: isUserPageError,
+    error: userPageError,
+    refetch: refetchUserPage,
+  } = useQueryToGetUserPage(
+    {
+      current: userPageCurrent,
+      size: userPageSize,
+      username: userFilters.username,
+      email: userFilters.email,
+    },
+    canViewUserPage && isUserTabActive
+  );
+  const userRecords = userPageData?.records || [];
+  const userTotal = userPageData?.total || 0;
+  const userPages = useMemo(() => {
+    if (!userTotal) return 0;
+    return Math.ceil(userTotal / userPageSize);
+  }, [userTotal]);
+  const userLoadError = isUserPageError
+    ? userPageError instanceof Error
+      ? userPageError.message
+      : "加载用户列表失败"
+    : null;
   useEffect(() => {
     if (isError && loadError) {
       toast.error(loadError, { position: "top-center" });
     }
   }, [isError, loadError]);
+  useEffect(() => {
+    if (isUserPageError && userLoadError) {
+      toast.error(userLoadError, { position: "top-center" });
+    }
+  }, [isUserPageError, userLoadError]);
   return (
     <>
       <Helmet>
@@ -125,6 +173,7 @@ export default function PersonalPage() {
                   <TabsTrigger value="practice">题单</TabsTrigger>
                   <TabsTrigger value="stats">解题数据</TabsTrigger>
                   <TabsTrigger value="submissions">提交记录</TabsTrigger>
+                  {canViewUserPage && <TabsTrigger value="users">用户列表</TabsTrigger>}
                   <TabsTrigger value="discussion">讨论</TabsTrigger>
                   <TabsTrigger value="achievement">成就</TabsTrigger>
                 </TabsList>
@@ -273,6 +322,174 @@ export default function PersonalPage() {
                   </CardContent>
                 </Card>
               </TabsContent>
+              {canViewUserPage && (
+                <TabsContent value="users">
+                  <Card>
+                    <CardContent className="p-6 space-y-4">
+                      <div className="flex flex-col gap-3 md:flex-row">
+                        <Input
+                          placeholder="按用户名搜索"
+                          value={usernameInput}
+                          onChange={(e) => setUsernameInput(e.target.value)}
+                        />
+                        <Input
+                          placeholder="按邮箱搜索"
+                          value={emailInput}
+                          onChange={(e) => setEmailInput(e.target.value)}
+                        />
+                        <Button
+                          onClick={() => {
+                            setUserPageCurrent(1);
+                            setUserFilters({
+                              username: usernameInput.trim() || undefined,
+                              email: emailInput.trim() || undefined,
+                            });
+                          }}
+                        >
+                          查询
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setUsernameInput("");
+                            setEmailInput("");
+                            setUserPageCurrent(1);
+                            setUserFilters({});
+                          }}
+                        >
+                          重置
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          共计{" "}
+                          <span className="font-semibold text-foreground">
+                            {userTotal}
+                          </span>{" "}
+                          位用户
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {isUserPageFetching && userRecords.length > 0 && (
+                            <div className="text-xs text-muted-foreground">
+                              更新中...
+                            </div>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => refetchUserPage()}
+                          >
+                            刷新
+                          </Button>
+                        </div>
+                      </div>
+                      {isUserPageLoading && userRecords.length === 0 && (
+                        <div className="flex items-center justify-center py-10 text-muted-foreground">
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          加载用户列表中...
+                        </div>
+                      )}
+                      {userLoadError && userRecords.length === 0 && (
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-8 text-sm text-muted-foreground">
+                          {userLoadError}
+                          <Button size="sm" onClick={() => refetchUserPage()}>
+                            重试
+                          </Button>
+                        </div>
+                      )}
+                      {userLoadError && userRecords.length > 0 && (
+                        <div className="rounded-lg border border-dashed px-4 py-2 text-xs text-muted-foreground">
+                          {userLoadError}
+                        </div>
+                      )}
+                      {!isUserPageLoading &&
+                        !userLoadError &&
+                        userRecords.length === 0 && (
+                          <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+                            暂无用户数据
+                          </div>
+                        )}
+                      {userRecords.length > 0 && (
+                        <div className={isUserPageFetching ? "opacity-70" : ""}>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="text-center">
+                                  用户ID
+                                </TableHead>
+                                <TableHead className="text-center">
+                                  用户名
+                                </TableHead>
+                                <TableHead className="text-center">
+                                  邮箱
+                                </TableHead>
+                                <TableHead className="text-center">
+                                  角色
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {userRecords.map((record) => (
+                                <TableRow key={record.user_public_id}>
+                                  <TableCell className="text-center font-mono">
+                                    <span title={record.user_public_id}>
+                                      {record.user_public_id.slice(0, 10)}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    {record.username}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    {record.email}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <div className="flex justify-center gap-1 flex-wrap">
+                                      {record.roles.map((role) => (
+                                        <Badge key={role} variant="outline">
+                                          {role}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
+                      {!!userPages && (
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={userPageCurrent <= 1}
+                            onClick={() =>
+                              setUserPageCurrent((prev) => Math.max(1, prev - 1))
+                            }
+                          >
+                            上一页
+                          </Button>
+                          <span className="text-sm text-muted-foreground">
+                            第 {userPageCurrent} / {userPages} 页
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={userPageCurrent >= userPages}
+                            onClick={() =>
+                              setUserPageCurrent((prev) =>
+                                Math.min(userPages, prev + 1)
+                              )
+                            }
+                          >
+                            下一页
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              )}
               <TabsContent value="discussion">
                 <div className="grid gap-4 md:grid-cols-2">
                   {["最近发帖", "最近回复"].map((name) => (

@@ -22,8 +22,6 @@ import {
   Edit,
   MessageCircle,
 } from "lucide-react";
-import { useSelector } from "react-redux";
-import { RootState } from "@/app/store";
 import { ProblemSection } from "./ProblemSection";
 import { ExampleSection } from "./ExampleSection";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
@@ -37,35 +35,46 @@ export default function ProblemDetailInfo({
   isAuthenticated,
 }: ProblemDetailInfoProps) {
   const nav = useNavigate();
-  const role = useSelector((state: RootState) => state.auth.user?.role ?? "guest");
   const { title, content, tags, pid, totalSubmit, totalAccept } = problem;
   const { description, info = {}, input, output, example, hint } = content;
   const {
     max_cpu_time_ms = "1000",
     max_real_time_ms = "2000",
+    max_memory_kb,
     max_memory_byte = "134217728",
     max_stack_byte = "33554432",
     max_process_number = "1",
     max_output_size = "10000",
     min_cpu_time_ms,
+    min_memory_kb,
     min_memory_byte,
     test_case_number = "1",
     problem_type = "Standard",
     checker_type = "Standard",
   } = info as Info;
-  const formatTime = (val: string | number) => (String(val) === "-1" ? "∞" : `${val} ms`);
+  const formatTime = (val: string | number) =>
+    String(val) === "-1" ? "∞" : `${val} ms`;
   const formatMemory = (val: string | number) => {
     if (String(val) === "-1") return "∞";
-    const bytes = Number(val);
-    return `${(bytes / 1024 / 1024).toFixed(0)} MiB`;
+    const kb = Number(val);
+    if (kb >= 1024) return `${(kb / 1024).toFixed(0)} MiB`;
+    return `${kb} KiB`;
   };
-  const formatCount = (val: string | number) => (String(val) === "-1" ? "∞" : val);
+  const formatCount = (val: string | number) =>
+    String(val) === "-1" ? "∞" : val;
   const formatSize = (val: string | number) => {
     if (String(val) === "-1") return "∞";
     const bytes = Number(val);
     if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KiB`;
     return `${bytes} B`;
   };
+  const maxMemoryValue =
+    max_memory_kb ?? (Number(max_memory_byte) / 1024).toString();
+  const minMemoryValue =
+    min_memory_kb ??
+    (min_memory_byte !== undefined
+      ? (Number(min_memory_byte) / 1024).toString()
+      : undefined);
   return (
     <div className="space-y-8 p-4 md:p-6">
       {/* === 1. 头部标题与标签 === */}
@@ -162,7 +171,7 @@ export default function ProblemDetailInfo({
               <TooltipTrigger asChild>
                 <span tabIndex={0} className="cursor-help outline-none">
                   <Badge className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none">
-                    <Database size={16} /> {formatMemory(max_memory_byte)}
+                    <Database size={16} /> {formatMemory(maxMemoryValue)}
                   </Badge>
                 </span>
               </TooltipTrigger>
@@ -170,12 +179,12 @@ export default function ProblemDetailInfo({
                 <div className="space-y-1 text-xs">
                   <p className="flex items-center gap-2">
                     <Database size={14} /> 内存限制:{" "}
-                    {formatMemory(max_memory_byte)}
+                    {formatMemory(maxMemoryValue)}
                   </p>
-                  {min_memory_byte && (
+                  {minMemoryValue && (
                     <p className="flex items-center gap-2">
                       <Database size={14} /> 最小内存限制:{" "}
-                      {formatMemory(min_memory_byte)}
+                      {formatMemory(minMemoryValue)}
                     </p>
                   )}
                   <p className="flex items-center gap-2">
@@ -236,16 +245,13 @@ export default function ProblemDetailInfo({
       </div>
       {/* === 2. 操作按钮区 === */}
       <div className="flex flex-wrap gap-4 justify-start">
-        {/* 仅管理员可见 */}
-        {isAuthenticated && (role === "admin" || role === "superadmin") && (
-          <Button
-            className="bg-purple-600 hover:bg-purple-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
-            onClick={() => nav(`/problemsLibrary/${pid}/edit`)}
-          >
-            <Edit className="mr-2 h-4 w-4" />
-            编辑题面
-          </Button>
-        )}
+        <Button
+          className="bg-purple-600 hover:bg-purple-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
+          onClick={() => nav(`/problemsLibrary/${pid}/edit`)}
+        >
+          <Edit className="mr-2 h-4 w-4" />
+          编辑题面
+        </Button>
         <Button className="bg-green-600 hover:bg-green-700 text-white transition duration-300 ease-in-out transform hover:scale-105">
           <ListChecks className="mr-2 h-4 w-4" />
           提交记录

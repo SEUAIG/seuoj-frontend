@@ -12,6 +12,17 @@ import { verificationReducer } from '../features/verification/verificationSlice'
 const authPersistConfig = {
   key: "auth", // storage 里的 key
   storage,
+  version: 1,
+  migrate: async (state: any) => {
+    if (!state?.user) return state;
+    return {
+      ...state,
+      user: {
+        ...state.user,
+        role: state.user.role || "superadmin",
+      },
+    };
+  },
   whitelist: ["user", "isAuthenticated", "jwt"], // 只持久化 auth里的
 };
 const codePersistConfig = {

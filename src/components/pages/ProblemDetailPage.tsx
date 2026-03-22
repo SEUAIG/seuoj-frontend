@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../app/store";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ENV } from "@/config/env";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/services/api/axios";
@@ -19,15 +19,17 @@ export interface ProblemExample {
 export interface Info {
   max_cpu_time_ms: string | number;
   max_real_time_ms: string | number;
-  max_memory_byte: string | number;
-  max_stack_byte: string | number;
-  max_process_number: string | number;
-  max_output_size: string | number;
+  max_memory_byte?: string | number;
+  max_memory_kb?: string | number;
+  max_stack_byte?: string | number;
+  max_process_number?: string | number;
+  max_output_size?: string | number;
   min_cpu_time_ms?: string | number;
+  min_memory_kb?: string | number;
   min_memory_byte?: string | number;
-  test_case_number: string | number;
-  problem_type: string;
-  checker_type: string;
+  test_case_number?: string | number;
+  problem_type?: string;
+  checker_type?: string;
 }
 export interface ProblemContent {
   pid: string;
@@ -49,6 +51,7 @@ export interface ProblemData {
 export default function ProblemDetailPage() {
   const { isAuthenticated } = useSelector((store: RootState) => store.auth);
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const [problem, setProblem] = useState<ProblemData | null>(null);
   const [codeFile, setCodeFile] = useState("");
   const [hide, setHide] = useState(false);
@@ -61,7 +64,14 @@ export default function ProblemDetailPage() {
     const fetchProblem = async () => {
       if (!id) return;
       try {
-        const res = await api.get(`/api/problem/${id}`);
+        const contest_public_id = searchParams.get("contest_public_id");
+        const problem_set_public_id = searchParams.get("problem_set_public_id");
+        const res = await api.get(`/api/problem/${id}`, {
+          params: {
+            contest_public_id: contest_public_id || undefined,
+            problem_set_public_id: problem_set_public_id || undefined,
+          },
+        });
         const result = res.data;
         if (result.code === 0 && result.data) {
           setProblem(result.data);
@@ -69,7 +79,7 @@ export default function ProblemDetailPage() {
       } catch (error) {}
     };
     fetchProblem();
-  }, [id]);
+  }, [id, searchParams]);
   if (!problem) {
     return (
       <div className="min-h-screen bg-gray-50 py-4 pb-10">

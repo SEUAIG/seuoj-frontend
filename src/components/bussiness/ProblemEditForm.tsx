@@ -23,7 +23,6 @@ import { toast } from "sonner";
 import { getTags } from "@/services/getTags";
 import { updateProblem, uploadProblemTestcases } from "@/services/problemEdit";
 import { createProblem } from "@/services/Problem/createProblem";
-import TestcaseUploadCard from "./TestcaseUploadCard";
 import { useNavigate } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
 
@@ -41,19 +40,6 @@ const problemEditSchema = z.object({
   output: z.string().min(1, "输出格式不能为空"),
   hint: z.string().optional(),
   example: z.array(exampleSchema).min(1, "至少添加一个示例"),
-  max_cpu_time_ms: z.string().min(1, "CPU时间限制不能为空"),
-  max_real_time_ms: z.string().min(1, "实际时间限制不能为空"),
-  max_memory_byte: z.string().min(1, "内存限制不能为空"),
-  max_stack_byte: z.string().min(1, "栈限制不能为空"),
-  max_process_number: z.string().min(1, "进程数限制不能为空"),
-  max_output_size: z.string().min(1, "输出大小限制不能为空"),
-  test_case_number: z.string().min(1, "测试点数量不能为空"),
-  problem_type: z.enum(["Standard", "Interactive"]),
-  checker_type: z.enum(["Standard", "Special"]),
-  interactor_type: z.enum(["Source", "Binary"]).optional(),
-  interactor_data: z.string().optional(),
-  checker_file_type: z.enum(["Source", "Binary"]).optional(),
-  checker_data: z.string().optional(),
 });
 type ProblemEditValues = z.infer<typeof problemEditSchema>;
 interface ProblemEditFormProps {
@@ -65,29 +51,6 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
   const { tags } = useSelector((state: RootState) => state.tags);
   const nav = useNavigate();
   const isSettingInitialTags = useRef(false);
-  const [testcaseFile, setTestcaseFile] = useState<File | null>(null);
-  const [testcaseFormat, setTestcaseFormat] = useState("");
-  const detectTestcaseFormat = (filename: string) => {
-    const lower = filename.toLowerCase();
-    if (lower.endsWith(".tar.gz")) return "tar.gz";
-    if (lower.endsWith(".tgz")) return "tgz";
-    if (lower.endsWith(".tar")) return "tar";
-    if (lower.endsWith(".zip")) return "zip";
-    if (lower.endsWith(".7z")) return "7z";
-    return "";
-  };
-  const handleTestcaseFileChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0] || null;
-    setTestcaseFile(file);
-    if (!file) {
-      setTestcaseFormat("");
-      return;
-    }
-    const detected = detectTestcaseFormat(file.name);
-    setTestcaseFormat(detected);
-  };
   const form = useForm<ProblemEditValues>({
     resolver: zodResolver(problemEditSchema) as any,
     defaultValues: {
@@ -105,19 +68,6 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
           description: "",
         },
       ],
-      max_cpu_time_ms: "1000",
-      max_real_time_ms: "2000",
-      max_memory_byte: "134217728",
-      max_stack_byte: "33554432",
-      max_process_number: "1",
-      max_output_size: "10000",
-      test_case_number: "1",
-      problem_type: "Standard",
-      checker_type: "Standard",
-      interactor_type: "Source",
-      interactor_data: "",
-      checker_file_type: "Source",
-      checker_data: "",
     },
   });
   useEffect(() => {
@@ -134,7 +84,6 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
         }
         const data = result.data || {};
         const content = data.content || data;
-        const info = content.info || {};
         const examplesRaw = Array.isArray(content.example)
           ? content.example
           : [];
@@ -145,25 +94,6 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
             description: item.description || "",
           })
         );
-        const checker = data.checker || content.checker || null;
-        const interactor = data.interactor || content.interactor || null;
-        const safeProblemType =
-          info.problem_type === "Interactive" ||
-          info.problem_type === "Standard"
-            ? info.problem_type
-            : "Standard";
-        const safeCheckerType =
-          info.checker_type === "Special" || info.checker_type === "Standard"
-            ? info.checker_type
-            : "Standard";
-        const safeInteractorType =
-          interactor?.type === "Binary" || interactor?.type === "Source"
-            ? interactor?.type
-            : "Source";
-        const safeCheckerFileType =
-          checker?.type === "Binary" || checker?.type === "Source"
-            ? checker?.type
-            : "Source";
         form.reset({
           pid: data.pid || "",
           title: data.title || "",
@@ -173,19 +103,6 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
           output: content.output || "",
           hint: content.hint || "",
           example: normalizedExamples,
-          max_cpu_time_ms: String(info.max_cpu_time_ms ?? "1000"),
-          max_real_time_ms: String(info.max_real_time_ms ?? "2000"),
-          max_memory_byte: String(info.max_memory_byte ?? "134217728"),
-          max_stack_byte: String(info.max_stack_byte ?? "33554432"),
-          max_process_number: String(info.max_process_number ?? "1"),
-          max_output_size: String(info.max_output_size ?? "10000"),
-          test_case_number: String(info.test_case_number ?? "1"),
-          problem_type: safeProblemType,
-          checker_type: safeCheckerType,
-          interactor_type: safeInteractorType,
-          interactor_data: interactor?.data || "",
-          checker_file_type: safeCheckerFileType,
-          checker_data: checker?.data || "",
         });
         isSettingInitialTags.current = true;
         dispatch(clearTags());
@@ -226,8 +143,6 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
     fetchProblem();
   }, [pid, dispatch, form]);
   const { handleSubmit, control, formState, setFocus } = form;
-  const problemType = form.watch("problem_type");
-  const checkerType = form.watch("checker_type");
   const { fields, append, remove } = useFieldArray({
     control,
     name: "example",
@@ -260,23 +175,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
         });
         if (res.code === 0) {
           toast.success("创建成功");
-          if (testcaseFile) {
-            try {
-              const uploadRes = await uploadProblemTestcases(
-                res.data.pid,
-                testcaseFile,
-                testcaseFormat
-              );
-              if (uploadRes.code === 0) {
-                toast.success("测试用例上传成功");
-              } else {
-                toast.error(uploadRes.message || "测试用例上传失败");
-              }
-            } catch (err) {
-              toast.error("测试用例上传请求失败");
-            }
-          }
-          nav(`/problemsLibrary/${res.data.pid}/config`);
+          nav(`/problemsLibrary/${res.data.pid}/judgeConfig`);
         } else {
           toast.error(res.message || "创建失败");
         }
@@ -287,36 +186,6 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
     }
 
     const dirty = formState.dirtyFields;
-    const infoDirty = Boolean(
-      dirty.max_cpu_time_ms ||
-        dirty.max_real_time_ms ||
-        dirty.max_memory_byte ||
-        dirty.max_stack_byte ||
-        dirty.max_process_number ||
-        dirty.max_output_size ||
-        dirty.problem_type ||
-        dirty.checker_type
-    );
-    const checkerTouched = Boolean(
-      dirty.checker_type || dirty.checker_file_type || dirty.checker_data
-    );
-    const interactorTouched = Boolean(
-      dirty.problem_type || dirty.interactor_type || dirty.interactor_data
-    );
-    const checkerPayload =
-      values.checker_type === "Special"
-        ? {
-            type: values.checker_file_type || "Source",
-            data: values.checker_data || "",
-          }
-        : null;
-    const interactorPayload =
-      values.problem_type === "Interactive"
-        ? {
-            type: values.interactor_type || "Source",
-            data: values.interactor_data || "",
-          }
-        : null;
     const requestPayload = {
       pid,
       title: dirty.title ? values.title : null,
@@ -328,38 +197,9 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
         ans: item.ans || null,
         description: item.description || null,
       })),
-      info: infoDirty
-        ? {
-            max_cpu_time_ms: dirty.max_cpu_time_ms
-              ? Number(values.max_cpu_time_ms)
-              : null,
-            max_real_time_ms: dirty.max_real_time_ms
-              ? Number(values.max_real_time_ms)
-              : null,
-            max_memory_byte: dirty.max_memory_byte
-              ? Number(values.max_memory_byte)
-              : null,
-            max_stack_byte: dirty.max_stack_byte
-              ? Number(values.max_stack_byte)
-              : null,
-            max_process_number: dirty.max_process_number
-              ? Number(values.max_process_number)
-              : null,
-            max_output_size: dirty.max_output_size
-              ? Number(values.max_output_size)
-              : null,
-            problem_type: dirty.problem_type ? values.problem_type : null,
-            checker_type: dirty.checker_type ? values.checker_type : null,
-          }
-        : null,
       tags: tagIds,
-      checker: checkerTouched ? checkerPayload : null,
-      interactor: interactorTouched ? interactorPayload : null,
     };
-    if (testcaseFile && !testcaseFormat) {
-      toast.error("请先选择测试用例文件格式", { position: "top-center" });
-      return;
-    }
+
     const updateProblemRequest = async () => {
       const result = await updateProblem(requestPayload);
       if (
@@ -370,33 +210,10 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
         throw new Error(result.message || "更新失败");
       }
     };
-    const uploadTestcasesRequest = async () => {
-      if (!testcaseFile) return;
-      const result = await uploadProblemTestcases(
-        pid,
-        testcaseFile,
-        testcaseFormat
-      );
-      if (
-        result?.code !== undefined &&
-        result.code !== 0 &&
-        result.code !== 200
-      ) {
-        throw new Error(result.message || "测试用例上传失败");
-      }
-    };
     try {
-      if (testcaseFile) {
-        await Promise.all([updateProblemRequest(), uploadTestcasesRequest()]);
-        toast.success("更新成功，测试用例已上传", { position: "top-center" });
-        setTestcaseFile(null);
-        setTestcaseFormat("");
-        nav(`/problemsLibrary/${pid}/config`);
-      } else {
-        await updateProblemRequest();
-        toast.success("更新成功", { position: "top-center" });
-        nav(`/problemsLibrary/${pid}/config`);
-      }
+      await updateProblemRequest();
+      toast.success("更新成功", { position: "top-center" });
+      nav(`/problemsLibrary/${pid}/judgeConfig`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "更新失败";
       toast.error(message, { position: "top-center" });
@@ -674,280 +491,6 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
           </CardContent>
         </Card>
 
-        {/* 评测配置 */}
-        <Card className="border shadow-sm bg-white/80 backdrop-blur">
-          <CardHeader className="border-b bg-muted/30">
-            <CardTitle className="text-lg font-semibold">评测配置</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5 pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={control as any}
-                name="max_cpu_time_ms"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CPU时间限制 (ms)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="1000"
-                        className="bg-background/50"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={control as any}
-                name="max_real_time_ms"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>实际时间限制 (ms)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="2000"
-                        className="bg-background/50"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={control as any}
-                name="max_memory_byte"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>内存限制 (byte)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="134217728"
-                        className="bg-background/50"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={control as any}
-                name="max_stack_byte"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>栈限制 (byte)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="33554432"
-                        className="bg-background/50"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={control as any}
-                name="max_process_number"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>进程数限制</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="1"
-                        className="bg-background/50"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={control as any}
-                name="max_output_size"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>输出大小限制 (byte)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="10000"
-                        className="bg-background/50"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={control as any}
-                name="test_case_number"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>测试点数量</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="1"
-                        className="bg-muted/30 text-muted-foreground cursor-not-allowed"
-                        disabled
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={control as any}
-                name="problem_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>题目类型</FormLabel>
-                    <FormControl>
-                      <select
-                        className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background/50 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        value={field.value}
-                        onChange={field.onChange}
-                      >
-                        <option value="Standard">Standard</option>
-                        <option value="Interactive">Interactive</option>
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={control as any}
-                name="checker_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>检查器类型</FormLabel>
-                    <FormControl>
-                      <select
-                        className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background/50 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        value={field.value}
-                        onChange={field.onChange}
-                      >
-                        <option value="Standard">Standard</option>
-                        <option value="Special">Special</option>
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {problemType === "Interactive" && (
-                <div className="md:col-span-2 rounded-md border bg-muted/10 p-4 space-y-4">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    交互器
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={control as any}
-                      name="interactor_type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>类型</FormLabel>
-                          <FormControl>
-                            <select
-                              className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background/50 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                              value={field.value}
-                              onChange={field.onChange}
-                            >
-                              <option value="Source">Source</option>
-                              <option value="Binary">Binary</option>
-                            </select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={control as any}
-                      name="interactor_data"
-                      render={({ field }) => (
-                        <FormItem className="md:col-span-2">
-                          <FormLabel>内容</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="源代码或 base64 编码的 bin"
-                              className="min-h-[120px] bg-background/50"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              )}
-              {checkerType === "Special" && (
-                <div className="md:col-span-2 rounded-md border bg-muted/10 p-4 space-y-4">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    检查器
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={control as any}
-                      name="checker_file_type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>类型</FormLabel>
-                          <FormControl>
-                            <select
-                              className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background/50 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                              value={field.value}
-                              onChange={field.onChange}
-                            >
-                              <option value="Source">Source</option>
-                              <option value="Binary">Binary</option>
-                            </select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={control as any}
-                      name="checker_data"
-                      render={({ field }) => (
-                        <FormItem className="md:col-span-2">
-                          <FormLabel>内容</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="源代码或 base64 编码的 bin"
-                              className="min-h-[120px] bg-background/50"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        <TestcaseUploadCard
-          file={testcaseFile}
-          format={testcaseFormat}
-          onFileChange={handleTestcaseFileChange}
-          onFormatChange={setTestcaseFormat}
-        />
         <Card className="border shadow-sm bg-white/80 backdrop-blur">
           <CardHeader className="border-b bg-muted/30">
             <CardTitle className="text-lg font-semibold">题目标签</CardTitle>

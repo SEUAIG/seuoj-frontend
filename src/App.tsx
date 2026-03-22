@@ -25,6 +25,7 @@ import UnauthorizedPage from "./components/pages/UnauthorizedPage";
 import ProtectedRoute from "./components/bussiness/ProtectedRoute";
 import ProblemTestFilePage from "./components/pages/ProblemTestFilePage";
 import ProblemConfigPage from "./components/pages/ProblemConfigPage";
+import ProblemJudgeConfigPage from "./components/pages/ProblemJudgeConfigPage";
 import ContestListDetailPage from "./components/pages/ContestListDetailPage";
 import ContestProblemDetailPage from "./components/pages/ContestProblemDetailPage";
 import ContestSubmissionPage from "./components/pages/ContestSubmissionPage";
@@ -59,6 +60,7 @@ function App() {
             <Route path=":id/edit" element={<ProblemEditPage />} />
             <Route path=":id/testfile" element={<ProblemTestFilePage />} />
             <Route path=":id/config" element={<ProblemConfigPage />} />
+            <Route path=":id/judgeConfig" element={<ProblemJudgeConfigPage />} />
             <Route path=":id" element={<ProblemDetailPage />} />
           </Route>
           <Route element={<ProtectedRoute allowRole="user" />}>
