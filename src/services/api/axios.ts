@@ -24,3 +24,15 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
+
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.data && error.response.data.message) {
+      error.message = error.response.data.message;
+    }
+    return Promise.reject(error);
+  }
+);
