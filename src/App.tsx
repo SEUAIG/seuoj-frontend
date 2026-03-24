@@ -1,39 +1,92 @@
 import { Routes, Route, Navigate, useParams } from "react-router-dom";
-import LoginPage from "./components/pages/LoginPage";
-import SignupPage from "./components/pages/SignupPage";
-import ForgetPage from "./components/pages/ForgetPage";
-import NotFoundPage from "./components/pages/NotFoundPage";
+import React, { Suspense } from "react";
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
-import HomePage from "./components/pages/HomePage";
-import ProblemsLibraryPage from "./components/pages/ProblemsLibraryPage";
-import CompetitionPage from "./components/pages/CompetitionPage";
-import EvaluationPage from "./components/pages/EvaluationPage";
-import ProblemSetListPage from "./components/pages/ProblemSetListPage";
-import ProblemSetCreatePage from "./components/pages/ProblemSetCreatePage";
-import ProblemSetDetailPage from "./components/pages/ProblemSetDetailPage";
-import ProblemSetUpdatePage from "./components/pages/ProblemSetUpdatePage";
-import DiscussionPage from "./components/pages/DiscussionPage";
-import HelpPage from "./components/pages/HelpPage";
-import ProblemDetailPage from "./components/pages/ProblemDetailPage";
-import SubmissionPage from "./components/pages/SubmissionPage";
-import ProblemEditPage from "./components/pages/ProblemEditPage";
-import ProblemCreatePage from "./components/pages/ProblemCreatePage";
-import path from "path";
-import PersonalPage from "./components/pages/PersonalPage";
-import UnauthorizedPage from "./components/pages/UnauthorizedPage";
 import ProtectedRoute from "./components/bussiness/ProtectedRoute";
-import ProblemTestFilePage from "./components/pages/ProblemTestFilePage";
-import ProblemConfigPage from "./components/pages/ProblemConfigPage";
-import ProblemJudgeConfigPage from "./components/pages/ProblemJudgeConfigPage";
-import ContestListDetailPage from "./components/pages/ContestListDetailPage";
-import ContestProblemDetailPage from "./components/pages/ContestProblemDetailPage";
-import ContestSubmissionPage from "./components/pages/ContestSubmissionPage";
-import ContestSubmissionListPage from "./components/pages/ContestSubmissionListPage";
-import ContestEditPage from "./components/pages/ContestEditPage";
-import CreateContestPage from "./components/pages/CreateContestPage";
-import ClassPage from "./components/pages/ClassPage";
-import ClassDetailPage from "./components/pages/ClassDetailPage";
+import { Loader2 } from "lucide-react";
+
+// 路由级懒加载
+const LoginPage = React.lazy(() => import("./components/pages/LoginPage"));
+const SignupPage = React.lazy(() => import("./components/pages/SignupPage"));
+const ForgetPage = React.lazy(() => import("./components/pages/ForgetPage"));
+const NotFoundPage = React.lazy(
+  () => import("./components/pages/NotFoundPage")
+);
+const HomePage = React.lazy(() => import("./components/pages/HomePage"));
+const ProblemsLibraryPage = React.lazy(
+  () => import("./components/pages/ProblemsLibraryPage")
+);
+const CompetitionPage = React.lazy(
+  () => import("./components/pages/CompetitionPage")
+);
+const EvaluationPage = React.lazy(
+  () => import("./components/pages/EvaluationPage")
+);
+const ProblemSetListPage = React.lazy(
+  () => import("./components/pages/ProblemSetListPage")
+);
+const ProblemSetCreatePage = React.lazy(
+  () => import("./components/pages/ProblemSetCreatePage")
+);
+const ProblemSetDetailPage = React.lazy(
+  () => import("./components/pages/ProblemSetDetailPage")
+);
+const ProblemSetUpdatePage = React.lazy(
+  () => import("./components/pages/ProblemSetUpdatePage")
+);
+const DiscussionPage = React.lazy(
+  () => import("./components/pages/DiscussionPage")
+);
+const HelpPage = React.lazy(() => import("./components/pages/HelpPage"));
+const ProblemDetailPage = React.lazy(
+  () => import("./components/pages/ProblemDetailPage")
+);
+const SubmissionPage = React.lazy(
+  () => import("./components/pages/SubmissionPage")
+);
+const ProblemEditPage = React.lazy(
+  () => import("./components/pages/ProblemEditPage")
+);
+const ProblemCreatePage = React.lazy(
+  () => import("./components/pages/ProblemCreatePage")
+);
+const PersonalPage = React.lazy(
+  () => import("./components/pages/PersonalPage")
+);
+const UnauthorizedPage = React.lazy(
+  () => import("./components/pages/UnauthorizedPage")
+);
+const ProblemTestFilePage = React.lazy(
+  () => import("./components/pages/ProblemTestFilePage")
+);
+const ProblemConfigPage = React.lazy(
+  () => import("./components/pages/ProblemConfigPage")
+);
+const ProblemJudgeConfigPage = React.lazy(
+  () => import("./components/pages/ProblemJudgeConfigPage")
+);
+const ContestListDetailPage = React.lazy(
+  () => import("./components/pages/ContestListDetailPage")
+);
+const ContestProblemDetailPage = React.lazy(
+  () => import("./components/pages/ContestProblemDetailPage")
+);
+const ContestSubmissionPage = React.lazy(
+  () => import("./components/pages/ContestSubmissionPage")
+);
+const ContestSubmissionListPage = React.lazy(
+  () => import("./components/pages/ContestSubmissionListPage")
+);
+const ContestEditPage = React.lazy(
+  () => import("./components/pages/ContestEditPage")
+);
+const CreateContestPage = React.lazy(
+  () => import("./components/pages/CreateContestPage")
+);
+const ClassPage = React.lazy(() => import("./components/pages/ClassPage"));
+const ClassDetailPage = React.lazy(
+  () => import("./components/pages/ClassDetailPage")
+);
 
 function LegacyCompetitionRedirect() {
   const { "*": rest } = useParams();
@@ -41,9 +94,16 @@ function LegacyCompetitionRedirect() {
   return <Navigate to={targetPath} replace />;
 }
 
+// 全局 Loading 组件
+const PageLoading = () => (
+  <div className="flex h-[calc(100vh-200px)] w-full items-center justify-center">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>
+);
+
 function App() {
   return (
-    <>
+    <Suspense fallback={<PageLoading />}>
       <Routes>
         <Route index element={<Navigate to="/home" />}></Route>
         <Route element={<AuthLayout />}>
@@ -60,7 +120,10 @@ function App() {
             <Route path=":id/edit" element={<ProblemEditPage />} />
             <Route path=":id/testfile" element={<ProblemTestFilePage />} />
             <Route path=":id/config" element={<ProblemConfigPage />} />
-            <Route path=":id/judgeConfig" element={<ProblemJudgeConfigPage />} />
+            <Route
+              path=":id/judgeConfig"
+              element={<ProblemJudgeConfigPage />}
+            />
             <Route path=":id" element={<ProblemDetailPage />} />
           </Route>
           <Route element={<ProtectedRoute allowRole="user" />}>
@@ -115,7 +178,7 @@ function App() {
         </Route>
         <Route path="*" element={<NotFoundPage />}></Route>
       </Routes>
-    </>
+    </Suspense>
   );
 }
 
