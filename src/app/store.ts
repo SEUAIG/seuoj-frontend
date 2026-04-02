@@ -1,4 +1,4 @@
-import { authReducer } from "@/features/auth/authSlice";
+import { authReducer, resetAuth } from "@/features/auth/authSlice";
 import { codeReducer } from "@/features/Code/codeSlice";
 import { contestCodeReducer } from "@/features/Code/contestCodeSlice";
 import { problemListReducer } from "@/features/ProblemList/problemListSlice";
@@ -9,12 +9,34 @@ import { configureStore } from "@reduxjs/toolkit";
 import { persistReducer, persistStore } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import { verificationReducer } from '../features/verification/verificationSlice';
+
+function isJwtExpired(jwt: string): boolean {
+  try {
+    const payload = JSON.parse(atob(jwt.split(".")[1]));
+    return !!(payload.exp && payload.exp * 1000 < Date.now());
+  } catch {
+    return true;
+  }
+}
+
 const authPersistConfig = {
-  key: "auth", // storage 里的 key
+  key: "auth",
   storage,
   version: 1,
   migrate: async (state: any) => {
-    if (!state?.user) return state;
+    if (!state) return state;
+    // 在持久化恢复时校验 JWT，过期则清除登录态
+    if (state.jwt && isJwtExpired(state.jwt)) {
+      return {
+        ...state,
+        user: null,
+        isAuthenticated: false,
+        jwt: undefined,
+        status: "idle",
+        error: undefined,
+      };
+    }
+    if (!state.user) return state;
     return {
       ...state,
       user: {
@@ -23,7 +45,7 @@ const authPersistConfig = {
       },
     };
   },
-  whitelist: ["user", "isAuthenticated", "jwt"], // 只持久化 auth里的
+  whitelist: ["user", "isAuthenticated", "jwt"],
 };
 const codePersistConfig = {
   key: "code",
@@ -60,7 +82,6 @@ const verificationPersistConfig = {
   storage,
   whitelist: ["verificationID","expireAt","nextSendAt"],
 };
-// TODO 退出登录时应当清除code auth的持久化
 export const store = configureStore({
   reducer: {
     auth: persistReducer(authPersistConfig, authReducer),

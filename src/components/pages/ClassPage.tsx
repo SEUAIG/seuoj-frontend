@@ -3,6 +3,8 @@ import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Plus, Loader2, Edit, Trash2, UserPlus } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { RootState } from "@/app/store";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { getClassPage, ClassItem } from "@/services/Class/getClassPage";
 import { deleteClass } from "@/services/Class/deleteClass";
@@ -31,6 +33,7 @@ import { toast } from "sonner";
 
 export default function ClassPage() {
   const nav = useNavigate();
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
   const [searchParams, setSearchParams] = useSearchParams();
   const page = parseInt(searchParams.get("page") || "1");
   const size = parseInt(searchParams.get("size") || "20");
@@ -124,10 +127,12 @@ export default function ClassPage() {
             浏览和管理班级列表
           </div>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          创建班级
-        </Button>
+        {isAuthenticated && (
+          <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            创建班级
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
@@ -175,6 +180,7 @@ export default function ClassPage() {
                     {item.description || "暂无描述"}
                   </CardDescription>
                 </CardContent>
+                {isAuthenticated && (
                 <CardFooter className="flex justify-end gap-2 pt-2 pb-4">
                   <Button
                     variant="outline"
@@ -209,6 +215,7 @@ export default function ClassPage() {
                     加入
                   </Button>
                 </CardFooter>
+                )}
               </Card>
             ))}
           </div>

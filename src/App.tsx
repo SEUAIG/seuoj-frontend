@@ -116,15 +116,17 @@ function App() {
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route path="/problemsLibrary">
             <Route index element={<ProblemsLibraryPage />} />
-            <Route path="create" element={<ProblemCreatePage />} />
-            <Route path=":id/edit" element={<ProblemEditPage />} />
-            <Route path=":id/testfile" element={<ProblemTestFilePage />} />
-            <Route path=":id/config" element={<ProblemConfigPage />} />
+            <Route path=":id" element={<ProblemDetailPage />} />
+          </Route>
+          <Route element={<ProtectedRoute allowRole="user" />}>
+            <Route path="/problemsLibrary/create" element={<ProblemCreatePage />} />
+            <Route path="/problemsLibrary/:id/edit" element={<ProblemEditPage />} />
+            <Route path="/problemsLibrary/:id/testfile" element={<ProblemTestFilePage />} />
+            <Route path="/problemsLibrary/:id/config" element={<ProblemConfigPage />} />
             <Route
-              path=":id/judgeConfig"
+              path="/problemsLibrary/:id/judgeConfig"
               element={<ProblemJudgeConfigPage />}
             />
-            <Route path=":id" element={<ProblemDetailPage />} />
           </Route>
           <Route element={<ProtectedRoute allowRole="user" />}>
             <Route path="/submission">
@@ -139,26 +141,28 @@ function App() {
           />
           <Route path="/contest">
             <Route index element={<CompetitionPage />} />
-            <Route path="create" element={<CreateContestPage />} />
             <Route
               path=":contest_public_id"
               element={<ContestListDetailPage />}
-            />
-            <Route
-              path=":contest_public_id/edit"
-              element={<ContestEditPage />}
             />
             <Route
               path=":contest_public_id/:id"
               element={<ContestProblemDetailPage />}
             />
             <Route
-              path=":contest_public_id/submission/:submission_no"
-              element={<ContestSubmissionPage />}
-            />
-            <Route
               path=":contest_public_id/submissions"
               element={<ContestSubmissionListPage />}
+            />
+          </Route>
+          <Route element={<ProtectedRoute allowRole="user" />}>
+            <Route path="/contest/create" element={<CreateContestPage />} />
+            <Route
+              path="/contest/:contest_public_id/edit"
+              element={<ContestEditPage />}
+            />
+            <Route
+              path="/contest/:contest_public_id/submission/:submission_no"
+              element={<ContestSubmissionPage />}
             />
           </Route>
           <Route path="/class">
@@ -167,12 +171,14 @@ function App() {
           </Route>
           <Route path="/evaluation" element={<EvaluationPage />} />
           <Route path="/problemset" element={<ProblemSetListPage />} />
-          <Route path="/problemset/create" element={<ProblemSetCreatePage />} />
           <Route path="/problemset/:id" element={<ProblemSetDetailPage />} />
-          <Route
-            path="/problemset/:id/edit"
-            element={<ProblemSetUpdatePage />}
-          />
+          <Route element={<ProtectedRoute allowRole="user" />}>
+            <Route path="/problemset/create" element={<ProblemSetCreatePage />} />
+            <Route
+              path="/problemset/:id/edit"
+              element={<ProblemSetUpdatePage />}
+            />
+          </Route>
           <Route path="/discussion" element={<DiscussionPage />} />
           <Route path="/help" element={<HelpPage />} />
         </Route>

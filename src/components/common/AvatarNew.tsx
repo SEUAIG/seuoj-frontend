@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import nahida from "./../../assets/nahida.png";
 import { useDispatch } from "react-redux";
 import { resetAuth } from "@/features/auth/authSlice";
+import { persistor } from "@/app/store";
 import { useNavigate } from "react-router-dom";
 
 export default function AvatarNew({ user }: { user: User }) {
@@ -45,7 +46,10 @@ export default function AvatarNew({ user }: { user: User }) {
           </DropdownMenuItem>
           <DropdownMenuItem 
             className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg p-2 cursor-pointer"
-            onClick={() => dispatch(resetAuth())}
+            onClick={() => {
+              dispatch(resetAuth());
+              persistor.purge();
+            }}
           >
             <LogOut size={16} />
             <div>退出登录</div>

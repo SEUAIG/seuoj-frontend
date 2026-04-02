@@ -91,7 +91,7 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.status = "idle";
       state.error = undefined;
-      //   用于注销用户
+      state.jwt = undefined;
     },
     setError(state, action) {
       state.error = action.payload;

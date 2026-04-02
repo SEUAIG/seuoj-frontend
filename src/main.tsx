@@ -16,7 +16,7 @@ import {
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { injectStore } from "./services/api/axios.ts";
-injectStore(store);
+injectStore(store, () => persistor.purge());
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error: Error) => {
@@ -42,7 +42,14 @@ createRoot(document.getElementById("root")!).render(
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
           <Provider store={store}>
-            <PersistGate loading={null} persistor={persistor}>
+            <PersistGate
+              loading={
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+                  <div>Loading...</div>
+                </div>
+              }
+              persistor={persistor}
+            >
               <Toaster />
               <App />
             </PersistGate>
