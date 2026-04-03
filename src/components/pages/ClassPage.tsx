@@ -5,7 +5,7 @@ import { Plus, Loader2, Edit, Trash2, UserPlus } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { RootState } from "@/app/store";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { getClassPage, ClassItem } from "@/services/Class/getClassPage";
 import { deleteClass } from "@/services/Class/deleteClass";
 import { joinClass } from "@/services/Class/joinClass";
@@ -33,6 +33,7 @@ import { toast } from "sonner";
 
 export default function ClassPage() {
   const nav = useNavigate();
+  const queryClient = useQueryClient();
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
   const [searchParams, setSearchParams] = useSearchParams();
   const page = parseInt(searchParams.get("page") || "1");
@@ -97,8 +98,9 @@ export default function ClassPage() {
       const res = await joinClass(item.class_public_id);
       if (res.code === 0) {
         toast.success(`成功加入班级: ${item.name}`);
-        // 加入成功后可以根据需要决定是否刷新列表
-        // refetch();
+        // 加入成功后清空班级详情成员缓存并刷新列表
+        queryClient.invalidateQueries({ queryKey: ["classMemberPage", item.class_public_id] });
+        refetch();
       } else {
         toast.error(res.message || "加入失败");
       }
