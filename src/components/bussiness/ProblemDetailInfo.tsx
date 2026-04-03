@@ -21,7 +21,11 @@ import {
   Database,
   Edit,
   MessageCircle,
+  Settings,
+  FileCode,
 } from "lucide-react";
+import { useSelector } from "react-redux";
+import { RootState } from "@/app/store";
 import { ProblemSection } from "./ProblemSection";
 import { ExampleSection } from "./ExampleSection";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
@@ -35,6 +39,8 @@ export default function ProblemDetailInfo({
   isAuthenticated,
 }: ProblemDetailInfoProps) {
   const nav = useNavigate();
+  const { user } = useSelector((store: RootState) => store.auth);
+  const isAdmin = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN" || user?.role === "superadmin";
   const { title, content, tags, pid, totalSubmit, totalAccept } = problem;
   const { description, info = {}, input, output, example, hint } = content;
   const {
@@ -243,15 +249,32 @@ export default function ProblemDetailInfo({
           </div>
         )}
       </div>
-      {/* === 2. 操作按钮区 === */}
       <div className="flex flex-wrap gap-4 justify-start">
-        <Button
-          className="bg-purple-600 hover:bg-purple-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
-          onClick={() => nav(`/problemsLibrary/${pid}/edit`)}
-        >
-          <Edit className="mr-2 h-4 w-4" />
-          编辑题面
-        </Button>
+        {isAdmin && (
+          <>
+            <Button
+              className="bg-purple-600 hover:bg-purple-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
+              onClick={() => nav(`/problemsLibrary/${pid}/edit`)}
+            >
+              <Edit className="mr-2 h-4 w-4" />
+              编辑题面
+            </Button>
+            <Button
+              onClick={() => nav(`/problemsLibrary/${pid}/judgeConfig`)}
+              className="bg-blue-600 hover:bg-blue-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              数据配置
+            </Button>
+            <Button
+              onClick={() => nav(`/problemsLibrary/${pid}/config`)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
+            >
+              <FileCode className="mr-2 h-4 w-4" />
+              高级配置
+            </Button>
+          </>
+        )}
         <Button className="bg-green-600 hover:bg-green-700 text-white transition duration-300 ease-in-out transform hover:scale-105">
           <ListChecks className="mr-2 h-4 w-4" />
           提交记录
