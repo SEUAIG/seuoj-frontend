@@ -393,17 +393,36 @@ export default function ProblemJudgeConfigPage() {
       if (uploadRes?.code !== undefined && uploadRes.code !== 0 && uploadRes.code !== 200) {
         throw new Error(uploadRes.message || "测试用例上传失败");
       }
-      toast.success("测试用例上传成功", { position: "top-center" });
+      toast.success("测试用例上传成功，正在解析...", { position: "top-center" });
 
-      // 上传后重新获取配置
-      const configRes = await getProblemConfig(pid);
+      // 服务器异步解析 zip，需要轮询获取配置直到测试点出现
+      let configRes;
+      let attempts = 0;
+      const maxAttempts = 5;
+      while (attempts < maxAttempts) {
+        attempts++;
+        await new Promise((r) => setTimeout(r, attempts * 800)); // 递增延迟
+        configRes = await getProblemConfig(pid);
+        const { testcases: newTcs } = configRes;
+        if (newTcs && newTcs.length > 0) break;
+        if (attempts >= maxAttempts) {
+          toast.warning("文件已上传，但测试点解析可能需要更长时间，请稍后刷新页面", {
+            position: "top-center",
+            duration: 5000,
+          });
+        }
+      }
+
+      if (!configRes) {
+        configRes = await getProblemConfig(pid);
+      }
+
       const { testcases: newTcs, subtasks: newSts, problem_info: info } = configRes;
 
       setTestcases(buildTestcaseRows(newTcs || []));
       setSubtasks(buildSubtaskRows(newSts ?? []));
       setDirty(false);
 
-      // 用服务器返回的 problem_info 更新表单
       if (info) {
         if (info.time_limit_ms) form.setValue("max_cpu_time_ms", String(info.time_limit_ms));
         if (info.memory_limit_kb) form.setValue("max_memory_byte", String(info.memory_limit_kb * 1024));
@@ -416,6 +435,7 @@ export default function ProblemJudgeConfigPage() {
         }
       }
 
+      toast.success("测试用例解析完成", { position: "top-center" });
       await fetchFolderTree();
       setTestcaseFile(null);
       setTestcaseFormat("");
