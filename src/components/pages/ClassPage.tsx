@@ -49,9 +49,10 @@ export default function ClassPage() {
   const [joiningClassId, setJoiningClassId] = useState<string | null>(null);
 
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
-    queryKey: ["classPage", page, size],
+    queryKey: ["classPage", page, size, isAuthenticated],
     queryFn: () => getClassPage({ current: page, size }),
     placeholderData: keepPreviousData,
+    refetchOnMount: "always",
   });
 
   const handlePageChange = (newPage: number) => {

@@ -289,9 +289,9 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                           variant="secondary"
                           onClick={async () => {
                             try {
-                              const res = await api.get("/api/problem/next-pid");
+                              const res = await api.get("/api/problem/next_id");
                               if (res.data.code === 0) {
-                                field.onChange(res.data.data);
+                                field.onChange(res.data.data.next_pid);
                               } else {
                                 toast.error(res.data.message || "获取失败");
                               }

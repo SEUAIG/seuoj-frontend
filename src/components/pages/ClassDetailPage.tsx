@@ -51,7 +51,8 @@ import { unlinkProblemSet } from "@/services/Class/unlinkProblemSet";
 import ClassPagination from "../bussiness/ClassPagination";
 import LinkContestModal from "../bussiness/LinkContestModal";
 import LinkProblemSetModal from "../bussiness/LinkProblemSetModal";
-import { Link as LinkIcon } from "lucide-react";
+import AddMemberModal from "../bussiness/AddMemberModal";
+import { Link as LinkIcon, UserPlus } from "lucide-react";
 
 export default function ClassDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -125,6 +126,7 @@ export default function ClassDetailPage() {
   const [isUnlinkPsDialogOpen, setIsUnlinkPsDialogOpen] = useState(false);
   const [isUnlinkingPs, setIsUnlinkingPs] = useState(false);
   const [isLinkPsModalOpen, setIsLinkPsModalOpen] = useState(false);
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
 
   const handlePageChange = (newPage: number) => {
     setSearchParams({ page: newPage.toString(), size: size.toString() });
@@ -247,17 +249,22 @@ export default function ClassDetailPage() {
         </div>
         <Button
           onClick={() => {
-            if (activeTab === "contests") {
+            if (activeTab === "members") {
+              setIsAddMemberModalOpen(true);
+            } else if (activeTab === "contests") {
               setIsLinkModalOpen(true);
             } else if (activeTab === "problem-sets") {
               setIsLinkPsModalOpen(true);
             }
           }}
-          disabled={activeTab === "members"}
-          className={activeTab === "members" ? "invisible" : ""}
         >
-          <LinkIcon className="h-4 w-4 mr-2" />
-          {activeTab === "contests" ? "关联比赛" : "关联题单"}
+          {activeTab === "members" ? (
+            <><UserPlus className="h-4 w-4 mr-2" />添加成员</>
+          ) : activeTab === "contests" ? (
+            <><LinkIcon className="h-4 w-4 mr-2" />关联比赛</>
+          ) : (
+            <><LinkIcon className="h-4 w-4 mr-2" />关联题单</>
+          )}
         </Button>
       </div>
 
@@ -618,6 +625,13 @@ export default function ClassDetailPage() {
         </DialogContent>
       </Dialog>
 
+      {id && isAddMemberModalOpen && (
+        <AddMemberModal
+          isOpen={isAddMemberModalOpen}
+          onClose={() => setIsAddMemberModalOpen(false)}
+          classId={id}
+        />
+      )}
       {id && isLinkModalOpen && (
         <LinkContestModal
           isOpen={isLinkModalOpen}
