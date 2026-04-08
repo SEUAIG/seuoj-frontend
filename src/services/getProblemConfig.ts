@@ -34,7 +34,7 @@ export interface CustomModules {
 export interface ProblemConfigData {
   problem_info: ProblemInfo;
   testcases: Testcase[];
-  subtasks: Subtask;
+  subtasks: Subtask[];
   custom_modules?: CustomModules;
 }
 

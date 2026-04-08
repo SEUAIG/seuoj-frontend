@@ -28,7 +28,7 @@ import {
 } from "@/services/getProblemConfig";
 import { uploadProblemTestcases } from "@/services/problemEdit";
 import TestcaseUploadCard from "@/components/bussiness/TestcaseUploadCard";
-import { ArrowLeft, Plus, Trash2, FileTree, AlertCircle } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, FolderTree, AlertCircle } from "lucide-react";
 
 const judgeConfigSchema = z.object({
   max_cpu_time_ms: z.string().min(1, "CPU时间限制不能为空"),
@@ -355,7 +355,7 @@ export default function ProblemJudgeConfigPage() {
     setValidationIssues(validateConfig(testcases, subtasks));
   }, [testcases, subtasks]);
 
-  const fetchFileTree = useCallback(async () => {
+  const fetchFolderTree = useCallback(async () => {
     if (!pid) return;
     setTreeLoading(true);
     try {
@@ -416,7 +416,7 @@ export default function ProblemJudgeConfigPage() {
         }
       }
 
-      await fetchFileTree();
+      await fetchFolderTree();
       setTestcaseFile(null);
       setTestcaseFormat("");
     } catch (error: any) {
@@ -551,8 +551,8 @@ export default function ProblemJudgeConfigPage() {
       }
     };
     fetchProblem();
-    fetchFileTree();
-  }, [pid, form, fetchFileTree]);
+    fetchFolderTree();
+  }, [pid, form, fetchFolderTree]);
 
   const { handleSubmit, control, formState, setFocus } = form;
   const problemType = form.watch("problem_type");
@@ -683,8 +683,8 @@ export default function ProblemJudgeConfigPage() {
                 </span>
               </CardTitle>
               <div className="flex items-center gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={fetchFileTree} disabled={treeLoading}>
-                  <FileTree className="mr-1 h-4 w-4" />
+                <Button type="button" variant="outline" size="sm" onClick={fetchFolderTree} disabled={treeLoading}>
+                  <FolderTree className="mr-1 h-4 w-4" />
                   {treeLoading ? "加载中..." : "刷新文件树"}
                 </Button>
                 <Button type="button" variant="outline" size="sm" onClick={addTestcase}>
