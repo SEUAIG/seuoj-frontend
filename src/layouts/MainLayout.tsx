@@ -4,7 +4,7 @@ import Slogan from "@/components/common/Slogan";
 import { Toaster } from "@/components/ui/sonner";
 export default function MainLayout() {
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-background">
       <div className="flex-none z-50 fixed top-0 left-0 right-0">
         <NavBar />
       </div>

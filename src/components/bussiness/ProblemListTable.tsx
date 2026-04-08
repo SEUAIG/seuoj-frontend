@@ -93,7 +93,7 @@ export default function ProblemListTable({
                     onClick={() => {
                       nav(`/problemsLibrary/${problem.pid}`);
                     }}
-                    className="font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer transition-colors"
+                    className="font-semibold text-primary hover:text-primary/80 hover:underline cursor-pointer transition-colors"
                   >
                     {problem.title}
                   </span>

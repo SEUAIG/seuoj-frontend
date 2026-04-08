@@ -56,3 +56,11 @@ Thumbs.db
 # ===============================
 问答.md
 localhost_5173-20260324T135740.json
+.vscode/settings.json
+/.agents
+/.claude
+CLAUDE.md
+/skills
+skills-lock.json
+.vscode/settings.json
+/.vscode
