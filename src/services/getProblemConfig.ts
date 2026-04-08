@@ -94,8 +94,10 @@ export async function updateProblemConfig(
  * 仅返回 data 文件夹下的文件用于测试点路径配置
  */
 export async function getProblemFileTree(pid: string): Promise<string[]> {
-  const res = await api.get<TreeItem[]>(`/api/problem/tree/${pid}`);
-  const tree = res.data;
+  const res = await api.get(`/api/problem/tree/${pid}`);
+  const result = res.data;
+  const tree: TreeItem[] = result?.data?.tree ?? result?.data ?? [];
+  if (!Array.isArray(tree)) return [];
 
   // 提取 data 文件夹下的所有文件路径
   const dataFolder = tree.find((item) => item.name === "data");

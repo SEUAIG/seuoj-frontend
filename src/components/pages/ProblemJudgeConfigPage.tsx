@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -31,18 +30,10 @@ import TestcaseUploadCard from "@/components/bussiness/TestcaseUploadCard";
 import { ArrowLeft, Plus, Trash2, FolderTree, AlertCircle } from "lucide-react";
 
 const judgeConfigSchema = z.object({
-  max_cpu_time_ms: z.string().min(1, "CPU时间限制不能为空"),
-  max_real_time_ms: z.string().min(1, "实际时间限制不能为空"),
-  max_memory_byte: z.string().min(1, "内存限制不能为空"),
-  max_stack_byte: z.string().min(1, "栈限制不能为空"),
-  max_process_number: z.string().min(1, "进程数限制不能为空"),
-  max_output_size: z.string().min(1, "输出大小限制不能为空"),
+  time_limit_ms: z.string().min(1, "时间限制不能为空"),
+  memory_limit_kb: z.string().min(1, "内存限制不能为空"),
   problem_type: z.enum(["Standard", "Interactive"]),
   checker_type: z.enum(["Standard", "Special"]),
-  interactor_type: z.enum(["Source", "Binary"]).optional(),
-  interactor_data: z.string().optional(),
-  checker_file_type: z.enum(["Source", "Binary"]).optional(),
-  checker_data: z.string().optional(),
 });
 
 type JudgeConfigValues = z.infer<typeof judgeConfigSchema>;
@@ -124,7 +115,7 @@ function validateConfig(
       issues.push({ type: "error", message: `测试点 #${tc.seq} 输入文件路径不能为空`, target: String(tc._key) });
     }
     if (!tc.ans_path.trim()) {
-      issues.push({ type: "error", message: `测试点 #${tc.seq} 答案文件路径不能为空`, target: String(tc._key) });
+      issues.push({ type: "warning", message: `测试点 #${tc.seq} 答案文件路径为空（Special Judge 可忽略）`, target: String(tc._key) });
     }
   });
 
@@ -395,48 +386,45 @@ export default function ProblemJudgeConfigPage() {
       }
       toast.success("测试用例上传成功，正在解析...", { position: "top-center" });
 
-      // 服务器异步解析 zip，需要轮询获取配置直到测试点出现
-      let configRes;
-      let attempts = 0;
-      const maxAttempts = 5;
-      while (attempts < maxAttempts) {
-        attempts++;
-        await new Promise((r) => setTimeout(r, attempts * 800)); // 递增延迟
-        configRes = await getProblemConfig(pid);
-        const { testcases: newTcs } = configRes;
-        if (newTcs && newTcs.length > 0) break;
-        if (attempts >= maxAttempts) {
-          toast.warning("文件已上传，但测试点解析可能需要更长时间，请稍后刷新页面", {
-            position: "top-center",
-            duration: 5000,
-          });
-        }
+      // 上传只解压文件到 data/ 目录，不会自动更新 info.toml，
+      // 因此需要通过文件树接口获取 data/ 下的文件列表，自动匹配 .in/.ans 文件对生成测试点
+      const files = await getProblemFileTree(pid);
+      setAvailableFiles(files);
+
+      // 匹配 .in 文件与对应的 .ans / .out 文件
+      const inFiles = files.filter((f) => f.endsWith(".in")).sort();
+      const ansSet = new Set(files.filter((f) => f.endsWith(".ans") || f.endsWith(".out")));
+      const generatedRows: TestcaseRow[] = inFiles.map((inPath, i) => {
+        const basePath = inPath.replace(/\.in$/, "");
+        let ansPath = "";
+        if (ansSet.has(basePath + ".ans")) ansPath = basePath + ".ans";
+        else if (ansSet.has(basePath + ".out")) ansPath = basePath + ".out";
+        return {
+          _key: Date.now() + i,
+          id: i + 1,
+          seq: i + 1,
+          in_path: inPath,
+          ans_path: ansPath,
+          weight: 1,
+          time_limit_ms: null,
+          memory_limit_kb: null,
+        };
+      });
+
+      if (generatedRows.length > 0) {
+        setTestcases(generatedRows);
+        setSubtasks([]);
+        setDirty(true);
+        toast.success(`已从上传文件中识别出 ${generatedRows.length} 个测试点，请检查后保存配置`, {
+          position: "top-center",
+          duration: 5000,
+        });
+      } else {
+        toast.warning("未在上传文件中找到 .in 文件，请手动添加测试点", {
+          position: "top-center",
+          duration: 5000,
+        });
       }
-
-      if (!configRes) {
-        configRes = await getProblemConfig(pid);
-      }
-
-      const { testcases: newTcs, subtasks: newSts, problem_info: info } = configRes;
-
-      setTestcases(buildTestcaseRows(newTcs || []));
-      setSubtasks(buildSubtaskRows(newSts ?? []));
-      setDirty(false);
-
-      if (info) {
-        if (info.time_limit_ms) form.setValue("max_cpu_time_ms", String(info.time_limit_ms));
-        if (info.memory_limit_kb) form.setValue("max_memory_byte", String(info.memory_limit_kb * 1024));
-        if (info.problem_type) {
-          form.setValue("problem_type", info.problem_type === "Interactive" ? "Interactive" : "Standard");
-        }
-        if (info.checker_type) {
-          form.setValue("checker_type",
-            info.checker_type === "Special" || info.checker_type === "Interactor" ? "Special" : "Standard");
-        }
-      }
-
-      toast.success("测试用例解析完成", { position: "top-center" });
-      await fetchFolderTree();
       setTestcaseFile(null);
       setTestcaseFormat("");
     } catch (error: any) {
@@ -522,18 +510,10 @@ export default function ProblemJudgeConfigPage() {
   const form = useForm<JudgeConfigValues>({
     resolver: zodResolver(judgeConfigSchema) as any,
     defaultValues: {
-      max_cpu_time_ms: "1000",
-      max_real_time_ms: "2000",
-      max_memory_byte: "134217728",
-      max_stack_byte: "33554432",
-      max_process_number: "1",
-      max_output_size: "10000",
+      time_limit_ms: "1000",
+      memory_limit_kb: "131072",
       problem_type: "Standard",
       checker_type: "Standard",
-      interactor_type: "Source",
-      interactor_data: "",
-      checker_file_type: "Source",
-      checker_data: "",
     },
   });
 
@@ -550,18 +530,10 @@ export default function ProblemJudgeConfigPage() {
 
         if (info) {
           form.reset({
-            max_cpu_time_ms: String(info.time_limit_ms ?? "1000"),
-            max_real_time_ms: "2000",
-            max_memory_byte: String((info.memory_limit_kb ?? 131072) * 1024),
-            max_stack_byte: "33554432",
-            max_process_number: "1",
-            max_output_size: "10000",
+            time_limit_ms: String(info.time_limit_ms ?? 1000),
+            memory_limit_kb: String(info.memory_limit_kb ?? 131072),
             problem_type: info.problem_type === "Interactive" ? "Interactive" : "Standard",
             checker_type: info.checker_type === "Special" || info.checker_type === "Interactor" ? "Special" : "Standard",
-            interactor_type: "Source",
-            interactor_data: "",
-            checker_file_type: "Source",
-            checker_data: "",
           });
         }
       } catch (error: any) {
@@ -575,8 +547,6 @@ export default function ProblemJudgeConfigPage() {
   }, [pid, form, fetchFolderTree]);
 
   const { handleSubmit, control, formState, setFocus } = form;
-  const problemType = form.watch("problem_type");
-  const checkerType = form.watch("checker_type");
 
   const onSubmit = async (values: JudgeConfigValues) => {
     if (errors.length > 0) {
@@ -594,11 +564,13 @@ export default function ProblemJudgeConfigPage() {
         Special: "special",
       };
 
-      // 清理：去掉 _key 和 seq（内部字段）
+      // 清理：去掉 _key 和 seq（内部字段），去掉路径中的 data/ 前缀（judgend 自动添加）
+      const stripDataPrefix = (p: string) => p.replace(/^data\//, "");
       const cleanTcs: Testcase[] = testcases.map(({ _key, seq, ...t }) => ({
         ...t,
-        // -1 表示新增测试点，服务器会忽略或分配新 ID；已有 ID 保持不变
-        id: t.id === -1 ? 0 : t.id, // 后端若不支持 0，可能需要去掉 id 字段或让后端自动分配
+        in_path: stripDataPrefix(t.in_path),
+        ans_path: stripDataPrefix(t.ans_path),
+        id: t.id === -1 ? 0 : t.id,
       }));
       const cleanSts: Subtask[] = subtasks.map(({ _key, ...s }) => s);
 
@@ -606,8 +578,8 @@ export default function ProblemJudgeConfigPage() {
         problem_info: {
           problem_type: problemTypeMap[values.problem_type] ?? "standard",
           checker_type: checkerTypeMap[values.checker_type] ?? "standard",
-          time_limit_ms: Number(values.max_cpu_time_ms),
-          memory_limit_kb: Math.floor(Number(values.max_memory_byte) / 1024),
+          time_limit_ms: Number(values.time_limit_ms),
+          memory_limit_kb: Number(values.memory_limit_kb),
         },
         testcases: cleanTcs,
         subtasks: cleanSts.length > 0 ? cleanSts : undefined,
@@ -978,10 +950,10 @@ export default function ProblemJudgeConfigPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={control}
-                  name="max_cpu_time_ms"
+                  name="time_limit_ms"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>CPU时间限制 (ms)</FormLabel>
+                      <FormLabel>时间限制 (ms)</FormLabel>
                       <FormControl>
                         <Input placeholder="1000" className="bg-background/50" {...field} />
                       </FormControl>
@@ -991,64 +963,12 @@ export default function ProblemJudgeConfigPage() {
                 />
                 <FormField
                   control={control}
-                  name="max_real_time_ms"
+                  name="memory_limit_kb"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>实际时间限制 (ms)</FormLabel>
+                      <FormLabel>内存限制 (KB)</FormLabel>
                       <FormControl>
-                        <Input placeholder="2000" className="bg-background/50" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={control}
-                  name="max_memory_byte"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>内存限制 (byte)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="134217728" className="bg-background/50" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={control}
-                  name="max_stack_byte"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>栈限制 (byte)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="33554432" className="bg-background/50" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={control}
-                  name="max_process_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>进程数限制</FormLabel>
-                      <FormControl>
-                        <Input placeholder="1" className="bg-background/50" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={control}
-                  name="max_output_size"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>输出大小限制 (byte)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="10000" className="bg-background/50" {...field} />
+                        <Input placeholder="131072" className="bg-background/50" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1094,94 +1014,6 @@ export default function ProblemJudgeConfigPage() {
                     </FormItem>
                   )}
                 />
-                {problemType === "Interactive" && (
-                  <div className="md:col-span-2 rounded-md border bg-muted/10 p-4 space-y-4">
-                    <div className="text-sm font-medium text-muted-foreground">交互器</div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={control}
-                        name="interactor_type"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>类型</FormLabel>
-                            <FormControl>
-                              <select
-                                className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background/50 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                                value={field.value || "Source"}
-                                onChange={field.onChange}
-                              >
-                                <option value="Source">Source</option>
-                                <option value="Binary">Binary</option>
-                              </select>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={control}
-                        name="interactor_data"
-                        render={({ field }) => (
-                          <FormItem className="md:col-span-2">
-                            <FormLabel>内容</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder="源代码或 base64 编码的 bin"
-                                className="min-h-[120px] bg-background/50"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-                )}
-                {checkerType === "Special" && (
-                  <div className="md:col-span-2 rounded-md border bg-muted/10 p-4 space-y-4">
-                    <div className="text-sm font-medium text-muted-foreground">检查器</div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={control}
-                        name="checker_file_type"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>类型</FormLabel>
-                            <FormControl>
-                              <select
-                                className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background/50 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                                value={field.value || "Source"}
-                                onChange={field.onChange}
-                              >
-                                <option value="Source">Source</option>
-                                <option value="Binary">Binary</option>
-                              </select>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={control}
-                        name="checker_data"
-                        render={({ field }) => (
-                          <FormItem className="md:col-span-2">
-                            <FormLabel>内容</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder="源代码或 base64 编码的 bin"
-                                className="min-h-[120px] bg-background/50"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
