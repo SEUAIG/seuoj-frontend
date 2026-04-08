@@ -40,7 +40,7 @@ export default function ProblemDetailInfo({
 }: ProblemDetailInfoProps) {
   const nav = useNavigate();
   const { user } = useSelector((store: RootState) => store.auth);
-  const isAdmin = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN" || user?.role === "superadmin";
+  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
   const { title, content, tags, pid, totalSubmit, totalAccept } = problem;
   const { description, info = {}, input, output, example, hint } = content;
   const {
