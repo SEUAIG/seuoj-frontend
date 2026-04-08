@@ -278,11 +278,31 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                   <FormItem>
                     <FormLabel>题目ID</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="请输入题目ID"
-                        className="bg-background/50"
-                        {...field}
-                      />
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="请输入题目ID"
+                          className="bg-background/50 flex-1"
+                          {...field}
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={async () => {
+                            try {
+                              const res = await api.get("/api/problem/next-pid");
+                              if (res.data.code === 0) {
+                                field.onChange(res.data.data);
+                              } else {
+                                toast.error(res.data.message || "获取失败");
+                              }
+                            } catch (e: any) {
+                              toast.error(e.message || "获取请求发生错误");
+                            }
+                          }}
+                        >
+                          自动获取
+                        </Button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

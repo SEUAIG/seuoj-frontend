@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,10 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { api } from "@/services/api/axios";
 import { toast } from "sonner";
-import { RefreshCw, Save } from "lucide-react";
+import { RefreshCw, Save, ArrowLeft, CheckCircle } from "lucide-react";
 type ConfigType = "META" | "CASE";
 export default function ProblemConfigPage() {
   const { id } = useParams();
+  const nav = useNavigate();
   const [activeType, setActiveType] = useState<ConfigType>("META");
   const [configText, setConfigText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -58,6 +59,12 @@ export default function ProblemConfigPage() {
       setSaving(false);
     }
   };
+
+  const handleSaveAndReturn = async () => {
+    await handleSave();
+    if (!id) return;
+    nav(`/problemsLibrary/${id}`);
+  };
   useEffect(() => {
     fetchConfig(activeType);
   }, [activeType, fetchConfig]);
@@ -66,11 +73,16 @@ export default function ProblemConfigPage() {
       <Helmet>
         <title>{`题目配置 #${id} - SeuOJ`}</title>
       </Helmet>
-      <div className="mb-6 space-y-2">
-        <h1 className="text-3xl font-bold">题目配置 #{id}</h1>
-        <p className="text-sm text-muted-foreground">
-          直接编辑配置源文件，保存后全量覆盖。
-        </p>
+      <div className="flex items-center gap-4 mb-6">
+        <Button variant="ghost" size="icon" onClick={() => nav(-1)}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold">题目高级配置 #{id}</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            直接编辑配置源文件，保存后全量覆盖。
+          </p>
+        </div>
       </div>
       <div className="space-y-4">
         <Alert className="bg-white/80">
@@ -100,9 +112,13 @@ export default function ProblemConfigPage() {
                   <RefreshCw />
                   重新加载
                 </Button>
-                <Button size="sm" onClick={handleSave} disabled={saving}>
+                <Button size="sm" onClick={handleSave} disabled={saving} variant="outline">
                   <Save />
-                  保存
+                  应用修改
+                </Button>
+                <Button size="sm" onClick={handleSaveAndReturn} disabled={saving}>
+                  <CheckCircle />
+                  保存并完成
                 </Button>
               </div>
             </div>
