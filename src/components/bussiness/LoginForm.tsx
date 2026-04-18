@@ -79,14 +79,14 @@ export default function LoginForm() {
           name="email"
           render={({ field }) => (
             <FormItem className="space-y-1.5">
-              <FormLabel className="text-gray-700 font-medium">邮箱</FormLabel>
+              <FormLabel className="text-foreground font-medium">邮箱</FormLabel>
               <FormControl>
                 <div className="relative group">
-                  <Mail className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
+                  <Mail className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={20} />
                   <Input
                     placeholder="请输入您的邮箱"
                     {...field}
-                    className="h-12 rounded-lg pl-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all bg-gray-50/50 hover:bg-white focus:bg-white"
+                    className="h-12 rounded-lg pl-10 border-input focus:border-primary focus:ring-primary transition-all bg-background/50 hover:bg-background focus:bg-background"
                   />
                 </div>
               </FormControl>
@@ -100,20 +100,20 @@ export default function LoginForm() {
           name="password"
           render={({ field }) => (
             <FormItem className="space-y-1.5">
-              <FormLabel className="text-gray-700 font-medium">密码</FormLabel>
+              <FormLabel className="text-foreground font-medium">密码</FormLabel>
               <FormControl>
                 <div className="relative group">
-                  <Lock className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
+                  <Lock className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={20} />
                   <Input
                     type={showPassword ? "text" : "password"}
                     placeholder="请输入密码"
                     {...field}
-                    className="h-12 rounded-lg pl-10 pr-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all bg-gray-50/50 hover:bg-white focus:bg-white text-lg tracking-wider"
+                    className="h-12 rounded-lg pl-10 pr-10 border-input focus:border-primary focus:ring-primary transition-all bg-background/50 hover:bg-background focus:bg-background text-lg tracking-wider"
                   />
                   {showPassword ? (
                     <Button
                       type="button"
-                      className="absolute top-1/2 right-1 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute top-1/2 right-1 -translate-y-1/2 text-muted-foreground hover:text-primary"
                       size="icon"
                       variant="ghost"
                       onClick={() => setShowPassword(false)}
@@ -123,7 +123,7 @@ export default function LoginForm() {
                   ) : (
                     <Button
                       type="button"
-                      className="absolute top-1/2 right-1 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute top-1/2 right-1 -translate-y-1/2 text-muted-foreground hover:text-primary"
                       size="icon"
                       variant="ghost"
                       onClick={() => setShowPassword(true)}
@@ -138,16 +138,16 @@ export default function LoginForm() {
           )}
         />
         <div className="flex items-center justify-between pt-2">
-          <Button variant="link" asChild className="px-0 text-sm text-gray-500 hover:text-indigo-600 font-normal">
+          <Button variant="link" asChild className="px-0 text-sm text-muted-foreground hover:text-primary font-normal">
             <Link to="/signup">注册账号</Link>
           </Button>
-          <Button variant="link" asChild className="px-0 text-sm text-gray-500 hover:text-indigo-600 font-normal">
+          <Button variant="link" asChild className="px-0 text-sm text-muted-foreground hover:text-primary font-normal">
             <Link to="/forget">忘记密码？</Link>
           </Button>
         </div>
         <Button
           type="submit"
-          className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors shadow-md hover:shadow-lg"
+          className="w-full h-12"
         >
           登录
         </Button>

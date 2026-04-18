@@ -4,7 +4,7 @@ import { Outlet } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 export default function AuthLayout() {
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-background">
       <div className="flex-none z-50">
         <NavBar />
       </div>

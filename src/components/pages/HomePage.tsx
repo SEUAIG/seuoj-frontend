@@ -23,21 +23,22 @@ export default function HomePage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Main Content Area - 3/4 width on large screens */}
         <div className="lg:col-span-3 space-y-6">
-          <section className="space-y-4">
+          {/* Welcome Section */}
+          <section>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">
-                  Welcome to SeuOJ
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                  {isAuthenticated ? `欢迎回来, ${user?.username}` : "Welcome to SeuOJ"}
                 </h1>
-                <p className="text-muted-foreground mt-2">
+                <p className="text-muted-foreground mt-1">
                   {isAuthenticated
-                    ? `欢迎回来, ${user?.username}!`
-                    : "开启你的算法之旅。"}
+                    ? "继续你的算法之旅"
+                    : "开启你的算法之旅"}
                 </p>
               </div>
               <div className="flex gap-3">
                 <Button asChild>
-                  <Link to="/problem">开始刷题</Link>
+                  <Link to="/problemsLibrary">开始刷题</Link>
                 </Button>
                 <Button variant="outline" asChild>
                   <Link to="/contest">参加比赛</Link>
@@ -46,9 +47,9 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* Announcements / News Placeholder */}
+          {/* Announcements */}
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-3">
               <CardTitle>公告</CardTitle>
             </CardHeader>
             <CardContent>
@@ -58,9 +59,9 @@ export default function HomePage() {
             </CardContent>
           </Card>
 
-          {/* Recommended Problems Placeholder */}
+          {/* Recommended Problems */}
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-3">
               <CardTitle>推荐题目</CardTitle>
             </CardHeader>
             <CardContent>
@@ -76,7 +77,7 @@ export default function HomePage() {
           {/* Fortune Component */}
           <Fortune />
 
-          {/* Daily Streak / Stats Placeholder */}
+          {/* Submission Heatmap */}
           {isAuthenticated && <SubmissionHeatmap year={currentYear} />}
         </div>
       </div>

@@ -2,11 +2,15 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
+import { Button } from "@/components/ui/button";
+
 interface TestcaseUploadCardProps {
   file: File | null;
   format: string;
   onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onFormatChange: (value: string) => void;
+  onConfirm: () => void;
+  confirmLoading?: boolean;
 }
 
 export default function TestcaseUploadCard({
@@ -14,6 +18,8 @@ export default function TestcaseUploadCard({
   format,
   onFileChange,
   onFormatChange,
+  onConfirm,
+  confirmLoading = false,
 }: TestcaseUploadCardProps) {
   return (
     <Card className="border shadow-sm bg-white/80 backdrop-blur">
@@ -56,6 +62,16 @@ export default function TestcaseUploadCard({
         <div className="text-xs text-muted-foreground">
           上传会覆盖已有测试点，仅支持 UTF-8
         </div>
+        {file && format && (
+          <Button
+            type="button"
+            onClick={onConfirm}
+            disabled={confirmLoading}
+            className="w-full mt-2 bg-blue-600 hover:bg-blue-700"
+          >
+            {confirmLoading ? "上传中..." : "确认上传"}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

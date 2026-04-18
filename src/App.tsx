@@ -87,6 +87,9 @@ const ClassPage = React.lazy(() => import("./components/pages/ClassPage"));
 const ClassDetailPage = React.lazy(
   () => import("./components/pages/ClassDetailPage")
 );
+const AdminUserManagementPage = React.lazy(
+  () => import("./components/pages/AdminUserManagementPage")
+);
 
 function LegacyCompetitionRedirect() {
   const { "*": rest } = useParams();
@@ -181,6 +184,9 @@ function App() {
           </Route>
           <Route path="/discussion" element={<DiscussionPage />} />
           <Route path="/help" element={<HelpPage />} />
+          <Route element={<ProtectedRoute allowRole="admin" />}>
+            <Route path="/admin/users" element={<AdminUserManagementPage />} />
+          </Route>
         </Route>
         <Route path="*" element={<NotFoundPage />}></Route>
       </Routes>

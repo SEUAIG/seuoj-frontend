@@ -1,6 +1,9 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { User, AuthState } from "./types";
 import { ENV } from "@/config/env";
+
+let onLoginSuccess: (() => void) | null = null;
+export const setOnLoginSuccess = (cb: () => void) => { onLoginSuccess = cb; };
 interface LoginPayload {
   email: string;
   password: string;
@@ -109,6 +112,7 @@ const authSlice = createSlice({
           role: role || "superadmin",
         };
         state.isAuthenticated = true;
+        onLoginSuccess?.();
       })
       .addCase(login.rejected, (state, action) => {
         state.isAuthenticated = false;

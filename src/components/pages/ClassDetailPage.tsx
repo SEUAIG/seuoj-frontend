@@ -12,6 +12,8 @@ import {
   ChevronRight,
   Unlink,
   BookOpen,
+  BarChart3,
+  Eye,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -51,7 +53,15 @@ import { unlinkProblemSet } from "@/services/Class/unlinkProblemSet";
 import ClassPagination from "../bussiness/ClassPagination";
 import LinkContestModal from "../bussiness/LinkContestModal";
 import LinkProblemSetModal from "../bussiness/LinkProblemSetModal";
-import { Link as LinkIcon } from "lucide-react";
+import AddMemberModal from "../bussiness/AddMemberModal";
+import BatchImportMembersModal from "../bussiness/BatchImportMembersModal";
+import ClassProblemSetMatrixDialog from "../bussiness/ClassProblemSetMatrixDialog";
+import { Link as LinkIcon, UserPlus, Upload } from "lucide-react";
+import {
+  getClassOverview,
+  ProblemSetProgressItem,
+} from "@/services/Class/getClassOverview";
+import { Progress } from "@/components/ui/progress";
 
 export default function ClassDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -125,6 +135,22 @@ export default function ClassDetailPage() {
   const [isUnlinkPsDialogOpen, setIsUnlinkPsDialogOpen] = useState(false);
   const [isUnlinkingPs, setIsUnlinkingPs] = useState(false);
   const [isLinkPsModalOpen, setIsLinkPsModalOpen] = useState(false);
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  const [isBatchImportModalOpen, setIsBatchImportModalOpen] = useState(false);
+  const [matrixProblemSet, setMatrixProblemSet] = useState<ProblemSetProgressItem | null>(null);
+
+  const {
+    data: overviewData,
+    isLoading: isOverviewLoading,
+    isError: isOverviewError,
+    error: overviewError,
+  } = useQuery({
+    queryKey: ["classOverview", id],
+    queryFn: () => getClassOverview(id!),
+    enabled: !!id && activeTab === "overview",
+  });
+
+  const overview = overviewData?.data;
 
   const handlePageChange = (newPage: number) => {
     setSearchParams({ page: newPage.toString(), size: size.toString() });
@@ -245,20 +271,35 @@ export default function ClassDetailPage() {
             </p>
           </div>
         </div>
-        <Button
-          onClick={() => {
-            if (activeTab === "contests") {
-              setIsLinkModalOpen(true);
-            } else if (activeTab === "problem-sets") {
-              setIsLinkPsModalOpen(true);
-            }
-          }}
-          disabled={activeTab === "members"}
-          className={activeTab === "members" ? "invisible" : ""}
-        >
-          <LinkIcon className="h-4 w-4 mr-2" />
-          {activeTab === "contests" ? "关联比赛" : "关联题单"}
-        </Button>
+        <div className="flex items-center gap-2">
+          {activeTab === "members" && (
+            <Button
+              variant="outline"
+              onClick={() => setIsBatchImportModalOpen(true)}
+            >
+              <Upload className="h-4 w-4 mr-2" />批量导入
+            </Button>
+          )}
+          <Button
+            onClick={() => {
+              if (activeTab === "members") {
+                setIsAddMemberModalOpen(true);
+              } else if (activeTab === "contests") {
+                setIsLinkModalOpen(true);
+              } else if (activeTab === "problem-sets") {
+                setIsLinkPsModalOpen(true);
+              }
+            }}
+          >
+            {activeTab === "members" ? (
+              <><UserPlus className="h-4 w-4 mr-2" />添加成员</>
+            ) : activeTab === "contests" ? (
+              <><LinkIcon className="h-4 w-4 mr-2" />关联比赛</>
+            ) : (
+              <><LinkIcon className="h-4 w-4 mr-2" />关联题单</>
+            )}
+          </Button>
+        </div>
       </div>
 
       <Tabs
@@ -267,10 +308,13 @@ export default function ClassDetailPage() {
         onValueChange={setActiveTab}
         className="flex-1 flex flex-col"
       >
-        <TabsList className="grid w-full grid-cols-3 max-w-md mb-4">
+        <TabsList className="grid w-full grid-cols-4 max-w-lg mb-4">
           <TabsTrigger value="members">成员列表</TabsTrigger>
           <TabsTrigger value="contests">已关联比赛</TabsTrigger>
           <TabsTrigger value="problem-sets">已关联题单</TabsTrigger>
+          <TabsTrigger value="overview">
+            <BarChart3 className="h-4 w-4 mr-1" />学情概览
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="members" className="!mt-0">
@@ -299,9 +343,8 @@ export default function ClassDetailPage() {
                 </div>
               ) : (
                 <div
-                  className={`flex-1 flex flex-col ${
-                    isFetching ? "opacity-60 transition-opacity" : ""
-                  }`}
+                  className={`flex-1 flex flex-col ${isFetching ? "opacity-60 transition-opacity" : ""
+                    }`}
                 >
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
@@ -340,9 +383,9 @@ export default function ClassDetailPage() {
                               <Calendar className="h-4 w-4" />
                               {member.joined_at
                                 ? format(
-                                    new Date(member.joined_at),
-                                    "yyyy-MM-dd HH:mm"
-                                  )
+                                  new Date(member.joined_at),
+                                  "yyyy-MM-dd HH:mm"
+                                )
                                 : "-"}
                             </td>
                             <td className="px-6 py-4 text-right">
@@ -408,9 +451,8 @@ export default function ClassDetailPage() {
                 </div>
               ) : (
                 <div
-                  className={`flex-1 flex flex-col ${
-                    isContestFetching ? "opacity-60 transition-opacity" : ""
-                  }`}
+                  className={`flex-1 flex flex-col ${isContestFetching ? "opacity-60 transition-opacity" : ""
+                    }`}
                 >
                   <div className="grid gap-3">
                     {contestRecords.map((contest) => (
@@ -494,9 +536,8 @@ export default function ClassDetailPage() {
                 </div>
               ) : (
                 <div
-                  className={`flex-1 flex flex-col ${
-                    isPsFetching ? "opacity-60 transition-opacity" : ""
-                  }`}
+                  className={`flex-1 flex flex-col ${isPsFetching ? "opacity-60 transition-opacity" : ""
+                    }`}
                 >
                   <div className="grid gap-3">
                     {psRecords.map((ps) => (
@@ -542,6 +583,118 @@ export default function ClassDetailPage() {
                       />
                     </div>
                   )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="overview" className="!mt-0">
+          <Card className="flex-1 flex flex-col border-none shadow-none bg-transparent">
+            <CardHeader className="flex flex-row items-center justify-between border-b px-0 pt-0 pb-4">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <BarChart3 className="h-5 w-5" />
+                学情概览
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 p-0 pt-4 flex flex-col">
+              {isOverviewLoading ? (
+                <div className="flex-1 flex items-center justify-center min-h-[300px]">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : isOverviewError ? (
+                <div className="flex-1 flex items-center justify-center text-red-500 min-h-[300px]">
+                  加载失败:{" "}
+                  {overviewError instanceof Error
+                    ? overviewError.message
+                    : "未知错误"}
+                </div>
+              ) : !overview ? (
+                <div className="flex items-center justify-center text-muted-foreground min-h-[300px]">
+                  暂无数据
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* 学生做题统计表 */}
+                  <div>
+                    <h3 className="text-base font-semibold mb-3">
+                      学生做题统计（共 {overview.total_problems} 题）
+                    </h3>
+                    {overview.students.length === 0 ? (
+                      <p className="text-muted-foreground">暂无班级成员</p>
+                    ) : (
+                      <div className="overflow-x-auto border rounded-lg">
+                        <table className="w-full text-sm text-left">
+                          <thead className="text-xs text-muted-foreground bg-muted/50 uppercase border-b">
+                            <tr>
+                              <th scope="col" className="px-6 py-3 font-medium">用户名</th>
+                              <th scope="col" className="px-6 py-3 font-medium text-center">AC 数 / 总题数</th>
+                              <th scope="col" className="px-6 py-3 font-medium text-center">完成率</th>
+                              <th scope="col" className="px-6 py-3 font-medium" style={{ minWidth: 200 }}>进度</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y">
+                            {overview.students.map((s) => {
+                              const rate = overview.total_problems > 0
+                                ? Math.round((s.ac_count / overview.total_problems) * 100)
+                                : 0;
+                              return (
+                                <tr key={s.user_public_id} className="bg-card hover:bg-muted/50 transition-colors">
+                                  <td className="px-6 py-3 font-medium">{s.username}</td>
+                                  <td className="px-6 py-3 text-center font-mono">
+                                    {s.ac_count} / {overview.total_problems}
+                                  </td>
+                                  <td className="px-6 py-3 text-center font-semibold">{rate}%</td>
+                                  <td className="px-6 py-3">
+                                    <Progress value={rate} className="h-2" />
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 各题单完成率 */}
+                  <div>
+                    <h3 className="text-base font-semibold mb-3">各题单完成率</h3>
+                    {overview.problem_sets.length === 0 ? (
+                      <p className="text-muted-foreground">暂无关联题单</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {overview.problem_sets.map((ps) => (
+                          <div
+                            key={ps.problem_set_public_id}
+                            className="flex items-center gap-4 p-3 bg-card rounded-lg border hover:border-primary/50 transition-colors cursor-pointer group"
+                            onClick={() => setMatrixProblemSet(ps)}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <BookOpen className="h-4 w-4 text-primary shrink-0" />
+                                <span className="font-medium truncate group-hover:text-primary transition-colors">
+                                  {ps.title}
+                                </span>
+                                <span className="text-xs text-muted-foreground shrink-0">
+                                  {ps.problem_count} 题
+                                </span>
+                              </div>
+                              <div className="mt-2">
+                                <Progress value={ps.avg_completion_rate} className="h-2" />
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0 w-16">
+                              <span className="text-sm font-semibold">
+                                {ps.avg_completion_rate}%
+                              </span>
+                            </div>
+                            <Eye className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -618,6 +771,13 @@ export default function ClassDetailPage() {
         </DialogContent>
       </Dialog>
 
+      {id && isAddMemberModalOpen && (
+        <AddMemberModal
+          isOpen={isAddMemberModalOpen}
+          onClose={() => setIsAddMemberModalOpen(false)}
+          classId={id}
+        />
+      )}
       {id && isLinkModalOpen && (
         <LinkContestModal
           isOpen={isLinkModalOpen}
@@ -630,6 +790,23 @@ export default function ClassDetailPage() {
           isOpen={isLinkPsModalOpen}
           onClose={() => setIsLinkPsModalOpen(false)}
           classId={id}
+        />
+      )}
+      {id && isBatchImportModalOpen && (
+        <BatchImportMembersModal
+          isOpen={isBatchImportModalOpen}
+          onClose={() => setIsBatchImportModalOpen(false)}
+          classId={id}
+          onSuccess={() => refetch()}
+        />
+      )}
+      {id && matrixProblemSet && (
+        <ClassProblemSetMatrixDialog
+          isOpen={!!matrixProblemSet}
+          onClose={() => setMatrixProblemSet(null)}
+          classId={id}
+          problemSetPublicId={matrixProblemSet.problem_set_public_id}
+          problemSetTitle={matrixProblemSet.title}
         />
       )}
     </div>

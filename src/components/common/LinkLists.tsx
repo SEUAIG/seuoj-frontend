@@ -7,10 +7,19 @@ import {
   MessagesSquare,
   CircleQuestionMark,
   GraduationCap,
+  Shield,
 } from "lucide-react";
 import React from "react";
 import NavItem from "./NavItem";
+import { useSelector } from "react-redux";
+import { RootState } from "@/app/store";
+
 export default function LinkLists() {
+  const role = useSelector(
+    (state: RootState) => state.auth.user?.role ?? "guest"
+  );
+  const isAdmin = role === "admin" || role === "superadmin";
+
   return (
     <ul className="flex text-lg justify-center items-center gap-8">
       <NavItem to="/home" end icon={House} label="首页" />
@@ -21,6 +30,7 @@ export default function LinkLists() {
       <NavItem to="/problemset" icon={ClipboardList} label="题单" />
       {/* <NavItem to="/discussion" icon={MessagesSquare} label="讨论" /> */}
       <NavItem to="/help" icon={CircleQuestionMark} label="帮助" />
+      {isAdmin && <NavItem to="/admin/users" icon={Shield} label="管理" />}
     </ul>
   );
 }

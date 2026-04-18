@@ -17,14 +17,13 @@ export default function NavItem({
         {({ isActive }) => (
           <div
             className={`
-              flex items-center gap-1
-              px-4 py-2 rounded-full
-              transition-all duration-400 relative
-              hover:bg-muted
+              flex items-center gap-1.5
+              px-4 py-2 rounded-md
+              transition-all duration-200
               ${
                 isActive
-                  ? "bg-accent text-foreground font-medium"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }
             `}
           >
@@ -33,24 +32,9 @@ export default function NavItem({
               size={36}
               className="h-4 w-4"
             />
-            <span
-              className={`whitespace-nowrap ${
-                isActive ? "font-bold" : "font-normal"
-              }`}
-            >
+            <span className="whitespace-nowrap">
               {label}
             </span>
-            {(
-              <span
-                className={`
-            absolute left-2 right-2 -bottom-1
-            h-0.5
-            rounded-full
-            bg-primary transform transition-transform delay-0 ease-in-out duration-500 origin-center
-            ${isActive?"scale-x-100":"scale-x-0"}
-          `}
-              />
-            )}
           </div>
         )}
       </NavLink>

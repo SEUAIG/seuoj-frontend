@@ -14,6 +14,7 @@ import { useDispatch } from "react-redux";
 import { resetAuth } from "@/features/auth/authSlice";
 import { persistor } from "@/app/store";
 import { useNavigate } from "react-router-dom";
+import { queryClient } from "@/main";
 
 export default function AvatarNew({ user }: { user: User }) {
   const username = user?.username || "Unknown";
@@ -49,6 +50,7 @@ export default function AvatarNew({ user }: { user: User }) {
             onClick={() => {
               dispatch(resetAuth());
               persistor.purge();
+              queryClient.invalidateQueries();
             }}
           >
             <LogOut size={16} />

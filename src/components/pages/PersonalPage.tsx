@@ -7,6 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -14,7 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2 } from "lucide-react";
+import { Loader2, KeyRound } from "lucide-react";
+import { api } from "@/services/api/axios";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/app/store";
 import { toast } from "sonner";
@@ -36,6 +45,48 @@ export default function PersonalPage() {
     (state: RootState) => state.submissionList
   );
   const [activeTab, setActiveTab] = useState("practice");
+  const [changePwdOpen, setChangePwdOpen] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changePwdLoading, setChangePwdLoading] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      toast.error("请填写所有字段");
+      return;
+    }
+    if (newPassword.length < 6 || newPassword.length > 20) {
+      toast.error("新密码长度需在 6-20 位之间");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("两次输入的新密码不一致");
+      return;
+    }
+    setChangePwdLoading(true);
+    try {
+      const res = await api.post("/api/auth/change-password", {
+        old_password: oldPassword,
+        new_password: newPassword,
+      });
+      if (res.data.code === 0) {
+        toast.success("密码修改成功");
+        setChangePwdOpen(false);
+        setOldPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        toast.error(res.data.message || "修改失败");
+      }
+    } catch (err: unknown) {
+      toast.error(
+        "修改失败: " + (err instanceof Error ? err.message : String(err))
+      );
+    } finally {
+      setChangePwdLoading(false);
+    }
+  };
   const isSubmissionActive = activeTab === "submissions";
   const { data, isLoading, isFetching, isError, error, refetch } =
     useQueryToGetSubmission(current, size, isSubmissionActive);
@@ -133,6 +184,14 @@ export default function PersonalPage() {
                 <div className="text-sm text-muted-foreground">Tagline</div>
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm">编辑资料</Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setChangePwdOpen(true)}
+                  >
+                    <KeyRound className="h-4 w-4 mr-1" />
+                    修改密码
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -515,6 +574,62 @@ export default function PersonalPage() {
             </Tabs>
           </section>
         </div>
+
+        {/* Change Password Dialog */}
+        <Dialog open={changePwdOpen} onOpenChange={setChangePwdOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>修改密码</DialogTitle>
+              <DialogDescription>
+                输入旧密码验证身份后设置新密码。
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 py-2">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">旧密码</label>
+                <Input
+                  type="password"
+                  placeholder="请输入当前密码"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">新密码</label>
+                <Input
+                  type="password"
+                  placeholder="6-20 位新密码"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">确认新密码</label>
+                <Input
+                  type="password"
+                  placeholder="再次输入新密码"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleChangePassword()}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setChangePwdOpen(false)}
+              >
+                取消
+              </Button>
+              <Button
+                onClick={handleChangePassword}
+                disabled={changePwdLoading}
+              >
+                {changePwdLoading ? "提交中..." : "确认修改"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );

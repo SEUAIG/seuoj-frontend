@@ -73,6 +73,16 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
   useEffect(() => {
     dispatch(clearTags());
   }, [dispatch]);
+
+  // 自动填充下一个可用的 PID
+  useEffect(() => {
+    if (!isCreateMode) return;
+    api.get("/api/problem/next_id").then((res: any) => {
+      const nextPid = res.data?.data?.next_pid;
+      if (nextPid) form.setValue("pid", nextPid);
+    }).catch(() => {/* 忽略，用户可手动填写 */});
+  }, [isCreateMode, form]);
+
   useEffect(() => {
     if (!pid) return;
     const fetchProblem = async () => {
@@ -289,9 +299,9 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                           variant="secondary"
                           onClick={async () => {
                             try {
-                              const res = await api.get("/api/problem/next-pid");
+                              const res = await api.get("/api/problem/next_id");
                               if (res.data.code === 0) {
-                                field.onChange(res.data.data);
+                                field.onChange(res.data.data.next_pid);
                               } else {
                                 toast.error(res.data.message || "获取失败");
                               }

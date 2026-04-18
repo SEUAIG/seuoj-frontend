@@ -16,8 +16,9 @@ import {
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { injectStore } from "./services/api/axios.ts";
+import { setOnLoginSuccess } from "./features/auth/authSlice.ts";
 injectStore(store, () => persistor.purge());
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error: Error) => {
       toast.error(error.message || "发生未知错误");
@@ -36,6 +37,7 @@ const queryClient = new QueryClient({
     },
   },
 });
+setOnLoginSuccess(() => queryClient.invalidateQueries());
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
