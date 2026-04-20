@@ -41,6 +41,9 @@ const HelpPage = React.lazy(() => import("./components/pages/HelpPage"));
 const ProblemDetailPage = React.lazy(
   () => import("./components/pages/ProblemDetailPage")
 );
+const ProblemAgentPage = React.lazy(
+  () => import("./components/pages/ProblemAgentPage")
+);
 const SubmissionPage = React.lazy(
   () => import("./components/pages/SubmissionPage")
 );
@@ -137,6 +140,7 @@ function App() {
               <Route path=":submissionNo" element={<SubmissionPage />} />
             </Route>
             <Route path="/personal" element={<PersonalPage />} />
+            <Route path="/problemsAgent/:id" element={<ProblemAgentPage />} />
           </Route>
           <Route
             path="/competition/*"
