@@ -40,6 +40,12 @@ const DiscussionPage = React.lazy(
 const AgentChatPage = React.lazy(
   () => import("./components/pages/AgentChatPage")
 );
+const KnowledgeGraphPage = React.lazy(
+  () => import("./components/pages/KnowledgeGraphPage")
+);
+const LearningChainPage = React.lazy(
+  () => import("./components/pages/LearningChainPage")
+);
 const HelpPage = React.lazy(() => import("./components/pages/HelpPage"));
 const ProblemDetailPage = React.lazy(
   () => import("./components/pages/ProblemDetailPage")
@@ -187,6 +193,8 @@ function App() {
           </Route>
           <Route path="/discussion" element={<DiscussionPage />} />
           <Route path="/agent-chat" element={<AgentChatPage />} />
+          <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />
+          <Route path="/learning-chain" element={<LearningChainPage />} />
           <Route path="/help" element={<HelpPage />} />
           <Route element={<ProtectedRoute allowRole="admin" />}>
             <Route path="/admin/users" element={<AdminUserManagementPage />} />

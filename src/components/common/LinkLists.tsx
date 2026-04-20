@@ -8,6 +8,8 @@ import {
   GraduationCap,
   Shield,
   Bot,
+  Network,
+  Link2,
 } from "lucide-react";
 import React from "react";
 import NavItem from "./NavItem";
@@ -29,6 +31,8 @@ export default function LinkLists() {
       <NavItem to="/evaluation" icon={ListCheck} label="评测" />
       <NavItem to="/problemset" icon={ClipboardList} label="题单" />
       <NavItem to="/agent-chat" icon={Bot} label="Agent Chat" />
+      <NavItem to="/knowledge-graph" icon={Network} label="知识图谱" />
+      <NavItem to="/learning-chain" icon={Link2} label="学习链" />
       {/* <NavItem to="/discussion" icon={MessagesSquare} label="讨论" /> */}
       <NavItem to="/help" icon={CircleQuestionMark} label="帮助" />
       {isAdmin && <NavItem to="/admin/users" icon={Shield} label="管理" />}
