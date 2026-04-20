@@ -192,7 +192,7 @@ function App() {
             />
           </Route>
           <Route path="/discussion" element={<DiscussionPage />} />
-          <Route path="/agent-chat" element={<AgentChatPage />} />
+          <Route path="/chat-agent" element={<AgentChatPage />} />
           <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />
           <Route path="/learning-chain" element={<LearningChainPage />} />
           <Route path="/help" element={<HelpPage />} />

@@ -30,7 +30,7 @@ export default function LinkLists() {
       <NavItem to="/class" icon={GraduationCap} label="班级" />
       <NavItem to="/evaluation" icon={ListCheck} label="评测" />
       <NavItem to="/problemset" icon={ClipboardList} label="题单" />
-      <NavItem to="/agent-chat" icon={Bot} label="Agent Chat" />
+      <NavItem to="/chat-agent" icon={Bot} label="Agent Chat" />
       <NavItem to="/knowledge-graph" icon={Network} label="知识图谱" />
       <NavItem to="/learning-chain" icon={Link2} label="学习链" />
       <NavItem to="/help" icon={CircleQuestionMark} label="帮助" />

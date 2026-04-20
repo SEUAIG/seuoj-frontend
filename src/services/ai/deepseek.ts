@@ -5,6 +5,8 @@ export interface DeepSeekMessage {
   content: string;
 }
 
+const RAG_ANSWER_TIMEOUT_MS = 300000;
+
 function buildSseResponse(content: string) {
   const encoder = new TextEncoder();
   const payload = JSON.stringify({
@@ -43,14 +45,22 @@ export async function deepseekStream(messages: DeepSeekMessage[]) {
     headers.Authorization = `Bearer ${jwt}`;
   }
 
-  const response = await fetch("/agent/api/rag/messages/rag_answer/", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      user_id: userId,
-      query: latestUserMessage,
-    }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), RAG_ANSWER_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch("/agent/api/rag/messages/rag_answer/", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        user_id: userId,
+        query: latestUserMessage,
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     return response;

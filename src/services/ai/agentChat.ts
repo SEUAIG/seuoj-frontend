@@ -15,6 +15,8 @@ export interface AgentChatSession {
   messages: AgentChatMessage[];
 }
 
+const RAG_ANSWER_TIMEOUT_MS = 300000;
+
 function normalizeRole(role: unknown): AgentChatRole {
   const value = String(role ?? "").toLowerCase();
   return value === "user" ? "user" : "assistant";
@@ -95,11 +97,24 @@ export async function askAgent(params: {
   };
   if (sessionId) body.session_id = sessionId;
 
-  const response = await fetch("/agent/api/rag/messages/rag_answer/", {
-    method: "POST",
-    headers: buildHeaders(jwt),
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), RAG_ANSWER_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch("/agent/api/rag/messages/rag_answer/", {
+      method: "POST",
+      headers: buildHeaders(jwt),
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error(`请求超时（>${RAG_ANSWER_TIMEOUT_MS / 1000}s）`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
   if (!response.ok) throw new Error(`发送消息失败（${response.status}）`);
 
   const data = await response.json();
@@ -118,4 +133,3 @@ export async function askAgent(params: {
     sessionId: String(returnedSessionId),
   };
 }
-
