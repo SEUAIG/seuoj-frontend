@@ -39,6 +39,8 @@ const CATEGORY_LABELS: Record<string, string> = {
 const GRAPH_WIDTH = 1100;
 const GRAPH_HEIGHT = 720;
 const DRAG_THRESHOLD = 6;
+const MIN_ZOOM = 0.35;
+const MAX_ZOOM = 2.6;
 
 type PositionedNode = KnowledgeGraphNode & { x: number; y: number };
 type ForceNode = PositionedNode & SimulationNodeDatum;
@@ -95,24 +97,25 @@ function clampNode(node: ForceNode) {
 }
 
 export default function KnowledgeGraphPage() {
-  const { isAuthenticated, jwt } = useSelector((state: RootState) => state.auth);
+  const { jwt } = useSelector((state: RootState) => state.auth);
   const [loading, setLoading] = useState(false);
   const [graphData, setGraphData] = useState<KnowledgeGraphData | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [simNodes, setSimNodes] = useState<ForceNode[]>([]);
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
+  const [viewTransform, setViewTransform] = useState({ x: 0, y: 0, k: 1 });
   const simulationRef = useRef<Simulation<ForceNode, ForceLink> | null>(null);
   const nodesRef = useRef<ForceNode[]>([]);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const pendingDragRef = useRef<{ nodeId: string; x: number; y: number } | null>(null);
+  const panningRef = useRef<{
+    startClientX: number;
+    startClientY: number;
+    startX: number;
+    startY: number;
+  } | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      setGraphData(null);
-      setSelectedNodeId(null);
-      return;
-    }
-
     let alive = true;
     setLoading(true);
     fetchKnowledgeGraph(jwt)
@@ -130,7 +133,7 @@ export default function KnowledgeGraphPage() {
     return () => {
       alive = false;
     };
-  }, [isAuthenticated, jwt]);
+  }, [jwt]);
 
   const positionedNodes = useMemo(
     () => computeNodePositions(graphData?.nodes ?? []),
@@ -238,12 +241,8 @@ export default function KnowledgeGraphPage() {
     if (!selectedNodeId || !graphData) return new Set<string>();
     const set = new Set<string>([selectedNodeId]);
     graphData.links.forEach((link) => {
-      if (link.source === selectedNodeId) {
-        set.add(link.target);
-      }
-      if (link.target === selectedNodeId) {
-        set.add(link.source);
-      }
+      if (link.source === selectedNodeId) set.add(link.target);
+      if (link.target === selectedNodeId) set.add(link.source);
     });
     return set;
   }, [selectedNodeId, graphData]);
@@ -252,12 +251,32 @@ export default function KnowledgeGraphPage() {
     if (!svgRef.current) return null;
     const rect = svgRef.current.getBoundingClientRect();
     if (!rect.width || !rect.height) return null;
-    const x = ((clientX - rect.left) / rect.width) * GRAPH_WIDTH;
-    const y = ((clientY - rect.top) / rect.height) * GRAPH_HEIGHT;
+    const svgX = ((clientX - rect.left) / rect.width) * GRAPH_WIDTH;
+    const svgY = ((clientY - rect.top) / rect.height) * GRAPH_HEIGHT;
+    const x = (svgX - viewTransform.x) / viewTransform.k;
+    const y = (svgY - viewTransform.y) / viewTransform.k;
     return {
       x: Math.max(0, Math.min(GRAPH_WIDTH, x)),
       y: Math.max(0, Math.min(GRAPH_HEIGHT, y)),
     };
+  }
+
+  function zoomAt(svgX: number, svgY: number, nextK: number) {
+    setViewTransform((prev) => {
+      const k = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextK));
+      if (Math.abs(k - prev.k) < 1e-6) return prev;
+      const x = svgX - ((svgX - prev.x) / prev.k) * k;
+      const y = svgY - ((svgY - prev.y) / prev.k) * k;
+      return { x, y, k };
+    });
+  }
+
+  function zoomBy(factor: number) {
+    zoomAt(GRAPH_WIDTH / 2, GRAPH_HEIGHT / 2, viewTransform.k * factor);
+  }
+
+  function resetZoom() {
+    setViewTransform({ x: 0, y: 0, k: 1 });
   }
 
   function onStartDrag(nodeId: string, clientX: number, clientY: number) {
@@ -274,6 +293,20 @@ export default function KnowledgeGraphPage() {
   }
 
   function onMoveDrag(clientX: number, clientY: number) {
+    if (panningRef.current && svgRef.current) {
+      const rect = svgRef.current.getBoundingClientRect();
+      if (rect.width && rect.height) {
+        const dx = ((clientX - panningRef.current.startClientX) / rect.width) * GRAPH_WIDTH;
+        const dy = ((clientY - panningRef.current.startClientY) / rect.height) * GRAPH_HEIGHT;
+        setViewTransform((prev) => ({
+          ...prev,
+          x: panningRef.current!.startX + dx,
+          y: panningRef.current!.startY + dy,
+        }));
+      }
+      return;
+    }
+
     if (!draggingNodeId && pendingDragRef.current) {
       const dx = clientX - pendingDragRef.current.x;
       const dy = clientY - pendingDragRef.current.y;
@@ -281,6 +314,7 @@ export default function KnowledgeGraphPage() {
         onStartDrag(pendingDragRef.current.nodeId, clientX, clientY);
       }
     }
+
     if (!draggingNodeId) return;
     const point = clientToGraph(clientX, clientY);
     const target = nodesRef.current.find((node) => node.id === draggingNodeId);
@@ -291,11 +325,16 @@ export default function KnowledgeGraphPage() {
   }
 
   function onEndDrag() {
+    if (panningRef.current) {
+      panningRef.current = null;
+      return;
+    }
     if (pendingDragRef.current && !draggingNodeId) {
       pendingDragRef.current = null;
       return;
     }
     if (!draggingNodeId) return;
+
     const simulation = simulationRef.current;
     const target = nodesRef.current.find((node) => node.id === draggingNodeId);
     if (target) {
@@ -324,17 +363,13 @@ export default function KnowledgeGraphPage() {
           </div>
 
           <div className="min-h-0 flex-1 overflow-auto p-4">
-            {!isAuthenticated ? (
-              <div className="flex h-full items-center justify-center rounded-lg border border-dashed">
-                <p className="text-sm text-muted-foreground">请先登录后查看知识图谱</p>
-              </div>
-            ) : loading ? (
+            {loading ? (
               <div className="flex h-full items-center justify-center rounded-lg border border-dashed">
                 <p className="text-sm text-muted-foreground">正在加载知识图谱...</p>
               </div>
             ) : !graphData || simNodes.length === 0 ? (
               <div className="flex h-full items-center justify-center rounded-lg border border-dashed">
-                <p className="text-sm text-muted-foreground">暂无知识图谱数据</p>
+                <p className="text-sm text-muted-foreground">暂无可用知识图谱数据</p>
               </div>
             ) : (
               <div className="relative h-full min-h-[620px] overflow-hidden rounded-lg border bg-background">
@@ -342,6 +377,24 @@ export default function KnowledgeGraphPage() {
                   ref={svgRef}
                   viewBox={`0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`}
                   className="h-full w-full"
+                  onWheel={(event) => {
+                    event.preventDefault();
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    const svgX = ((event.clientX - rect.left) / rect.width) * GRAPH_WIDTH;
+                    const svgY = ((event.clientY - rect.top) / rect.height) * GRAPH_HEIGHT;
+                    const factor = event.deltaY > 0 ? 0.9 : 1.1;
+                    zoomAt(svgX, svgY, viewTransform.k * factor);
+                  }}
+                  onPointerDown={(event) => {
+                    if (event.target !== event.currentTarget) return;
+                    panningRef.current = {
+                      startClientX: event.clientX,
+                      startClientY: event.clientY,
+                      startX: viewTransform.x,
+                      startY: viewTransform.y,
+                    };
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                  }}
                   onPointerMove={(event) => onMoveDrag(event.clientX, event.clientY)}
                   onPointerUp={onEndDrag}
                   onPointerLeave={onEndDrag}
@@ -351,88 +404,117 @@ export default function KnowledgeGraphPage() {
                     }
                   }}
                 >
-                  {graphData.links.map((link, index) => {
-                    const source = nodeMap.get(link.source);
-                    const target = nodeMap.get(link.target);
-                    if (!source || !target) return null;
-                    const isConnected =
-                      !selectedNodeId ||
-                      link.source === selectedNodeId ||
-                      link.target === selectedNodeId;
-                    return (
-                      <g key={`${link.source}-${link.target}-${index}`}>
-                        <line
-                          x1={source.x}
-                          y1={source.y}
-                          x2={target.x}
-                          y2={target.y}
-                          stroke={isConnected ? "#64748b" : "#cbd5e1"}
-                          strokeOpacity={isConnected ? 0.75 : 0.25}
-                          strokeWidth={isConnected ? 2 : 1}
-                        />
-                      </g>
-                    );
-                  })}
+                  <g transform={`translate(${viewTransform.x} ${viewTransform.y}) scale(${viewTransform.k})`}>
+                    {graphData.links.map((link, index) => {
+                      const source = nodeMap.get(link.source);
+                      const target = nodeMap.get(link.target);
+                      if (!source || !target) return null;
+                      const isConnected =
+                        !selectedNodeId ||
+                        link.source === selectedNodeId ||
+                        link.target === selectedNodeId;
+                      const midX = (source.x + target.x) / 2;
+                      const midY = (source.y + target.y) / 2;
+                      return (
+                        <g key={`${link.source}-${link.target}-${index}`}>
+                          <line
+                            x1={source.x}
+                            y1={source.y}
+                            x2={target.x}
+                            y2={target.y}
+                            stroke={isConnected ? "#64748b" : "#cbd5e1"}
+                            strokeOpacity={isConnected ? 0.75 : 0.25}
+                            strokeWidth={isConnected ? 2 : 1}
+                          />
+                          {link.type ? (
+                            <text
+                              x={midX}
+                              y={midY - 4}
+                              textAnchor="middle"
+                              fontSize="10"
+                              fill={isConnected ? "#475569" : "#94a3b8"}
+                              className="select-none"
+                              pointerEvents="none"
+                            >
+                              {link.type}
+                            </text>
+                          ) : null}
+                        </g>
+                      );
+                    })}
 
-                  {simNodes.map((node) => {
-                    const active = connectedNodeIds.has(node.id);
-                    const selected = selectedNodeId === node.id;
-                    const radius = 14 + Math.round((node.mastery ?? 0) / 10);
-                    return (
-                      <g key={node.id}>
-                        <circle
-                          cx={node.x}
-                          cy={node.y}
-                          r={selected ? radius + 5 : radius + 2}
-                          fill={getCategoryColor(node.category)}
-                          opacity={selected ? 0.25 : 0.12}
-                        />
-                        <circle
-                          cx={node.x}
-                          cy={node.y}
-                          r={radius}
-                          fill={getCategoryColor(node.category)}
-                          stroke={selected ? "#0f172a" : "#ffffff"}
-                          strokeWidth={selected ? 3 : 2}
-                          opacity={selectedNodeId && !active ? 0.45 : 0.95}
-                          className="cursor-grab transition-opacity active:cursor-grabbing"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setSelectedNodeId((prev) => (prev === node.id ? null : node.id));
-                          }}
-                          onPointerDown={(event) => {
-                            event.stopPropagation();
-                            pendingDragRef.current = {
-                              nodeId: node.id,
-                              x: event.clientX,
-                              y: event.clientY,
-                            };
-                          }}
-                        />
-                        <text
-                          x={node.x}
-                          y={node.y + radius + 18}
-                          textAnchor="middle"
-                          fontSize="11"
-                          fill="#334155"
-                          className="select-none"
-                        >
-                          {node.name.length > 8 ? `${node.name.slice(0, 8)}...` : node.name}
-                        </text>
-                      </g>
-                    );
-                  })}
+                    {simNodes.map((node) => {
+                      const active = connectedNodeIds.has(node.id);
+                      const selected = selectedNodeId === node.id;
+                      const radius = 14 + Math.round((node.mastery ?? 0) / 10);
+                      return (
+                        <g key={node.id}>
+                          <circle
+                            cx={node.x}
+                            cy={node.y}
+                            r={selected ? radius + 5 : radius + 2}
+                            fill={getCategoryColor(node.category)}
+                            opacity={selected ? 0.25 : 0.12}
+                          />
+                          <circle
+                            cx={node.x}
+                            cy={node.y}
+                            r={radius}
+                            fill={getCategoryColor(node.category)}
+                            stroke={selected ? "#0f172a" : "#ffffff"}
+                            strokeWidth={selected ? 3 : 2}
+                            opacity={selectedNodeId && !active ? 0.45 : 0.95}
+                            className="cursor-grab transition-opacity active:cursor-grabbing"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelectedNodeId((prev) => (prev === node.id ? null : node.id));
+                            }}
+                            onPointerDown={(event) => {
+                              event.stopPropagation();
+                              pendingDragRef.current = {
+                                nodeId: node.id,
+                                x: event.clientX,
+                                y: event.clientY,
+                              };
+                            }}
+                          />
+                          <text
+                            x={node.x}
+                            y={node.y + radius + 18}
+                            textAnchor="middle"
+                            fontSize="11"
+                            fill="#334155"
+                            className="select-none"
+                            pointerEvents="none"
+                          >
+                            {node.name.length > 8 ? `${node.name.slice(0, 8)}...` : node.name}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </g>
                 </svg>
 
+                <div className="absolute left-3 top-3 rounded-md border bg-card/90 p-2 backdrop-blur">
+                  <div className="flex items-center gap-1.5">
+                    <button type="button" onClick={() => zoomBy(1.18)} className="rounded border px-2 py-1 text-xs hover:bg-accent">
+                      放大
+                    </button>
+                    <button type="button" onClick={() => zoomBy(0.85)} className="rounded border px-2 py-1 text-xs hover:bg-accent">
+                      缩小
+                    </button>
+                    <button type="button" onClick={resetZoom} className="rounded border px-2 py-1 text-xs hover:bg-accent">
+                      重置
+                    </button>
+                  </div>
+                </div>
+
                 <div className="absolute right-3 top-3 rounded-md border bg-card/90 p-3 backdrop-blur">
-                  <p className="mb-2 text-xs font-medium text-muted-foreground">知识点类型</p>
+                  <p className="mb-2 text-xs font-medium text-muted-foreground">知识图谱类别</p>
                   <div className="space-y-1.5">
                     {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
                       <div key={key} className="flex items-center gap-2 text-xs">
-                        <span
-                          className="inline-block h-2.5 w-2.5 rounded-full"
-                          style={{ backgroundColor: getCategoryColor(key) }}
-                        />
+                        <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getCategoryColor(key) }} />
                         <span>{label}</span>
                       </div>
                     ))}
@@ -471,7 +553,7 @@ export default function KnowledgeGraphPage() {
             </div>
 
             <div>
-              <h3 className="mb-2 text-sm font-medium text-muted-foreground">推荐学习</h3>
+              <h3 className="mb-2 text-sm font-medium text-muted-foreground">推荐知识点</h3>
               <div className="space-y-2">
                 {recommendedNodes.map((node) => (
                   <button
@@ -479,22 +561,15 @@ export default function KnowledgeGraphPage() {
                     key={node.id}
                     onClick={() => setSelectedNodeId(node.id)}
                     className={`w-full rounded-md border p-3 text-left transition ${
-                      selectedNodeId === node.id
-                        ? "border-primary/40 bg-primary/5"
-                        : "bg-card hover:border-primary/30"
+                      selectedNodeId === node.id ? "border-primary/40 bg-primary/5" : "bg-card hover:border-primary/30"
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <span
-                        className="inline-block h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: getCategoryColor(node.category) }}
-                      />
+                      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getCategoryColor(node.category) }} />
                       <p className="text-sm font-medium">{node.name}</p>
                     </div>
-                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                      {node.description || "暂无描述"}
-                    </p>
-                    <p className="mt-2 text-xs text-muted-foreground">掌握度 {(node.mastery ?? 0)}%</p>
+                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{node.description || "暂无描述"}</p>
+                    <p className="mt-2 text-xs text-muted-foreground">掌握度：{node.mastery ?? 0}%</p>
                   </button>
                 ))}
               </div>
@@ -503,15 +578,10 @@ export default function KnowledgeGraphPage() {
             {selectedNode ? (
               <div className="rounded-md border bg-card p-3">
                 <p className="text-sm font-semibold">{selectedNode.name}</p>
-                <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                  {selectedNode.description || "暂无详细描述"}
-                </p>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">{selectedNode.description || "暂无描述"}</p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {(selectedNode.tags ?? []).map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary"
-                    >
+                    <span key={tag} className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
                       {tag}
                     </span>
                   ))}

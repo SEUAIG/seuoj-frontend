@@ -26,7 +26,7 @@ function getDifficultyText(difficulty: string) {
 }
 
 export default function LearningChainPage() {
-  const { isAuthenticated, jwt } = useSelector((state: RootState) => state.auth);
+  const { jwt } = useSelector((state: RootState) => state.auth);
   const [loading, setLoading] = useState(false);
   const [chains, setChains] = useState<LearningChain[]>([]);
   const [recommendedIds, setRecommendedIds] = useState<string[]>([]);
@@ -34,14 +34,6 @@ export default function LearningChainPage() {
   const [masteredNodes, setMasteredNodes] = useState(0);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      setChains([]);
-      setRecommendedIds([]);
-      setActiveChains(0);
-      setMasteredNodes(0);
-      return;
-    }
-
     let alive = true;
     setLoading(true);
     fetchLearningChains(jwt)
@@ -62,7 +54,7 @@ export default function LearningChainPage() {
     return () => {
       alive = false;
     };
-  }, [isAuthenticated, jwt]);
+  }, [jwt]);
 
   const recommendedChains = useMemo(
     () => chains.filter((item) => recommendedIds.includes(item.id)),
@@ -104,11 +96,7 @@ export default function LearningChainPage() {
               </div>
             </div>
 
-            {!isAuthenticated ? (
-              <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-                请先登录后查看学习链
-              </div>
-            ) : loading ? (
+            {loading ? (
               <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
                 正在加载学习链...
               </div>
@@ -116,7 +104,7 @@ export default function LearningChainPage() {
               <>
                 {recommendedChains.length > 0 ? (
                   <section className="mb-8">
-                    <h2 className="mb-4 text-lg font-semibold">为你推荐</h2>
+                    <h2 className="mb-4 text-lg font-semibold">推荐学习链</h2>
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                       {recommendedChains.map((chain) => (
                         <button
@@ -213,4 +201,3 @@ export default function LearningChainPage() {
     </div>
   );
 }
-
