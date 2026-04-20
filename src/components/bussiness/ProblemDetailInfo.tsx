@@ -25,9 +25,6 @@ import {
   FileCode,
   Rocket,
 } from "lucide-react";
-import { toast } from "sonner";
-import { ENV } from "@/config/env";
-import { exchangeForTempToken } from "@/services/api/tokenExchange";
 import { useSelector } from "react-redux";
 import { RootState } from "@/app/store";
 import { ProblemSection } from "./ProblemSection";
@@ -37,10 +34,14 @@ import { ProblemData, Info } from "@/components/pages/ProblemDetailPage";
 interface ProblemDetailInfoProps {
   problem: ProblemData;
   isAuthenticated: boolean;
+  practiceButtonLabel?: string;
+  onPracticeClick?: (pid: string) => void;
 }
 export default function ProblemDetailInfo({
   problem,
   isAuthenticated,
+  practiceButtonLabel,
+  onPracticeClick,
 }: ProblemDetailInfoProps) {
   const nav = useNavigate();
   const { user } = useSelector((store: RootState) => store.auth);
@@ -303,27 +304,16 @@ export default function ProblemDetailInfo({
         {isAuthenticated && (
           <Button
             className="bg-teal-600 hover:bg-teal-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
-            onClick={async () => {
-              const newWindow = window.open("about:blank", "_blank");
-              try {
-                const tempToken = await exchangeForTempToken();
-                const url = `${ENV.AI_PLATFORM_URL}/student/coding/${pid}?token=${encodeURIComponent(tempToken)}`;
-                console.log("[跳转AI练习] 目标URL:", url);
-                if (newWindow) {
-                  newWindow.location.href = url;
-                } else {
-                  console.warn("[跳转AI练习] 弹窗被拦截，改为当前页跳转");
-                  window.location.href = url;
-                }
-              } catch (e: any) {
-                console.error("[跳转AI练习] 失败:", e);
-                if (newWindow) newWindow.close();
-                toast.error(e.message || "跳转失败", { position: "top-center" });
+            onClick={() => {
+              if (onPracticeClick) {
+                onPracticeClick(pid);
+                return;
               }
+              nav(`/problemsAgent/${pid}`);
             }}
           >
             <Rocket className="mr-2 h-4 w-4" />
-            跳转到AI练习
+            {practiceButtonLabel || "AI练习"}
           </Button>
         )}
       </div>
