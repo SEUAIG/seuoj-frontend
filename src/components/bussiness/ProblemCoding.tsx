@@ -7,11 +7,13 @@ interface ProblemCodingProps {
   pid: string;
   setCodeFile: Dispatch<SetStateAction<string>>;
   handleCodeSubmit: () => void;
+  submitDisabled?: boolean;
 }
 export default function ProblemCoding({
   pid,
   setCodeFile,
   handleCodeSubmit,
+  submitDisabled = false,
 }: ProblemCodingProps) {
   return (
     <div className="flex flex-col h-full gap-4 p-4 md:p-6 bg-gray-50">
@@ -31,6 +33,7 @@ export default function ProblemCoding({
             className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
             size="sm"
             onClick={handleCodeSubmit}
+            disabled={submitDisabled}
           >
             <SquarePen className="mr-2 h-4 w-4" />
             提交

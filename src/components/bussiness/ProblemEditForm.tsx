@@ -185,7 +185,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
         });
         if (res.code === 0) {
           toast.success("创建成功");
-          nav(`/problemsLibrary/${res.data.pid}/judgeConfig`);
+          nav(`/problemsLibrary/${res.data.pid}`);
         } else {
           toast.error(res.message || "创建失败");
         }
@@ -223,7 +223,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
     try {
       await updateProblemRequest();
       toast.success("更新成功", { position: "top-center" });
-      nav(`/problemsLibrary/${pid}/judgeConfig`);
+      nav(`/problemsLibrary/${pid}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "更新失败";
       toast.error(message, { position: "top-center" });
