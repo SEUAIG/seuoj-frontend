@@ -71,9 +71,6 @@ const UnauthorizedPage = React.lazy(
 const ProblemTestFilePage = React.lazy(
   () => import("./components/pages/ProblemTestFilePage")
 );
-const ProblemConfigPage = React.lazy(
-  () => import("./components/pages/ProblemConfigPage")
-);
 const ProblemJudgeConfigPage = React.lazy(
   () => import("./components/pages/ProblemJudgeConfigPage")
 );
@@ -137,7 +134,6 @@ function App() {
             <Route path="/problemsLibrary/create" element={<ProblemCreatePage />} />
             <Route path="/problemsLibrary/:id/edit" element={<ProblemEditPage />} />
             <Route path="/problemsLibrary/:id/testfile" element={<ProblemTestFilePage />} />
-            <Route path="/problemsLibrary/:id/config" element={<ProblemConfigPage />} />
             <Route
               path="/problemsLibrary/:id/judgeConfig"
               element={<ProblemJudgeConfigPage />}

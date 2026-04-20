@@ -12,6 +12,7 @@ import {
   Code,
   Clock,
   BookCopy,
+  Download,
   Tag,
   Zap,
   Layers,
@@ -21,8 +22,6 @@ import {
   Database,
   Edit,
   MessageCircle,
-  Settings,
-  FileCode,
   Rocket,
 } from "lucide-react";
 import { useSelector } from "react-redux";
@@ -34,12 +33,14 @@ import { ProblemData, Info } from "@/components/pages/ProblemDetailPage";
 interface ProblemDetailInfoProps {
   problem: ProblemData;
   isAuthenticated: boolean;
+  hasTestcases?: boolean;
   practiceButtonLabel?: string;
   onPracticeClick?: (pid: string) => void;
 }
 export default function ProblemDetailInfo({
   problem,
   isAuthenticated,
+  hasTestcases,
   practiceButtonLabel,
   onPracticeClick,
 }: ProblemDetailInfoProps) {
@@ -59,7 +60,7 @@ export default function ProblemDetailInfo({
     min_cpu_time_ms,
     min_memory_kb,
     min_memory_byte,
-    test_case_number = "1",
+    test_case_number = "0",
     problem_type = "Standard",
     checker_type = "Standard",
   } = info as Info;
@@ -86,6 +87,10 @@ export default function ProblemDetailInfo({
     (min_memory_byte !== undefined
       ? (Number(min_memory_byte) / 1024).toString()
       : undefined);
+  const missingTestcases =
+    hasTestcases === undefined
+      ? Number(test_case_number ?? 0) <= 0
+      : !hasTestcases;
   return (
     <div className="space-y-8 p-4 md:p-6">
       {/* === 1. 头部标题与标签 === */}
@@ -264,20 +269,6 @@ export default function ProblemDetailInfo({
               <Edit className="mr-2 h-4 w-4" />
               编辑题面
             </Button>
-            <Button
-              onClick={() => nav(`/problemsLibrary/${pid}/judgeConfig`)}
-              className="bg-blue-600 hover:bg-blue-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              数据配置
-            </Button>
-            <Button
-              onClick={() => nav(`/problemsLibrary/${pid}/config`)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
-            >
-              <FileCode className="mr-2 h-4 w-4" />
-              高级配置
-            </Button>
           </>
         )}
         <Button className="bg-green-600 hover:bg-green-700 text-white transition duration-300 ease-in-out transform hover:scale-105">
@@ -290,12 +281,25 @@ export default function ProblemDetailInfo({
         </Button>
         <Button
           onClick={() => {
-            nav("testfile");
+            nav(`/problemsLibrary/${pid}/judgeConfig`);
           }}
-          className="bg-yellow-600 hover:bg-yellow-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
+          className={`text-white transition duration-300 ease-in-out transform hover:scale-105 ${
+            missingTestcases
+              ? "bg-red-600 hover:bg-red-700 border-4 border-yellow-300 ring-4 ring-red-300 ring-offset-2 shadow-[0_0_0_4px_rgba(239,68,68,0.35)] animate-pulse"
+              : "bg-yellow-600 hover:bg-yellow-700"
+          }`}
         >
           <BookCopy className="mr-2 h-4 w-4" />
-          文件
+          评测配置
+        </Button>
+        <Button
+          onClick={() => {
+            nav(`/problemsLibrary/${pid}/testfile`);
+          }}
+          className="bg-sky-600 hover:bg-sky-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
+        >
+          <Download className="mr-2 h-4 w-4" />
+          下载文件
         </Button>
         <Button className="bg-amber-600 hover:bg-amber-700 text-white transition duration-300 ease-in-out transform hover:scale-105">
           <MessageCircle className="mr-2 h-4 w-4" />

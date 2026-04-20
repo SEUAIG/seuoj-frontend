@@ -114,6 +114,6 @@ export async function getProblemFileTree(pid: string): Promise<string[]> {
       }
     }
   };
-  collectFiles(dataFolder.children, "data");
+  collectFiles(dataFolder.children, "");
   return files;
 }

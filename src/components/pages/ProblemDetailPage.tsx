@@ -1,16 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { RootState } from "../../app/store";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ENV } from "@/config/env";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/services/api/axios";
 import ProblemDetailInfo from "@/components/bussiness/ProblemDetailInfo";
 import ProblemCoding from "@/components/bussiness/ProblemCoding";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import AIChatWidget from "../common/AIChatWidget";
+import { toast } from "sonner";
 export interface ProblemExample {
   in: string;
   ans: string;
@@ -53,9 +52,10 @@ export default function ProblemDetailPage() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const [problem, setProblem] = useState<ProblemData | null>(null);
-  const [codeFile, setCodeFile] = useState("");
+  const [hasTestCases, setHasTestCases] = useState(true);
+  const [, setCodeFile] = useState("");
   const [hide, setHide] = useState(false);
-  const [showChat, setShowChat] = useState(true);
+  const promptedNoTestcasePidRef = useRef<string | null>(null);
   const { language, codeFileObjectArray } = useSelector(
     (store: RootState) => store.code
   );
@@ -77,13 +77,27 @@ export default function ProblemDetailPage() {
           setProblem(result.data);
         }
       } catch (error) {}
+      try {
+        const configRes = await api.get(`/api/problem/config/${id}`);
+        const configResult = configRes.data;
+        const subtasks = configResult?.data?.subtasks;
+        setHasTestCases(Array.isArray(subtasks) && subtasks.length > 0);
+      } catch (error) {
+        setHasTestCases(false);
+      }
     };
     fetchProblem();
   }, [id, searchParams]);
+  useEffect(() => {
+    if (!problem) return;
+    if (hasTestCases) return;
+    if (promptedNoTestcasePidRef.current === problem.pid) return;
+    promptedNoTestcasePidRef.current = problem.pid;
+    toast.warning("当前题目没有测试点，请点击“评测配置”上传压缩包并配置测试点");
+  }, [problem, hasTestCases]);
   if (!problem) {
     return (
       <div className="min-h-screen bg-gray-50 py-4 pb-10">
-        <AIChatWidget />
         <div className="max-w-4xl mx-auto px-6 space-y-8">
           <div className="space-y-4">
             <Skeleton className="h-10 w-1/3" />
@@ -119,6 +133,10 @@ export default function ProblemDetailPage() {
   }
   const { title, pid } = problem;
   const handleCodeSubmit = async () => {
+    if (!hasTestCases) {
+      toast.error("当前题目没有测试点，请先在左侧点击“评测配置”完善测试数据");
+      return;
+    }
     const index = codeFileObjectArray.findIndex(
       (i: { pid: string }) => i.pid === pid
     );
@@ -137,21 +155,8 @@ export default function ProblemDetailPage() {
       <Helmet>
         <title>{`#${id}. ${title} - SeuOJ`}</title>
       </Helmet>
-      {showChat && <AIChatWidget />}
       <div className="h-[calc(100vh-5.5rem)] w-full max-w-full overflow-x-hidden overflow-y-hidden flex flex-col lg:flex-row bg-white border-t border-gray-200 relative">
-        <div className="fixed right-10 z-50 top-16 flex items-center space-x-6 bg-white/80 backdrop-blur-sm p-2 rounded-lg border border-gray-100 shadow-sm">
-          {/* AI 助手开关 */}
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="show-chat"
-              checked={showChat}
-              onCheckedChange={setShowChat}
-            />
-            <Label htmlFor="show-chat" className="cursor-pointer">
-              AI 助手
-            </Label>
-          </div>
-
+        <div className="fixed right-10 z-50 top-16 flex items-center bg-white/80 backdrop-blur-sm p-2 rounded-lg border border-gray-100 shadow-sm">
           {/* 隐藏编辑器开关 */}
           <div className="flex items-center space-x-2">
             <Switch id="sethide" checked={hide} onCheckedChange={setHide} />
@@ -168,6 +173,7 @@ export default function ProblemDetailPage() {
           <ProblemDetailInfo
             problem={problem}
             isAuthenticated={isAuthenticated}
+            hasTestcases={hasTestCases}
           />
         </div>
         {hide ? null : (
@@ -177,6 +183,7 @@ export default function ProblemDetailPage() {
                 pid={pid}
                 setCodeFile={setCodeFile}
                 handleCodeSubmit={handleCodeSubmit}
+                submitDisabled={!hasTestCases}
               />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-gray-50">

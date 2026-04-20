@@ -32,8 +32,25 @@ import { ArrowLeft, Plus, Trash2, FolderTree, AlertCircle } from "lucide-react";
 const judgeConfigSchema = z.object({
   time_limit_ms: z.string().min(1, "时间限制不能为空"),
   memory_limit_kb: z.string().min(1, "内存限制不能为空"),
-  problem_type: z.enum(["Standard", "Interactive"]),
-  checker_type: z.enum(["Standard", "Special"]),
+  problem_type: z.enum(["Standard", "Interactive", "Special"]),
+  checker_type: z.enum(["Standard", "Special", "Interactor"]),
+  checker_path: z.string().optional(),
+  interactor_path: z.string().optional(),
+}).superRefine((values, ctx) => {
+  if (values.problem_type === "Interactive" && !values.interactor_path?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["interactor_path"],
+      message: "Interactive 题型必须配置 interactor 路径",
+    });
+  }
+  if (values.problem_type === "Special" && !values.checker_path?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["checker_path"],
+      message: "Special 题型必须配置 checker 路径",
+    });
+  }
 });
 
 type JudgeConfigValues = z.infer<typeof judgeConfigSchema>;
@@ -77,12 +94,13 @@ interface ValidationIssue {
 
 /** 构建测试点列表 — 上传后由服务器解析返回 */
 function buildTestcaseRows(raw: Testcase[]): TestcaseRow[] {
+  const stripDataPrefix = (p: string) => p.replace(/^data\//, "");
   return raw.map((tc, i) => ({
     _key: Date.now() + i,
     id: tc.id,
     seq: i + 1,
-    in_path: tc.in_path,
-    ans_path: tc.ans_path,
+    in_path: stripDataPrefix(tc.in_path),
+    ans_path: stripDataPrefix(tc.ans_path),
     weight: tc.weight ?? 1,
     time_limit_ms: tc.time_limit_ms ?? null,
     memory_limit_kb: tc.memory_limit_kb ?? null,
@@ -226,46 +244,62 @@ function FilePathInput({
   onChange: (v: string) => void;
   files: string[];
 }) {
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
-    if (!search) return files.slice(0, 50);
-    const q = search.toLowerCase();
+    const q = value.trim().toLowerCase();
+    if (!q) return files.slice(0, 50);
     return files.filter((f) => f.toLowerCase().includes(q)).slice(0, 50);
-  }, [files, search]);
+  }, [files, value]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!wrapperRef.current) return;
+      if (!wrapperRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, []);
 
   return (
-    <div className="relative">
+    <div ref={wrapperRef} className="relative">
       <Input
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setOpen(true);
+        }}
+        onClick={() => setOpen(true)}
         onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
         className="bg-background/50 font-mono text-xs"
-        placeholder="data/1.in"
+        placeholder="1.in"
       />
-      {open && filtered.length > 0 && (
-        <div className="absolute z-50 mt-1 min-w-[280px] rounded-md border bg-popover shadow-lg">
-          <div className="p-2 border-b">
-            <Input
-              placeholder="搜索文件..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-7 text-xs"
-              autoFocus
-            />
-          </div>
+      {open && (
+        <div className="absolute z-[120] mt-1 min-w-[280px] rounded-md border bg-popover shadow-lg">
           <div className="max-h-48 overflow-y-auto">
-            {filtered.map((f) => (
-              <div
-                key={f}
-                className="px-3 py-1.5 text-xs font-mono hover:bg-muted cursor-pointer truncate"
-                onMouseDown={() => { onChange(f); setOpen(false); }}
-              >
-                {f}
+            {filtered.length > 0 ? (
+              filtered.map((f) => (
+                <div
+                  key={f}
+                  className="px-3 py-1.5 text-xs font-mono hover:bg-muted cursor-pointer truncate"
+                  onMouseDown={() => {
+                    onChange(f);
+                    setOpen(false);
+                  }}
+                >
+                  {f}
+                </div>
+              ))
+            ) : (
+              <div className="px-3 py-2 text-xs text-muted-foreground">
+                没有匹配的文件
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}
@@ -443,8 +477,8 @@ export default function ProblemJudgeConfigPage() {
         _key: Date.now(),
         id: -1,            // -1 表示新增（服务器分配）
         seq: nextSeq,
-        in_path: `data/${nextSeq}.in`,
-        ans_path: `data/${nextSeq}.ans`,
+        in_path: `${nextSeq}.in`,
+        ans_path: `${nextSeq}.ans`,
         weight: 1,
         time_limit_ms: null,
         memory_limit_kb: null,
@@ -514,6 +548,8 @@ export default function ProblemJudgeConfigPage() {
       memory_limit_kb: "131072",
       problem_type: "Standard",
       checker_type: "Standard",
+      checker_path: "",
+      interactor_path: "",
     },
   });
 
@@ -522,7 +558,12 @@ export default function ProblemJudgeConfigPage() {
     const fetchProblem = async () => {
       try {
         const configRes = await getProblemConfig(pid);
-        const { testcases: tcs, subtasks: sts, problem_info: info } = configRes;
+        const {
+          testcases: tcs,
+          subtasks: sts,
+          problem_info: info,
+          custom_modules,
+        } = configRes;
 
         setTestcases(buildTestcaseRows(tcs || []));
         setSubtasks(buildSubtaskRows(sts ?? []));
@@ -532,8 +573,20 @@ export default function ProblemJudgeConfigPage() {
           form.reset({
             time_limit_ms: String(info.time_limit_ms ?? 1000),
             memory_limit_kb: String(info.memory_limit_kb ?? 131072),
-            problem_type: info.problem_type === "Interactive" ? "Interactive" : "Standard",
-            checker_type: info.checker_type === "Special" || info.checker_type === "Interactor" ? "Special" : "Standard",
+            problem_type:
+              info.problem_type === "Interactive"
+                ? "Interactive"
+                : info.problem_type === "Special"
+                ? "Special"
+                : "Standard",
+            checker_type:
+              info.checker_type === "Interactor"
+                ? "Interactor"
+                : info.checker_type === "Special"
+                ? "Special"
+                : "Standard",
+            checker_path: custom_modules?.checker_path ?? "",
+            interactor_path: custom_modules?.interactor_path ?? "",
           });
         }
       } catch (error: any) {
@@ -547,6 +600,7 @@ export default function ProblemJudgeConfigPage() {
   }, [pid, form, fetchFolderTree]);
 
   const { handleSubmit, control, formState, setFocus } = form;
+  const selectedProblemType = form.watch("problem_type");
 
   const onSubmit = async (values: JudgeConfigValues) => {
     if (errors.length > 0) {
@@ -558,10 +612,12 @@ export default function ProblemJudgeConfigPage() {
       const problemTypeMap: Record<string, "standard" | "interactive" | "special"> = {
         Standard: "standard",
         Interactive: "interactive",
+        Special: "special",
       };
       const checkerTypeMap: Record<string, "standard" | "special" | "interactor"> = {
         Standard: "standard",
         Special: "special",
+        Interactor: "interactor",
       };
 
       // 清理：去掉 _key 和 seq（内部字段），去掉路径中的 data/ 前缀（judgend 自动添加）
@@ -573,6 +629,12 @@ export default function ProblemJudgeConfigPage() {
         id: t.id === -1 ? 0 : t.id,
       }));
       const cleanSts: Subtask[] = subtasks.map(({ _key, ...s }) => s);
+      let customModules: ProblemConfigPayload["custom_modules"] | undefined;
+      if (values.problem_type === "Interactive") {
+        customModules = { interactor_path: values.interactor_path?.trim() || "" };
+      } else if (values.problem_type === "Special") {
+        customModules = { checker_path: values.checker_path?.trim() || "" };
+      }
 
       const payload: ProblemConfigPayload = {
         problem_info: {
@@ -583,6 +645,7 @@ export default function ProblemJudgeConfigPage() {
         },
         testcases: cleanTcs,
         subtasks: cleanSts.length > 0 ? cleanSts : undefined,
+        custom_modules: customModules,
       };
 
       await updateProblemConfig(pid, payload);
@@ -596,7 +659,7 @@ export default function ProblemJudgeConfigPage() {
       }
 
       setDirty(false);
-      nav(`/problemsLibrary/${pid}/config`);
+      nav(`/problemsLibrary/${pid}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "保存失败";
       toast.error(message, { position: "top-center" });
@@ -691,7 +754,7 @@ export default function ProblemJudgeConfigPage() {
                   暂无测试点，请上传测试用例压缩包或手动添加
                 </div>
               ) : (
-                <div className="rounded-md border overflow-hidden">
+                <div className="rounded-md border overflow-visible">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50">
                       <tr>
@@ -984,10 +1047,23 @@ export default function ProblemJudgeConfigPage() {
                         <select
                           className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background/50 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
                           value={field.value}
-                          onChange={field.onChange}
+                          onChange={(e) => {
+                            const next = e.target.value as "Standard" | "Interactive" | "Special";
+                            field.onChange(next);
+                            const linkedCheckerMap: Record<typeof next, "Standard" | "Interactor" | "Special"> = {
+                              Standard: "Standard",
+                              Interactive: "Interactor",
+                              Special: "Special",
+                            };
+                            form.setValue("checker_type", linkedCheckerMap[next], {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            });
+                          }}
                         >
                           <option value="Standard">Standard</option>
                           <option value="Interactive">Interactive</option>
+                          <option value="Special">Special</option>
                         </select>
                       </FormControl>
                       <FormMessage />
@@ -1004,16 +1080,67 @@ export default function ProblemJudgeConfigPage() {
                         <select
                           className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background/50 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
                           value={field.value}
-                          onChange={field.onChange}
+                          onChange={(e) => {
+                            const next = e.target.value as "Standard" | "Special" | "Interactor";
+                            field.onChange(next);
+                            const linkedProblemMap: Record<typeof next, "Standard" | "Special" | "Interactive"> = {
+                              Standard: "Standard",
+                              Special: "Special",
+                              Interactor: "Interactive",
+                            };
+                            form.setValue("problem_type", linkedProblemMap[next], {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            });
+                          }}
                         >
                           <option value="Standard">Standard</option>
                           <option value="Special">Special</option>
+                          <option value="Interactor">Interactor</option>
                         </select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                {selectedProblemType === "Special" && (
+                  <FormField
+                    control={control}
+                    name="checker_path"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>checker 路径</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="checker 源代码路径，如 checker.cpp"
+                            className="bg-background/50 font-mono"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+                {selectedProblemType === "Interactive" && (
+                  <FormField
+                    control={control}
+                    name="interactor_path"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>interactor 路径</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="interactor 源代码路径，如 interactor.cpp"
+                            className="bg-background/50 font-mono"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
             </CardContent>
           </Card>

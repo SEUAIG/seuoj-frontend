@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
-import { ArrowLeft, Download, FileText } from "lucide-react";
+import { ArrowLeft, Download, FileText, Settings } from "lucide-react";
 import { Checkbox } from "../ui/checkbox";
 import { Button } from "../ui/button";
 
@@ -52,7 +52,7 @@ export default function ProblemTestFilePage() {
   const handleSingleDownload = async (filename: string) => {
     if (!id) return;
     try {
-      const blob = await downloadProblemFile(id, `data/${filename}`);
+      const blob = await downloadProblemFile(id, filename);
       triggerBlobDownload(blob, filename);
     } catch (e) {
       console.error("下载失败", e);
@@ -63,7 +63,7 @@ export default function ProblemTestFilePage() {
     if (!id || selectedRows.size === 0) return;
     for (const item of Array.from(selectedRows)) {
       try {
-        const blob = await downloadProblemFile(id, `data/${item}`);
+        const blob = await downloadProblemFile(id, item);
         triggerBlobDownload(blob, item);
       } catch (e) {
         console.error(`下载 ${item} 失败`, e);
@@ -111,16 +111,30 @@ export default function ProblemTestFilePage() {
               </p>
             </div>
           </div>
-          <Button
-            size="sm"
-            className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => {
-              nav(-1);
-            }}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            返回上一页
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2"
+              onClick={() => {
+                if (!id) return;
+                nav(`/problemsLibrary/${id}/judgeConfig`);
+              }}
+            >
+              <Settings className="h-4 w-4" />
+              评测配置
+            </Button>
+            <Button
+              size="sm"
+              className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() => {
+                nav(-1);
+              }}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              返回上一页
+            </Button>
+          </div>
         </div>
         {loading && (
           <div className="flex items-center justify-center py-16 text-muted-foreground">
