@@ -179,7 +179,7 @@ export default function ProblemAgentPage() {
       dispatch(
         setCodeFile({
           pid: editorPid,
-          codeFile: extractCodeText(String(payload.code || "")),
+          codeFile: extractCodeText(String(payload.best_stdin_code || "")),
         })
       );
       setStdinCode((payload.stdin_code as string) || "");

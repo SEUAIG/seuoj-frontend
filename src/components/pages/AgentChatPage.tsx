@@ -4,10 +4,13 @@ import {
   AgentChatMessage,
   AgentChatSession,
   askAgent,
+  deleteAgentSession,
   fetchAgentSessionDetail,
+  fetchAgentSessionMessages,
   fetchAgentSessions,
+  updateAgentSessionTitle,
 } from "@/services/ai/agentChat";
-import { Plus, SendHorizontal } from "lucide-react";
+import { Pencil, Plus, SendHorizontal, Trash2 } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useSelector } from "react-redux";
@@ -17,6 +20,8 @@ interface CitationItem {
   number: number;
   title: string;
   snippet: string;
+  location?: string;
+  sourceType?: string;
 }
 
 const QUICK_QUESTIONS = [
@@ -46,6 +51,23 @@ function extractCitations(content: string): CitationItem[] {
   }));
 }
 
+function mapMessageCitations(message: AgentChatMessage): CitationItem[] {
+  const fromApi = (message.citations ?? [])
+    .map((item, index) => {
+      const number = Number(item.citation_number ?? index + 1);
+      return {
+        number,
+        title: String(item.source_title ?? `参考 ${number}`),
+        snippet: String(item.snippet ?? ""),
+        location: item.location ? String(item.location) : undefined,
+        sourceType: item.source_type ? String(item.source_type) : undefined,
+      };
+    })
+    .sort((a, b) => a.number - b.number);
+  if (fromApi.length > 0) return fromApi;
+  return extractCitations(message.content);
+}
+
 function upsertSessionList(
   sessions: AgentChatSession[],
   target: AgentChatSession
@@ -70,6 +92,7 @@ export default function AgentChatPage() {
   const [resizingSide, setResizingSide] = useState<"left" | "right" | null>(null);
   const resizeStartXRef = useRef(0);
   const resizeStartWidthRef = useRef(0);
+  const loadedSessionIdsRef = useRef<Set<string>>(new Set());
 
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -122,10 +145,29 @@ export default function AgentChatPage() {
     let alive = true;
     setLoadingSessions(true);
     fetchAgentSessions({ userId, jwt })
-      .then((list) => {
+      .then(async (list) => {
         if (!alive) return;
         setSessions(list);
-        setCurrentSessionId((prev) => prev ?? list[0]?.id ?? null);
+        const firstId = list[0]?.id ?? null;
+        setCurrentSessionId((prev) => prev ?? firstId);
+        if (firstId && !loadedSessionIdsRef.current.has(firstId)) {
+          try {
+            const [detail, messages] = await Promise.all([
+              fetchAgentSessionDetail({ sessionId: firstId, jwt }),
+              fetchAgentSessionMessages({ sessionId: firstId, jwt }),
+            ]);
+            if (!alive) return;
+            loadedSessionIdsRef.current.add(firstId);
+            setSessions((previous) =>
+              upsertSessionList(previous, {
+                ...detail,
+                messages,
+              })
+            );
+          } catch {
+            // ignore background preload errors
+          }
+        }
       })
       .catch((error) => {
         toast.error(error instanceof Error ? error.message : "获取会话失败");
@@ -171,11 +213,54 @@ export default function AgentChatPage() {
     setShowCitationPanel(false);
 
     if (sessionId.startsWith("temp-session")) return;
+    if (loadedSessionIdsRef.current.has(sessionId)) return;
     try {
-      const detail = await fetchAgentSessionDetail({ sessionId, jwt });
-      setSessions((previous) => upsertSessionList(previous, detail));
+      const [detail, messages] = await Promise.all([
+        fetchAgentSessionDetail({ sessionId, jwt }),
+        fetchAgentSessionMessages({ sessionId, jwt }),
+      ]);
+      loadedSessionIdsRef.current.add(sessionId);
+      setSessions((previous) =>
+        upsertSessionList(previous, {
+          ...detail,
+          messages,
+        })
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "获取会话详情失败");
+    }
+  }
+
+  async function handleRenameSession(sessionId: string, oldTitle: string) {
+    const title = window.prompt("请输入新的会话标题", oldTitle)?.trim();
+    if (!title || title === oldTitle) return;
+    try {
+      const updated = await updateAgentSessionTitle({ sessionId, title, jwt });
+      setSessions((previous) =>
+        previous.map((session) =>
+          session.id === sessionId ? { ...session, title: updated.title } : session
+        )
+      );
+      toast.success("会话标题已更新");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "更新会话标题失败");
+    }
+  }
+
+  async function handleDeleteSession(sessionId: string) {
+    const ok = window.confirm("确认删除该会话？删除后不可恢复。");
+    if (!ok) return;
+    try {
+      await deleteAgentSession({ sessionId, jwt });
+      loadedSessionIdsRef.current.delete(sessionId);
+      const remaining = sessions.filter((session) => session.id !== sessionId);
+      setSessions(remaining);
+      if (currentSessionId === sessionId) {
+        setCurrentSessionId(remaining[0]?.id ?? null);
+      }
+      toast.success("会话已删除");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "删除会话失败");
     }
   }
 
@@ -240,6 +325,7 @@ export default function AgentChatPage() {
       });
 
       const finalSessionId = returnedSessionId || targetSessionId;
+      loadedSessionIdsRef.current.add(finalSessionId);
       setCurrentSessionId(finalSessionId);
       setSessions((previous) => {
         const base = previous.filter((item) => item.id !== targetSessionId);
@@ -335,24 +421,48 @@ export default function AgentChatPage() {
               </p>
             ) : (
               sessions.map((session) => (
-                <button
-                  type="button"
+                <div
                   key={session.id}
-                  onClick={() => handleSelectSession(session.id)}
                   className={`w-full rounded-md border p-3 text-left transition ${
                     currentSessionId === session.id
                       ? "border-primary/40 bg-primary/5"
                       : "border-transparent bg-background hover:border-border"
                   }`}
                 >
-                  <p className="truncate text-sm font-medium">{session.title}</p>
-                  <p className="mt-1 truncate text-xs text-muted-foreground">
-                    {session.lastMessage || "暂无消息"}
-                  </p>
-                  <p className="mt-2 text-[11px] text-muted-foreground">
-                    {new Date(session.updatedAt).toLocaleString()}
-                  </p>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectSession(session.id)}
+                    className="w-full text-left"
+                  >
+                    <p className="truncate text-sm font-medium">{session.title}</p>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      {session.lastMessage || "暂无消息"}
+                    </p>
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      {new Date(session.updatedAt).toLocaleString()}
+                    </p>
+                  </button>
+                  {!session.id.startsWith("temp-session") ? (
+                    <div className="mt-2 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleRenameSession(session.id, session.title)}
+                        className="inline-flex items-center gap-1 rounded border px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+                      >
+                        <Pencil className="h-3 w-3" />
+                        重命名
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSession(session.id)}
+                        className="inline-flex items-center gap-1 rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        删除
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
               ))
             )}
           </div>
@@ -388,7 +498,7 @@ export default function AgentChatPage() {
           ) : (
             <div ref={messagesContainerRef} className="min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
               {currentMessages.map((message) => {
-                const citations = message.role === "assistant" ? extractCitations(message.content) : [];
+                const citations = message.role === "assistant" ? mapMessageCitations(message) : [];
                 return (
                   <div
                     key={message.id}
@@ -494,6 +604,9 @@ export default function AgentChatPage() {
               <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
                 <p className="text-sm font-medium">{selectedCitation?.title ?? "未选择参考项"}</p>
                 <p className="text-xs text-muted-foreground">参考项 #{selectedCitation?.number ?? "-"}</p>
+                {selectedCitation?.location ? (
+                  <p className="text-xs text-muted-foreground">位置: {selectedCitation.location}</p>
+                ) : null}
                 <div className="rounded-md border bg-muted/30 p-3 text-sm leading-6">
                   {selectedCitation?.snippet ?? "请从助手消息中选择一个参考项。"}
                 </div>

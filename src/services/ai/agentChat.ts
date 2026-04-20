@@ -5,6 +5,13 @@ export interface AgentChatMessage {
   role: AgentChatRole;
   content: string;
   createdAt: string;
+  citations?: Array<{
+    citation_number?: number;
+    source_title?: string;
+    snippet?: string;
+    location?: string;
+    source_type?: string;
+  }>;
 }
 
 export interface AgentChatSession {
@@ -28,6 +35,7 @@ function mapMessage(raw: any): AgentChatMessage {
     role: normalizeRole(raw?.role),
     content: String(raw?.content ?? ""),
     createdAt: String(raw?.timestamp ?? raw?.created_at ?? new Date().toISOString()),
+    citations: Array.isArray(raw?.citations) ? raw.citations : [],
   };
 }
 
@@ -44,10 +52,16 @@ function mapSession(raw: any): AgentChatSession {
 
 function buildHeaders(jwt?: string) {
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
   };
   if (jwt) headers.Authorization = `Bearer ${jwt}`;
   return headers;
+}
+
+function buildJsonHeaders(jwt?: string) {
+  return {
+    ...buildHeaders(jwt),
+    "Content-Type": "application/json",
+  };
 }
 
 export async function fetchAgentSessions(params: {
@@ -84,6 +98,45 @@ export async function fetchAgentSessionDetail(params: {
   return mapSession(data);
 }
 
+export async function fetchAgentSessionMessages(params: {
+  sessionId: string;
+  jwt?: string;
+}) {
+  const { sessionId, jwt } = params;
+  const response = await fetch(`/agent/api/rag/sessions/${sessionId}/messages/`, {
+    headers: buildHeaders(jwt),
+  });
+  if (!response.ok) throw new Error(`获取会话消息失败（${response.status}）`);
+  const data = await response.json();
+  const rows = Array.isArray(data?.messages) ? data.messages : [];
+  return rows.map(mapMessage) as AgentChatMessage[];
+}
+
+export async function updateAgentSessionTitle(params: {
+  sessionId: string;
+  title: string;
+  jwt?: string;
+}) {
+  const { sessionId, title, jwt } = params;
+  const response = await fetch(`/agent/api/rag/sessions/${sessionId}/`, {
+    method: "PUT",
+    headers: buildJsonHeaders(jwt),
+    body: JSON.stringify({ title }),
+  });
+  if (!response.ok) throw new Error(`更新会话标题失败（${response.status}）`);
+  const data = await response.json();
+  return mapSession(data);
+}
+
+export async function deleteAgentSession(params: { sessionId: string; jwt?: string }) {
+  const { sessionId, jwt } = params;
+  const response = await fetch(`/agent/api/rag/sessions/${sessionId}/`, {
+    method: "DELETE",
+    headers: buildHeaders(jwt),
+  });
+  if (!response.ok) throw new Error(`删除会话失败（${response.status}）`);
+}
+
 export async function askAgent(params: {
   userId: string;
   query: string;
@@ -103,7 +156,7 @@ export async function askAgent(params: {
   try {
     response = await fetch("/agent/api/rag/messages/rag_answer/", {
       method: "POST",
-      headers: buildHeaders(jwt),
+      headers: buildJsonHeaders(jwt),
       body: JSON.stringify(body),
       signal: controller.signal,
     });
