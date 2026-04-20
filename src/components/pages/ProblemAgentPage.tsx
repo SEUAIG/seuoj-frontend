@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useNavigate, useParams } from "react-router-dom";
 import { FlaskConical, Play, X } from "lucide-react";
@@ -61,6 +61,7 @@ export default function ProblemAgentPage() {
     (store: RootState) => store.code.codeFileObjectArray
   );
   const [problemData, setProblemData] = useState<ProblemData | null>(null);
+  const [hasTestCases, setHasTestCases] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [pseudocode, setPseudocode] = useState("");
   const [language, setLanguage] = useState<AgentCodingLanguage>("cpp");
@@ -71,6 +72,7 @@ export default function ProblemAgentPage() {
   const [runningTests, setRunningTests] = useState(false);
   const [newCaseInput, setNewCaseInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const promptedNoTestcasePidRef = useRef<string | null>(null);
 
   const selectedProblemId = id || "";
   const editorPid = `agent-${selectedProblemId || "temp"}`;
@@ -130,14 +132,31 @@ export default function ProblemAgentPage() {
           return;
         }
         setProblemData(result.data);
+        try {
+          const configRes = await api.get(`/api/problem/config/${selectedProblemId}`);
+          const configResult = configRes.data;
+          const subtasks = configResult?.data?.subtasks;
+          setHasTestCases(Array.isArray(subtasks) && subtasks.length > 0);
+        } catch {
+          setHasTestCases(false);
+        }
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "获取题目详情失败");
+        setHasTestCases(false);
       } finally {
         setLoadingDetail(false);
       }
     };
     loadProblemDetail();
   }, [dispatch, editorPid, selectedProblemId]);
+
+  useEffect(() => {
+    if (!problemData) return;
+    if (hasTestCases) return;
+    if (promptedNoTestcasePidRef.current === problemData.pid) return;
+    promptedNoTestcasePidRef.current = problemData.pid;
+    toast.warning("当前题目没有测试点，请点击“评测配置”上传压缩包并配置测试点");
+  }, [problemData, hasTestCases]);
 
   const handleGenerateCode = async () => {
     if (!pseudocode.trim()) return;
@@ -282,6 +301,10 @@ export default function ProblemAgentPage() {
   };
 
   const handleSubmit = async () => {
+    if (!hasTestCases) {
+      toast.error("当前题目没有测试点，请先在左侧点击“评测配置”完善测试数据");
+      return;
+    }
     if (!selectedProblemId || !editorCode.trim()) {
       toast.error("请先生成代码后再提交");
       return;
@@ -329,6 +352,7 @@ export default function ProblemAgentPage() {
             <ProblemDetailInfo
               problem={problemData}
               isAuthenticated={isAuthenticated}
+              hasTestcases={hasTestCases}
               practiceButtonLabel="传统练习"
               onPracticeClick={(pid) => nav(`/problemsLibrary/${pid}`)}
             />
@@ -389,7 +413,7 @@ export default function ProblemAgentPage() {
                     <Button
                       size="sm"
                       onClick={handleSubmit}
-                      disabled={!editorCode.trim() || isSubmitting}
+                      disabled={!editorCode.trim() || isSubmitting || !hasTestCases}
                     >
                       {isSubmitting ? "提交中..." : "提交评测"}
                     </Button>
