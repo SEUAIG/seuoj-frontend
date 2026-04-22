@@ -1,6 +1,6 @@
 import { api } from "@/services/api/axios";
 
-export type CommonUserRole = "USER" | "TEACHER" | "ADMIN" | "SUPER_ADMIN";
+export type CommonUserRole = "STUDENT" | "TEACHER" | "ADMIN" | "SUPER_ADMIN";
 
 export interface GetUserPageRequest {
   current?: number;

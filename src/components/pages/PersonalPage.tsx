@@ -101,7 +101,7 @@ export default function PersonalPage() {
     if (!total) return 0;
     return Math.ceil(total / Number(size));
   }, [total, size]);
-  const canViewUserPage = isAuthenticated && user?.role !== "guest" && user?.role !== "user";
+  const canViewUserPage = isAuthenticated && user?.role !== "guest" && user?.role !== "student";
   const [userPageCurrent, setUserPageCurrent] = useState(1);
   const userPageSize = 10;
   const [usernameInput, setUsernameInput] = useState("");

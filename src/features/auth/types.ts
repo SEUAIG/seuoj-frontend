@@ -1,10 +1,10 @@
-export type UserRole = "guest" | "user" | "admin" | "superadmin";
+export type UserRole = "guest" | "student" | "teacher" | "admin" | "superadmin";
 
 export type User = {
     id:string;
     username:string;
     avatarUrl:string;
-    role?:"guest"|"admin"|"superadmin"|"user";
+    role?:UserRole;
 
 }
 export type AuthState = {

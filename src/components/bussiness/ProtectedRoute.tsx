@@ -2,7 +2,7 @@ import { RootState } from "@/app/store";
 import React from "react";
 import { useSelector } from "react-redux";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-type Role = "guest" | "user" | "admin" | "superadmin";
+type Role = "guest" | "student" | "teacher" | "admin" | "superadmin";
 export default function ProtectedRoute({
   allowRole = "guest",
 }: {
@@ -15,12 +15,29 @@ export default function ProtectedRoute({
   switch (allowRole) {
     case "guest":
       return <Outlet />;
-    case "user":
+    case "student":
       if (role === "guest") return <Navigate to="/login" replace />;
+      return <Outlet />;
+    case "teacher":
+      if (role === "guest") return <Navigate to="/login" replace />;
+      if (role === "student") {
+        return (
+          <Navigate
+            to="/unauthorized"
+            replace
+            state={{
+              perm: "teacher",
+              role,
+              allowedRoles: ["teacher", "admin", "superadmin"],
+              fallbackPath: location.state?.fallbackPath ?? "/home",
+            }}
+          />
+        );
+      }
       return <Outlet />;
     case "admin":
       if (role === "guest") return <Navigate to="/login" replace />;
-      if (role === "user") {
+      if (role === "student" || role === "teacher") {
         return (
           <Navigate
             to="/unauthorized"

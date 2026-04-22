@@ -109,7 +109,7 @@ const authSlice = createSlice({
           id: "1",
           username: username || "user",
           avatarUrl: "",
-          role: role || "superadmin",
+          role: role || "student",
         };
         state.isAuthenticated = true;
         onLoginSuccess?.();

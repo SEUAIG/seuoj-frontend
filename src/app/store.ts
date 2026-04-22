@@ -41,7 +41,7 @@ const authPersistConfig = {
       ...state,
       user: {
         ...state.user,
-        role: state.user.role || "superadmin",
+        role: state.user.role === "user" ? "student" : (state.user.role || "student"),
       },
     };
   },

@@ -332,7 +332,7 @@ export default function AdminUserManagementPage() {
     const totalPages = Math.ceil(total / pageSize);
 
     const roleColors: Record<CommonUserRole, string> = {
-        USER: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+        STUDENT: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
         TEACHER: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
         ADMIN: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300",
         SUPER_ADMIN: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",

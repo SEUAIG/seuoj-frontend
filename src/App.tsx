@@ -130,7 +130,7 @@ function App() {
             <Route index element={<ProblemsLibraryPage />} />
             <Route path=":id" element={<ProblemDetailPage />} />
           </Route>
-          <Route element={<ProtectedRoute allowRole="user" />}>
+          <Route element={<ProtectedRoute allowRole="student" />}>
             <Route path="/problemsLibrary/create" element={<ProblemCreatePage />} />
             <Route path="/problemsLibrary/:id/edit" element={<ProblemEditPage />} />
             <Route path="/problemsLibrary/:id/testfile" element={<ProblemTestFilePage />} />
@@ -139,7 +139,7 @@ function App() {
               element={<ProblemJudgeConfigPage />}
             />
           </Route>
-          <Route element={<ProtectedRoute allowRole="user" />}>
+          <Route element={<ProtectedRoute allowRole="student" />}>
             <Route path="/submission">
               <Route index element={<SubmissionPage />} />
               <Route path=":submissionNo" element={<SubmissionPage />} />
@@ -166,7 +166,7 @@ function App() {
               element={<ContestSubmissionListPage />}
             />
           </Route>
-          <Route element={<ProtectedRoute allowRole="user" />}>
+          <Route element={<ProtectedRoute allowRole="student" />}>
             <Route path="/contest/create" element={<CreateContestPage />} />
             <Route
               path="/contest/:contest_public_id/edit"
@@ -184,7 +184,7 @@ function App() {
           <Route path="/evaluation" element={<EvaluationPage />} />
           <Route path="/problemset" element={<ProblemSetListPage />} />
           <Route path="/problemset/:id" element={<ProblemSetDetailPage />} />
-          <Route element={<ProtectedRoute allowRole="user" />}>
+          <Route element={<ProtectedRoute allowRole="student" />}>
             <Route path="/problemset/create" element={<ProblemSetCreatePage />} />
             <Route
               path="/problemset/:id/edit"
