@@ -19,7 +19,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { createAnnouncement } from "@/services/Class/createAnnouncement";
+import { updateAnnouncement } from "@/services/Class/updateAnnouncement";
 import { uploadFile } from "@/services/file/uploadFile";
+import type { AnnouncementItem } from "@/services/Class/getAnnouncementPage";
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return bytes + " B";
@@ -49,6 +51,8 @@ interface CreateAnnouncementDialogProps {
   onClose: () => void;
   classId: number;
   assignmentId?: number;
+  /** When provided, dialog operates in edit mode */
+  editAnnouncement?: AnnouncementItem;
   onSuccess?: () => void;
 }
 
@@ -56,15 +60,27 @@ export default function CreateAnnouncementDialog({
   isOpen,
   onClose,
   classId,
+  editAnnouncement,
   onSuccess,
 }: CreateAnnouncementDialogProps) {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [isPinned, setIsPinned] = useState(false);
-  const [attachments, setAttachments] = useState<UploadedFile[]>([]);
+  const isEdit = !!editAnnouncement;
+  const [title, setTitle] = useState(editAnnouncement?.title ?? "");
+  const [content, setContent] = useState(editAnnouncement?.content ?? "");
+  const [isPinned, setIsPinned] = useState(editAnnouncement?.is_pinned ?? false);
+  const [attachments, setAttachments] = useState<UploadedFile[]>(
+    editAnnouncement?.attachments?.map((a) => ({
+      file_path: a.file_path,
+      file_name: a.file_name,
+      file_size: a.file_size,
+    })) ?? []
+  );
+  const [removedAttachmentIds, setRemovedAttachmentIds] = useState<number[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Existing attachments (from server) vs newly added ones
+  const existingAttachments = editAnnouncement?.attachments ?? [];
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -99,6 +115,14 @@ export default function CreateAnnouncementDialog({
   };
 
   const removeAttachment = (index: number) => {
+    const att = attachments[index];
+    // If this attachment matches an existing server attachment, record its ID for removal
+    const existing = existingAttachments.find(
+      (e) => e.file_path === att.file_path && e.file_name === att.file_name
+    );
+    if (existing) {
+      setRemovedAttachmentIds((prev) => [...prev, existing.id]);
+    }
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -110,22 +134,45 @@ export default function CreateAnnouncementDialog({
 
     setIsSubmitting(true);
     try {
-      const res = await createAnnouncement(classId, {
-        title: title.trim(),
-        content: content || undefined,
-        is_pinned: isPinned,
-        attachments: attachments.length > 0 ? attachments : undefined,
-      });
-
-      if (res.code === 0) {
-        toast.success("公告发布成功");
-        onClose();
-        onSuccess?.();
+      if (isEdit && editAnnouncement) {
+        // Distinguish newly added attachments from existing ones
+        const newAttachments = attachments.filter(
+          (a) =>
+            !existingAttachments.some(
+              (e) => e.file_path === a.file_path && e.file_name === a.file_name
+            )
+        );
+        const res = await updateAnnouncement(classId, editAnnouncement.announcement_id, {
+          title: title.trim(),
+          content: content || undefined,
+          is_pinned: isPinned,
+          add_attachments: newAttachments.length > 0 ? newAttachments : undefined,
+          remove_attachment_ids: removedAttachmentIds.length > 0 ? removedAttachmentIds : undefined,
+        });
+        if (res.code === 0) {
+          toast.success("公告已更新");
+          onClose();
+          onSuccess?.();
+        } else {
+          toast.error(res.message || "更新失败");
+        }
       } else {
-        toast.error(res.message || "发布失败");
+        const res = await createAnnouncement(classId, {
+          title: title.trim(),
+          content: content || undefined,
+          is_pinned: isPinned,
+          attachments: attachments.length > 0 ? attachments : undefined,
+        });
+        if (res.code === 0) {
+          toast.success("公告发布成功");
+          onClose();
+          onSuccess?.();
+        } else {
+          toast.error(res.message || "发布失败");
+        }
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "发布失败";
+      const message = err instanceof Error ? err.message : isEdit ? "更新失败" : "发布失败";
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -136,7 +183,7 @@ export default function CreateAnnouncementDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>发布公告</DialogTitle>
+          <DialogTitle>{isEdit ? "编辑公告" : "发布公告"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
@@ -235,10 +282,10 @@ export default function CreateAnnouncementDialog({
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                发布中...
+                {isEdit ? "保存中..." : "发布中..."}
               </>
             ) : (
-              "发布"
+              isEdit ? "保存" : "发布"
             )}
           </Button>
         </DialogFooter>

@@ -98,7 +98,7 @@ export default function AnnouncementCard({
 
         {/* Content */}
         {announcement.content && (
-          <div className="mt-3 prose prose-sm max-w-none text-foreground">
+          <div className="mt-3 prose prose-sm dark:prose-invert max-w-none text-foreground">
             <MarkdownRenderer>{announcement.content}</MarkdownRenderer>
           </div>
         )}

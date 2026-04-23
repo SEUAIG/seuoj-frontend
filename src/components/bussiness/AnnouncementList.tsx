@@ -42,6 +42,7 @@ export default function AnnouncementList({
   });
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<AnnouncementItem | null>(null);
   const [toDelete, setToDelete] = useState<AnnouncementItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -103,9 +104,7 @@ export default function AnnouncementList({
                 key={ann.announcement_id}
                 announcement={ann}
                 canEdit={canEdit}
-                onEdit={() => {
-                  /* TODO: edit dialog */
-                }}
+                onEdit={setEditingAnnouncement}
                 onDelete={setToDelete}
               />
             ))}
@@ -128,6 +127,19 @@ export default function AnnouncementList({
           isOpen={isCreateOpen}
           onClose={() => setIsCreateOpen(false)}
           classId={classId}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["classAnnouncements", classId] });
+          }}
+        />
+      )}
+
+      {/* Edit dialog */}
+      {editingAnnouncement && (
+        <CreateAnnouncementDialog
+          isOpen={!!editingAnnouncement}
+          onClose={() => setEditingAnnouncement(null)}
+          classId={classId}
+          editAnnouncement={editingAnnouncement}
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ["classAnnouncements", classId] });
           }}
