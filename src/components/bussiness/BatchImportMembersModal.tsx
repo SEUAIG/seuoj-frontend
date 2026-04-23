@@ -21,6 +21,7 @@ import {
     batchImportClassMembers,
     type StudentRow,
     type ClassBatchImportResult,
+    type RowResult,
 } from "@/services/Class/batchImportClassMembers";
 import {
     Upload,
@@ -170,12 +171,6 @@ export default function BatchImportMembersModal({
                     ? (cols[passwordIdx] || "").trim()
                     : "";
 
-            if (!name) {
-                throw new Error(
-                    `学生「${studentId}」的姓名不能为空，请映射昵称/姓名列`
-                );
-            }
-
             if (passwordMode === "assigned" && !password) {
                 throw new Error(
                     `指定密码模式下，学生「${name}」(${studentId}) 的密码不能为空`
@@ -258,7 +253,7 @@ export default function BatchImportMembersModal({
                 setImportResult(res.data);
                 setImportStep("result");
                 toast.success(
-                    `导入完成：成功 ${res.data.success_count} 个，失败 ${res.data.fail_count} 个`
+                    `导入完成：成功 ${res.data.success_count} 个，跳过 ${res.data.skipped_count} 个，失败 ${res.data.fail_count} 个`
                 );
                 onSuccess?.();
             } else {
@@ -274,79 +269,39 @@ export default function BatchImportMembersModal({
         }
     };
 
-    const downloadSuccessReport = () => {
-        if (!importResult || importResult.successes.length === 0) return;
+    const downloadAllReport = () => {
+        if (!importResult || importResult.rows.length === 0) return;
         const dateStr = new Date().toISOString().slice(0, 10);
 
+        const allRows: (string | number)[][] = [
+            ["序号", "一卡通号", "姓名", "邮箱", "密码", "状态", "详情"],
+            ...importResult.rows.map((r: RowResult) => [
+                r.row,
+                r.student_id,
+                r.name,
+                r.email || "",
+                r.password || "",
+                r.status,
+                r.detail || "",
+            ]),
+        ];
+
         if (uploadedFileType === "xlsx") {
-            const wsData = [
-                ["序号", "一卡通号", "姓名", "邮箱", "密码", "备注"],
-                ...importResult.successes.map((s) => [
-                    s.row,
-                    s.student_id,
-                    s.name,
-                    s.email,
-                    s.password,
-                    s.existing_account ? "已有账号(直接加入班级)" : "新创建",
-                ]),
-            ];
-            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            const ws = XLSX.utils.aoa_to_sheet(allRows);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "导入成功账号");
-            XLSX.writeFile(wb, `班级导入成功账号_${dateStr}.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, "导入结果");
+            XLSX.writeFile(wb, `班级批量导入结果_${dateStr}.xlsx`);
         } else {
-            const csv = [
-                "序号,一卡通号,姓名,邮箱,密码,备注",
-                ...importResult.successes.map(
-                    (s) =>
-                        `${s.row},"${s.student_id}","${s.name}","${s.email}","${s.password}","${s.existing_account ? "已有账号(直接加入班级)" : "新创建"}"`
-                ),
-            ].join("\n");
+            const csv = allRows.map((row) =>
+                row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+            ).join("\n");
             const blob = new Blob(["\uFEFF" + csv], {
                 type: "text/csv;charset=utf-8;",
             });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `班级导入成功账号_${dateStr}.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-    };
-
-    const downloadFailureReport = () => {
-        if (!importResult || importResult.failures.length === 0) return;
-        const dateStr = new Date().toISOString().slice(0, 10);
-
-        if (uploadedFileType === "xlsx") {
-            const wsData = [
-                ["行号", "一卡通号", "姓名", "失败原因"],
-                ...importResult.failures.map((f) => [
-                    f.row,
-                    f.student_id,
-                    f.name,
-                    f.reason,
-                ]),
-            ];
-            const ws = XLSX.utils.aoa_to_sheet(wsData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "失败记录");
-            XLSX.writeFile(wb, `班级导入失败记录_${dateStr}.xlsx`);
-        } else {
-            const csv = [
-                "行号,一卡通号,姓名,失败原因",
-                ...importResult.failures.map(
-                    (f) =>
-                        `${f.row},"${f.student_id}","${f.name}","${f.reason}"`
-                ),
-            ].join("\n");
-            const blob = new Blob(["\uFEFF" + csv], {
-                type: "text/csv;charset=utf-8;",
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `班级导入失败记录_${dateStr}.csv`;
+            a.download = `班级批量导入结果_${dateStr}.csv`;
             a.click();
             URL.revokeObjectURL(url);
         }
@@ -591,6 +546,12 @@ export default function BatchImportMembersModal({
                                 <CheckCircle2 className="h-5 w-5" />
                                 <span>成功 {importResult.success_count} 个</span>
                             </div>
+                            {importResult.skipped_count > 0 && (
+                                <div className="flex items-center gap-2 text-yellow-600">
+                                    <AlertCircle className="h-5 w-5" />
+                                    <span>跳过 {importResult.skipped_count} 个</span>
+                                </div>
+                            )}
                             {importResult.fail_count > 0 && (
                                 <div className="flex items-center gap-2 text-red-600">
                                     <AlertCircle className="h-5 w-5" />
@@ -599,13 +560,10 @@ export default function BatchImportMembersModal({
                             )}
                         </div>
 
-                        {/* Success download */}
-                        {importResult.successes.length > 0 && (
-                            <div className="rounded-lg border bg-green-50 dark:bg-green-950/20 p-4 space-y-3">
-                                <p className="text-sm font-medium text-green-700 dark:text-green-400">
-                                    成功导入的账号信息（含密码）仅在此处展示，请及时下载保存。
-                                </p>
-                                <div className="border rounded-lg max-h-[200px] overflow-auto bg-white dark:bg-background">
+                        {/* Unified result table */}
+                        {importResult.rows.length > 0 && (
+                            <div className="space-y-3">
+                                <div className="rounded-lg border max-h-[300px] overflow-auto">
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
@@ -614,25 +572,31 @@ export default function BatchImportMembersModal({
                                                 <TableHead>姓名</TableHead>
                                                 <TableHead>邮箱</TableHead>
                                                 <TableHead>密码</TableHead>
-                                                <TableHead>备注</TableHead>
+                                                <TableHead>状态</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {importResult.successes.map((s, i) => (
+                                            {importResult.rows.map((r: RowResult, i: number) => (
                                                 <TableRow key={i}>
-                                                    <TableCell>{s.row}</TableCell>
+                                                    <TableCell>{r.row}</TableCell>
                                                     <TableCell className="font-mono">
-                                                        {s.student_id}
+                                                        {r.student_id}
                                                     </TableCell>
-                                                    <TableCell>{s.name}</TableCell>
-                                                    <TableCell>{s.email}</TableCell>
+                                                    <TableCell>{r.name || "-"}</TableCell>
+                                                    <TableCell className="text-muted-foreground">
+                                                        {r.email || "-"}
+                                                    </TableCell>
                                                     <TableCell className="font-mono text-xs">
-                                                        {s.password}
+                                                        {r.password || "-"}
                                                     </TableCell>
-                                                    <TableCell className="text-xs text-muted-foreground">
-                                                        {s.existing_account
-                                                            ? "已有账号(直接加入班级)"
-                                                            : "新创建"}
+                                                    <TableCell>
+                                                        <span className={
+                                                            r.status.includes("跳过") ? "text-yellow-600" :
+                                                            r.status.includes("忽略") ? "text-red-600" :
+                                                            "text-green-600"
+                                                        }>
+                                                            {r.status}
+                                                        </span>
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
@@ -641,52 +605,12 @@ export default function BatchImportMembersModal({
                                 </div>
                                 <Button
                                     size="sm"
-                                    onClick={downloadSuccessReport}
+                                    onClick={downloadAllReport}
                                 >
                                     <Download className="h-4 w-4 mr-1" />
-                                    下载成功账号表
+                                    下载全部记录
                                 </Button>
                             </div>
-                        )}
-
-                        {/* Failure details */}
-                        {importResult.failures.length > 0 && (
-                            <>
-                                <div className="border rounded-lg max-h-[200px] overflow-auto">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead className="w-[60px]">行号</TableHead>
-                                                <TableHead>一卡通号</TableHead>
-                                                <TableHead>姓名</TableHead>
-                                                <TableHead>失败原因</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {importResult.failures.map((f, i) => (
-                                                <TableRow key={i}>
-                                                    <TableCell>{f.row}</TableCell>
-                                                    <TableCell className="font-mono">
-                                                        {f.student_id}
-                                                    </TableCell>
-                                                    <TableCell>{f.name}</TableCell>
-                                                    <TableCell className="text-red-600">
-                                                        {f.reason}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={downloadFailureReport}
-                                >
-                                    <Download className="h-4 w-4 mr-1" />
-                                    下载失败记录
-                                </Button>
-                            </>
                         )}
                     </div>
                 )}

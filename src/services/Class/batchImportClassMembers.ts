@@ -12,28 +12,22 @@ export interface ClassBatchImportRequest {
     students: StudentRow[];
 }
 
-export interface SuccessDetail {
+export interface RowResult {
     row: number;
     student_id: string;
     name: string;
-    email: string;
-    password: string;
-    existing_account: boolean;
-}
-
-export interface FailDetail {
-    row: number;
-    student_id: string;
-    name: string;
-    reason: string;
+    email?: string;
+    password?: string;
+    status: string;
+    detail?: string;
 }
 
 export interface ClassBatchImportResult {
     total_count: number;
     success_count: number;
+    skipped_count: number;
     fail_count: number;
-    successes: SuccessDetail[];
-    failures: FailDetail[];
+    rows: RowResult[];
 }
 
 export interface ClassBatchImportResponse {

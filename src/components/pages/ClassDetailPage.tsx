@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import {
   Loader2,
   ArrowLeft,
@@ -11,11 +11,14 @@ import {
   Trophy,
   ChevronRight,
   Unlink,
-  BookOpen,
   BarChart3,
   Eye,
+  Home,
+  BookOpen,
   Megaphone,
-  ClipboardList,
+  Link as LinkIcon,
+  UserPlus,
+  Upload,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -47,34 +50,42 @@ import {
   getLinkedContestPage,
   LinkPageItem,
 } from "@/services/Class/getLinkedContestPage";
-import {
-  getLinkedProblemSetPage,
-  LinkProblemSetPageItem,
-} from "@/services/Class/getLinkedProblemSetPage";
 import { removeMember } from "@/services/Class/removeMember";
 import { unlinkContest } from "@/services/Class/unlinkContest";
-import { unlinkProblemSet } from "@/services/Class/unlinkProblemSet";
 import ClassPagination from "../bussiness/ClassPagination";
 import LinkContestModal from "../bussiness/LinkContestModal";
-import LinkProblemSetModal from "../bussiness/LinkProblemSetModal";
 import AddMemberModal from "../bussiness/AddMemberModal";
 import BatchImportMembersModal from "../bussiness/BatchImportMembersModal";
+import ClassHomepage from "../bussiness/ClassHomepage";
 import AnnouncementList from "../bussiness/AnnouncementList";
 import AssignmentOverviewDialog from "../bussiness/AssignmentOverviewDialog";
-import { Link as LinkIcon, UserPlus, Upload } from "lucide-react";
 import {
   getClassOverview,
   type AssignmentProgressItem,
 } from "@/services/Class/getClassOverview";
+import { getClassDetail } from "@/services/Class/getClassDetail";
 import { Progress } from "@/components/ui/progress";
 
 export default function ClassDetailPage() {
   const { id } = useParams<{ id: string }>();
   const classId = Number(id);
   const nav = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const page = parseInt(searchParams.get("page") || "1");
   const size = parseInt(searchParams.get("size") || "20");
+
+  // Class detail (introduction, name, etc.)
+  const {
+    data: classDetailResponse,
+    isLoading: isClassDetailLoading,
+    refetch: refetchClassDetail,
+  } = useQuery({
+    queryKey: ["classDetail", classId],
+    queryFn: () => getClassDetail(classId),
+    enabled: !!id,
+  });
+  const classDetail = classDetailResponse?.data;
 
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["classMemberPage", classId, page, size],
@@ -101,25 +112,7 @@ export default function ClassDetailPage() {
     placeholderData: keepPreviousData,
   });
 
-  const [psPage, setPsPage] = useState(1);
-  const psSize = 20;
-
-  const {
-    data: psData,
-    isLoading: isPsLoading,
-    isFetching: isPsFetching,
-    isError: isPsError,
-    error: psError,
-    refetch: refetchPs,
-  } = useQuery({
-    queryKey: ["classLinkedProblemSets", classId, psPage, psSize],
-    queryFn: () =>
-      getLinkedProblemSetPage(classId, { current: psPage, size: psSize }),
-    enabled: !!id,
-    placeholderData: keepPreviousData,
-  });
-
-  const [activeTab, setActiveTab] = useState("announcements");
+  const [activeTab, setActiveTab] = useState("homepage");
 
   const [memberToRemove, setMemberToRemove] = useState<ClassMemberItem | null>(
     null
@@ -134,13 +127,6 @@ export default function ClassDetailPage() {
   const [isUnlinking, setIsUnlinking] = useState(false);
 
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
-
-  const [psToUnlink, setPsToUnlink] = useState<LinkProblemSetPageItem | null>(
-    null
-  );
-  const [isUnlinkPsDialogOpen, setIsUnlinkPsDialogOpen] = useState(false);
-  const [isUnlinkingPs, setIsUnlinkingPs] = useState(false);
-  const [isLinkPsModalOpen, setIsLinkPsModalOpen] = useState(false);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [isBatchImportModalOpen, setIsBatchImportModalOpen] = useState(false);
   const [assignmentDrilldown, setAssignmentDrilldown] = useState<AssignmentProgressItem | null>(null);
@@ -216,37 +202,6 @@ export default function ClassDetailPage() {
     }
   };
 
-  const handleUnlinkPsClick = (
-    e: React.MouseEvent,
-    ps: LinkProblemSetPageItem
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setPsToUnlink(ps);
-    setIsUnlinkPsDialogOpen(true);
-  };
-
-  const confirmUnlinkPs = async () => {
-    if (!psToUnlink || !id) return;
-    setIsUnlinkingPs(true);
-    try {
-      const res = await unlinkProblemSet(classId, Number(psToUnlink.id));
-      if (res.code === 0) {
-        toast.success(`已解除与题单 "${psToUnlink.title}" 的关联`);
-        setIsUnlinkPsDialogOpen(false);
-        setPsToUnlink(null);
-        refetchPs();
-      } else {
-        toast.error(res.message || "解除关联失败");
-      }
-    } catch (error: any) {
-      console.error(error);
-      toast.error(error.message || "解除关联请求发生错误");
-    } finally {
-      setIsUnlinkingPs(false);
-    }
-  };
-
   const records = data?.data?.records || [];
   const total = data?.data?.total || 0;
   const totalPages = Math.ceil(total / size);
@@ -255,14 +210,18 @@ export default function ClassDetailPage() {
   const contestTotal = contestData?.data?.total || 0;
   const contestTotalPages = Math.ceil(contestTotal / contestSize);
 
-  const psRecords = psData?.data?.records || [];
-  const psTotal = psData?.data?.total || 0;
-  const psTotalPages = Math.ceil(psTotal / psSize);
+  if (isClassDetailLoading) {
+    return (
+      <div className="container mx-auto py-8 min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-8 min-h-screen flex flex-col">
       <Helmet>
-        <title>班级详情 - SeuOJ</title>
+        <title>{classDetail?.name || "班级详情"} - SeuOJ</title>
       </Helmet>
 
       <div className="flex items-center justify-between mb-6">
@@ -271,10 +230,14 @@ export default function ClassDetailPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">班级详情</h1>
-            <p className="text-muted-foreground mt-2">
-              查看班级成员及关联内容。
-            </p>
+            <h1 className="text-3xl font-bold">
+              {classDetail?.name || "班级详情"}
+            </h1>
+            {classDetail?.description && (
+              <p className="text-muted-foreground mt-1">
+                {classDetail.description}
+              </p>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -296,46 +259,50 @@ export default function ClassDetailPage() {
               <LinkIcon className="h-4 w-4 mr-2" />关联比赛
             </Button>
           )}
-          {activeTab === "problem-sets" && (
-            <Button onClick={() => setIsLinkPsModalOpen(true)}>
-              <LinkIcon className="h-4 w-4 mr-2" />关联题单
-            </Button>
-          )}
         </div>
       </div>
 
       <Tabs
-        defaultValue="announcements"
+        defaultValue="homepage"
         value={activeTab}
         onValueChange={setActiveTab}
         className="flex-1 flex flex-col"
       >
         <TabsList className="grid w-full grid-cols-5 max-w-2xl mb-4">
+          <TabsTrigger value="homepage">
+            <Home className="h-4 w-4 mr-1" />首页
+          </TabsTrigger>
           <TabsTrigger value="announcements">
             <Megaphone className="h-4 w-4 mr-1" />公告
           </TabsTrigger>
           <TabsTrigger value="members">成员列表</TabsTrigger>
           <TabsTrigger value="contests">已关联比赛</TabsTrigger>
-          <TabsTrigger value="problem-sets">
-            <ClipboardList className="h-4 w-4 mr-1" />作业
-          </TabsTrigger>
           <TabsTrigger value="overview">
             <BarChart3 className="h-4 w-4 mr-1" />学情概览
           </TabsTrigger>
         </TabsList>
 
-        {/* Announcements tab (default) */}
+        {/* Homepage tab (default) */}
+        <TabsContent value="homepage" className="!mt-0">
+          {classDetail && (
+            <ClassHomepage
+              classId={classId}
+              classDetail={classDetail}
+              canEdit={true}
+              onRefresh={() => {
+                refetchClassDetail();
+                queryClient.invalidateQueries({ queryKey: ["classOverview", classId] });
+                queryClient.invalidateQueries({ queryKey: ["classAnnouncements", classId] });
+              }}
+              onSwitchToOverview={() => setActiveTab("overview")}
+              onSwitchToAnnouncements={() => setActiveTab("announcements")}
+            />
+          )}
+        </TabsContent>
+
+        {/* Announcements tab */}
         <TabsContent value="announcements" className="!mt-0">
-          <Card className="flex-1 flex flex-col border-none shadow-none bg-transparent">
-            <CardContent className="flex-1 p-0 pt-2 flex flex-col">
-              {id && (
-                <AnnouncementList
-                  classId={classId}
-                  canEdit={true}
-                />
-              )}
-            </CardContent>
-          </Card>
+          <AnnouncementList classId={classId} canEdit={true} />
         </TabsContent>
 
         <TabsContent value="members" className="!mt-0">
@@ -525,91 +492,6 @@ export default function ClassDetailPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="problem-sets" className="!mt-0">
-          <Card className="flex-1 flex flex-col border-none shadow-none bg-transparent">
-            <CardHeader className="flex flex-row items-center justify-between border-b px-0 pt-0 pb-4">
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <BookOpen className="h-5 w-5" />
-                已关联题单 ({psTotal})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 p-0 pt-4 flex flex-col">
-              {isPsLoading ? (
-                <div className="flex-1 flex items-center justify-center min-h-[300px]">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : isPsError ? (
-                <div className="flex-1 flex items-center justify-center text-red-500 min-h-[300px]">
-                  加载失败:{" "}
-                  {psError instanceof Error ? psError.message : "未知错误"}
-                </div>
-              ) : psRecords.length === 0 ? (
-                <div className="flex flex-col items-center justify-center flex-1 min-h-[300px] text-center bg-muted/10 rounded-md">
-                  <p className="text-muted-foreground text-lg mb-4">
-                    暂未关联任何题单
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsLinkPsModalOpen(true)}
-                  >
-                    立即关联
-                  </Button>
-                </div>
-              ) : (
-                <div
-                  className={`flex-1 flex flex-col ${isPsFetching ? "opacity-60 transition-opacity" : ""
-                    }`}
-                >
-                  <div className="grid gap-3">
-                    {psRecords.map((ps) => (
-                      <div
-                        key={ps.id}
-                        className="flex items-center justify-between p-4 bg-card rounded-lg border hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer group"
-                        onClick={() => nav(`/problemset/${ps.id}`)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                            <BookOpen className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-base group-hover:text-primary transition-colors">
-                              {ps.title}
-                            </h4>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              ID: {ps.id}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50 z-10"
-                            onClick={(e) => handleUnlinkPsClick(e, ps)}
-                            title="解除关联"
-                          >
-                            <Unlink className="h-4 w-4" />
-                          </Button>
-                          <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  {psTotalPages > 1 && (
-                    <div className="p-4 mt-auto flex justify-center">
-                      <ClassPagination
-                        totalPages={psTotalPages}
-                        currentPage={psPage}
-                        onPageChange={setPsPage}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="overview" className="!mt-0">
           <Card className="flex-1 flex flex-col border-none shadow-none bg-transparent">
             <CardHeader className="flex flex-row items-center justify-between border-b px-0 pt-0 pb-4">
@@ -737,7 +619,7 @@ export default function ClassDetailPage() {
                           <div
                             key={a.assignment_id}
                             className="flex items-center gap-4 p-3 bg-card rounded-lg border hover:border-primary/50 transition-colors cursor-pointer group"
-                            onClick={() => setAssignmentDrilldown(a)}
+                            onClick={() => nav(`/class/${classId}/assignment/${a.assignment_id}`)}
                           >
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
@@ -857,13 +739,6 @@ export default function ClassDetailPage() {
         <LinkContestModal
           isOpen={isLinkModalOpen}
           onClose={() => setIsLinkModalOpen(false)}
-          classId={classId}
-        />
-      )}
-      {id && isLinkPsModalOpen && (
-        <LinkProblemSetModal
-          isOpen={isLinkPsModalOpen}
-          onClose={() => setIsLinkPsModalOpen(false)}
           classId={classId}
         />
       )}
