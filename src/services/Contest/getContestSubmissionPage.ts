@@ -32,6 +32,7 @@ export type ContestSubmissionRecord = {
   submit_time: string;
   username: string;
   nickname?: string;
+  user_id?: number;
   problem: ContestProblemOverview;
 };
 export type ContestSubmissionPageData = {

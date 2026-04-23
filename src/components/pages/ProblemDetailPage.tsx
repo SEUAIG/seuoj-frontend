@@ -66,10 +66,12 @@ export default function ProblemDetailPage() {
       try {
         const contest_id = searchParams.get("contest_id");
         const problem_set_id = searchParams.get("problem_set_id");
+        const assignment_id = searchParams.get("assignment_id");
         const res = await api.get(`/api/problem/${id}`, {
           params: {
             contest_id: contest_id || undefined,
             problem_set_id: problem_set_id || undefined,
+            assignment_id: assignment_id || undefined,
           },
         });
         const result = res.data;
@@ -142,7 +144,11 @@ export default function ProblemDetailPage() {
     );
     if (index === -1) return;
     const code = codeFileObjectArray[index].codeFile;
-    const data = { pid, language, code };
+    const assignmentId = searchParams.get("assignment_id");
+    const data: Record<string, unknown> = { pid, language, code };
+    if (assignmentId) {
+      data.assignment_id = Number(assignmentId);
+    }
     const res = await api.post("/api/submission", data);
     const result = res.data;
     const { submissionNo } = result.data;

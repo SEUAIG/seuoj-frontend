@@ -27,6 +27,7 @@ export interface SubmissionListItem {
     | null;
   username: string;
   nickname?: string;
+  user_id?: number;
   submission_no: string;
   submit_time: string;
   finish_time: string | null;

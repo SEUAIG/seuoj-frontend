@@ -420,7 +420,7 @@ export default function AssignmentDetailPage() {
                       <div
                         key={p.pid}
                         className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer"
-                        onClick={() => nav(`/problemsLibrary/${p.pid}`)}
+                        onClick={() => nav(`/problemsLibrary/${p.pid}?assignment_id=${assignmentId}`)}
                       >
                         <span className="text-xs text-muted-foreground w-6">
                           {i + 1}
@@ -580,7 +580,7 @@ export default function AssignmentDetailPage() {
                         <tr
                           key={p.pid}
                           className="bg-card hover:bg-muted/50 transition-colors cursor-pointer"
-                          onClick={() => nav(`/problemsLibrary/${p.pid}`)}
+                          onClick={() => nav(`/problemsLibrary/${p.pid}?assignment_id=${assignmentId}`)}
                         >
                           <td className="px-6 py-3 text-muted-foreground">
                             {i + 1}

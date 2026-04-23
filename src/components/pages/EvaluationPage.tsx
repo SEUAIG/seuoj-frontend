@@ -424,7 +424,16 @@ export default function EvaluationPage() {
                             {languageLabel[item.language] ?? item.language}
                           </TableCell>
                           <TableCell className="text-sm text-center py-2">
-                            {item.nickname || item.username || "-"}
+                            {item.user_id ? (
+                              <span
+                                className="cursor-pointer text-primary hover:underline"
+                                onClick={() => navigate(`/user/${item.user_id}`)}
+                              >
+                                {item.nickname || item.username || "-"}
+                              </span>
+                            ) : (
+                              item.nickname || item.username || "-"
+                            )}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground font-mono text-center py-2">
                             {formatTime(item.submit_time)}

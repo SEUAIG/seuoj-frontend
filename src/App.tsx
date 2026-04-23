@@ -102,6 +102,9 @@ const AssignmentDetailPage = React.lazy(
 const AdminUserManagementPage = React.lazy(
   () => import("./components/pages/AdminUserManagementPage")
 );
+const UserProfilePage = React.lazy(
+  () => import("./components/pages/UserProfilePage")
+);
 
 function LegacyCompetitionRedirect() {
   const { "*": rest } = useParams();
@@ -148,6 +151,7 @@ function App() {
               <Route path=":submissionNo" element={<SubmissionPage />} />
             </Route>
             <Route path="/personal" element={<PersonalPage />} />
+            <Route path="/user/:userId" element={<UserProfilePage />} />
             <Route path="/problemsAgent/:id" element={<ProblemAgentPage />} />
           </Route>
           <Route

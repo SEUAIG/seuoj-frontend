@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import AnswerState from "../common/AnswerState";
 import ScoreBadge from "../common/ScoreBadage";
 import { SubmissionData } from "../pages/SubmissionPage";
@@ -22,6 +23,7 @@ export default function SubmissionRecord({
   submission,
   title,
 }: SubmissionRecordProps) {
+  const nav = useNavigate();
   const {
     submissionNo,
     pid,
@@ -34,6 +36,7 @@ export default function SubmissionRecord({
     finishTime,
     username,
     nickname,
+    userId,
     score,
   } = submission;
   const isError =
@@ -83,7 +86,14 @@ export default function SubmissionRecord({
       <TableBody>
         <TableRow>
           <TableCell className="text-center">{pid}</TableCell>
-          <TableCell className="text-center">{title || pid}</TableCell>
+          <TableCell className="text-center">
+            <span
+              className="cursor-pointer text-primary hover:underline"
+              onClick={() => nav(`/problemsLibrary/${pid}`)}
+            >
+              {title || pid}
+            </span>
+          </TableCell>
           {/* 优先使用查询参数的title 否则使用pid */}
           <TableCell className="text-center">
             {verdict && <AnswerState state={verdict} />}
@@ -94,7 +104,18 @@ export default function SubmissionRecord({
           <TableCell className="text-center">{timeDisplay}</TableCell>
           <TableCell className="text-center">{memoryDisplay}</TableCell>
           <TableCell className="text-center">{language}</TableCell>
-          <TableCell className="text-center">{nickname || username}</TableCell>
+          <TableCell className="text-center">
+            {userId ? (
+              <span
+                className="cursor-pointer text-primary hover:underline"
+                onClick={() => nav(`/user/${userId}`)}
+              >
+                {nickname || username}
+              </span>
+            ) : (
+              nickname || username
+            )}
+          </TableCell>
           <TableCell className="text-center">{formattedTime}</TableCell>
         </TableRow>
       </TableBody>

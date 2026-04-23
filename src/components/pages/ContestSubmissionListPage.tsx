@@ -126,7 +126,18 @@ export default function ContestSubmissionListPage() {
                         {record.score !== null ? record.score : "-"}
                       </TableCell>
                       <TableCell>{record.language || "Unknown"}</TableCell>
-                      <TableCell>{record.nickname || record.username}</TableCell>
+                      <TableCell>
+                        {record.user_id ? (
+                          <span
+                            className="cursor-pointer text-primary hover:underline"
+                            onClick={() => nav(`/user/${record.user_id}`)}
+                          >
+                            {record.nickname || record.username}
+                          </span>
+                        ) : (
+                          record.nickname || record.username
+                        )}
+                      </TableCell>
                       <TableCell className="text-muted-foreground text-sm pr-6">
                         {new Date(record.submit_time).toLocaleString()}
                       </TableCell>

@@ -61,6 +61,7 @@ export interface SubmissionData {
   code: string; // 用户代码
   username: string; // 提交者用户名
   nickname?: string;
+  userId?: number;
   score?: number; // 分数
   subtasks?: SubtaskItem[];
 }
