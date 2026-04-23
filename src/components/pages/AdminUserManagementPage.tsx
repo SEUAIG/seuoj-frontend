@@ -29,6 +29,7 @@ import {
     type BatchImportUserRow,
     type BatchImportResult,
 } from "@/services/user/batchImportUsers";
+import type { SuccessDetail, SkipDetail, FailDetail } from "@/services/user/batchImportUsers";
 import {
     Upload,
     Download,
@@ -310,7 +311,7 @@ export default function AdminUserManagementPage() {
                 setImportResult(res.data);
                 setImportStep("result");
                 toast.success(
-                    `导入完成：成功 ${res.data.successCount} 个，失败 ${res.data.failCount} 个`
+                    `导入完成：成功 ${res.data.successCount} 个，跳过 ${res.data.skippedCount} 个，失败 ${res.data.failCount} 个`
                 );
                 if (loaded) fetchUsers();
             } else {
@@ -326,33 +327,39 @@ export default function AdminUserManagementPage() {
         }
     };
 
-    const downloadFailureReport = () => {
-        if (!importResult || importResult.failures.length === 0) return;
+    const downloadAllReport = () => {
+        if (!importResult) return;
         const dateStr = new Date().toISOString().slice(0, 10);
 
+        const allRows: (string | number)[][] = [
+            ["行号", "用户名", "邮箱", "密码", "状态", "原因"],
+            ...importResult.successes.map((s: SuccessDetail) => [
+                s.row, s.username, s.email, s.password, "成功", ""
+            ]),
+            ...importResult.skipped.map((s: SkipDetail) => [
+                s.row, s.username, s.email, "", "跳过", s.reason
+            ]),
+            ...importResult.failures.map((f: FailDetail) => [
+                f.row, f.username, f.email, "", "失败", f.reason
+            ]),
+        ].sort((a, b) => (a[0] as number) - (b[0] as number));
+
         if (uploadedFileType === "xlsx") {
-            const wsData = [
-                ["行号", "用户名", "邮箱", "失败原因"],
-                ...importResult.failures.map((f) => [f.row, f.username, f.email, f.reason]),
-            ];
-            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            const ws = XLSX.utils.aoa_to_sheet(allRows);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "失败记录");
-            XLSX.writeFile(wb, `导入失败记录_${dateStr}.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, "导入结果");
+            XLSX.writeFile(wb, `批量导入结果_${dateStr}.xlsx`);
         } else {
-            const csv = [
-                "行号,用户名,邮箱,失败原因",
-                ...importResult.failures.map(
-                    (f) => `${f.row},"${f.username}","${f.email}","${f.reason}"`
-                ),
-            ].join("\n");
+            const csv = allRows.map((row) =>
+                row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+            ).join("\n");
             const blob = new Blob(["\uFEFF" + csv], {
                 type: "text/csv;charset=utf-8;",
             });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `导入失败记录_${dateStr}.csv`;
+            a.download = `批量导入结果_${dateStr}.csv`;
             a.click();
             URL.revokeObjectURL(url);
         }
@@ -749,6 +756,12 @@ export default function AdminUserManagementPage() {
                                     <CheckCircle2 className="h-5 w-5" />
                                     <span>成功 {importResult.successCount} 个</span>
                                 </div>
+                                {importResult.skippedCount > 0 && (
+                                    <div className="flex items-center gap-2 text-yellow-600">
+                                        <AlertCircle className="h-5 w-5" />
+                                        <span>跳过 {importResult.skippedCount} 个</span>
+                                    </div>
+                                )}
                                 {importResult.failCount > 0 && (
                                     <div className="flex items-center gap-2 text-red-600">
                                         <AlertCircle className="h-5 w-5" />
@@ -757,9 +770,40 @@ export default function AdminUserManagementPage() {
                                 )}
                             </div>
 
+                            {importResult.skipped.length > 0 && (
+                                <div className="space-y-2">
+                                    <p className="text-sm font-medium text-yellow-700">跳过的记录</p>
+                                    <div className="border rounded-lg max-h-[200px] overflow-auto">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead className="w-[60px]">行号</TableHead>
+                                                    <TableHead>用户名</TableHead>
+                                                    <TableHead>邮箱</TableHead>
+                                                    <TableHead>跳过原因</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {importResult.skipped.map((s, i) => (
+                                                    <TableRow key={i}>
+                                                        <TableCell>{s.row}</TableCell>
+                                                        <TableCell>{s.username}</TableCell>
+                                                        <TableCell>{s.email}</TableCell>
+                                                        <TableCell className="text-yellow-600">
+                                                            {s.reason}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                </div>
+                            )}
+
                             {importResult.failures.length > 0 && (
-                                <>
-                                    <div className="border rounded-lg max-h-[300px] overflow-auto">
+                                <div className="space-y-2">
+                                    <p className="text-sm font-medium text-red-700">失败的记录</p>
+                                    <div className="border rounded-lg max-h-[200px] overflow-auto">
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
@@ -783,16 +827,17 @@ export default function AdminUserManagementPage() {
                                             </TableBody>
                                         </Table>
                                     </div>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={downloadFailureReport}
-                                    >
-                                        <Download className="h-4 w-4 mr-1" />
-                                        下载失败记录
-                                    </Button>
-                                </>
+                                </div>
                             )}
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={downloadAllReport}
+                            >
+                                <Download className="h-4 w-4 mr-1" />
+                                下载全部记录
+                            </Button>
                         </div>
                     )}
 

@@ -13,6 +13,20 @@ export interface BatchImportRequest {
     users: BatchImportUserRow[];
 }
 
+export interface SuccessDetail {
+    row: number;
+    username: string;
+    email: string;
+    password: string;
+}
+
+export interface SkipDetail {
+    row: number;
+    username: string;
+    email: string;
+    reason: string;
+}
+
 export interface FailDetail {
     row: number;
     username: string;
@@ -23,7 +37,10 @@ export interface FailDetail {
 export interface BatchImportResult {
     totalCount: number;
     successCount: number;
+    skippedCount: number;
     failCount: number;
+    successes: SuccessDetail[];
+    skipped: SkipDetail[];
     failures: FailDetail[];
 }
 
