@@ -96,6 +96,9 @@ const ClassPage = React.lazy(() => import("./components/pages/ClassPage"));
 const ClassDetailPage = React.lazy(
   () => import("./components/pages/ClassDetailPage")
 );
+const AssignmentDetailPage = React.lazy(
+  () => import("./components/pages/AssignmentDetailPage")
+);
 const AdminUserManagementPage = React.lazy(
   () => import("./components/pages/AdminUserManagementPage")
 );
@@ -180,6 +183,7 @@ function App() {
           <Route path="/class">
             <Route index element={<ClassPage />} />
             <Route path=":id" element={<ClassDetailPage />} />
+            <Route path=":classId/assignment/:assignmentId" element={<AssignmentDetailPage />} />
           </Route>
           <Route path="/evaluation" element={<EvaluationPage />} />
           <Route path="/problemset" element={<ProblemSetListPage />} />
