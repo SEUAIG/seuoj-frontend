@@ -206,7 +206,18 @@ export default function PersonalPage() {
                     <AvatarFallback>{(user?.nickname || user?.username || "U")[0].toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="text-lg font-semibold">{user?.nickname || user?.username || "用户"}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-semibold">{user?.nickname || user?.username || "用户"}</span>
+                      {user?.role && (
+                        <Badge variant={
+                          user.role === "superadmin" ? "destructive" :
+                          user.role === "admin" ? "default" :
+                          user.role === "teacher" ? "secondary" : "outline"
+                        }>
+                          {({ superadmin: "超级管理员", admin: "管理员", teacher: "教师", student: "学生" } as Record<string, string>)[user.role] || user.role}
+                        </Badge>
+                      )}
+                    </div>
                     <div className="text-sm text-muted-foreground">
                       @{user?.username}
                     </div>

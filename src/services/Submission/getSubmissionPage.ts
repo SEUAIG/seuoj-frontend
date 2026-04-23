@@ -3,6 +3,10 @@ import { api } from "../api/axios";
 export interface SubmissionPageRequest {
   current?: number;
   size?: number;
+  pid?: string;
+  verdict?: string;
+  language?: string;
+  username?: string;
 }
 
 export interface SubmissionListItem {
@@ -22,6 +26,7 @@ export interface SubmissionListItem {
     | "Skipped"
     | null;
   username: string;
+  nickname?: string;
   submission_no: string;
   submit_time: string;
   finish_time: string | null;

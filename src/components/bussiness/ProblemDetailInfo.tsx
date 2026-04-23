@@ -271,11 +271,17 @@ export default function ProblemDetailInfo({
             </Button>
           </>
         )}
-        <Button className="bg-green-600 hover:bg-green-700 text-white transition duration-300 ease-in-out transform hover:scale-105">
+        <Button
+          onClick={() => nav(`/evaluation?pid=${pid}`)}
+          className="bg-green-600 hover:bg-green-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
+        >
           <ListChecks className="mr-2 h-4 w-4" />
           提交记录
         </Button>
-        <Button className="bg-orange-600 hover:bg-orange-700 text-white transition duration-300 ease-in-out transform hover:scale-105">
+        <Button
+          onClick={() => nav(`/evaluation?pid=${pid}`)}
+          className="bg-orange-600 hover:bg-orange-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
+        >
           <Activity className="mr-2 h-4 w-4" />
           统计
         </Button>

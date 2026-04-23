@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useSelector } from "react-redux";
+import { RootState } from "@/app/store";
 import { getSubmissionPage } from "@/services/Submission/getSubmissionPage";
 import {
   Table,
@@ -12,8 +14,16 @@ import {
   TableRow,
 } from "../ui/table";
 import { Badge } from "../ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ExternalLink, Search, RefreshCw } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2, ExternalLink, Search, RefreshCw, X } from "lucide-react";
 import ClassPagination from "../bussiness/ClassPagination";
 import { Button } from "../ui/button";
 
@@ -55,7 +65,34 @@ const verdictDisplayMap: Record<string, { label: string; color: string }> = {
     label: "JE",
     color: "bg-gray-100 text-gray-700 border-gray-300",
   },
+  PartiallyAccepted: {
+    label: "PA",
+    color: "bg-teal-100 text-teal-700 border-teal-300",
+  },
 };
+
+const verdictOptions = [
+  { value: "Accepted", label: "AC - Accepted" },
+  { value: "WrongAnswer", label: "WA - Wrong Answer" },
+  { value: "TimeLimitExceeded", label: "TLE - Time Limit Exceeded" },
+  { value: "MemoryLimitExceeded", label: "MLE - Memory Limit Exceeded" },
+  { value: "RuntimeError", label: "RE - Runtime Error" },
+  { value: "CompileError", label: "CE - Compile Error" },
+  { value: "SystemError", label: "SE - System Error" },
+  { value: "PartiallyAccepted", label: "PA - Partially Accepted" },
+];
+
+const languageOptions = [
+  { value: "C", label: "C" },
+  { value: "Cpp", label: "C++" },
+  { value: "Cpp11", label: "C++11" },
+  { value: "Cpp17", label: "C++17" },
+  { value: "Cpp20", label: "C++20" },
+  { value: "Java17", label: "Java 17" },
+  { value: "Python3_12", label: "Python 3" },
+  { value: "Nodejs22", label: "Node.js" },
+  { value: "Go1_22", label: "Go" },
+];
 
 const statusDisplayMap: Record<string, { label: string; color: string }> = {
   Pending: {
@@ -103,33 +140,102 @@ export default function EvaluationPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const current = parseInt(searchParams.get("page") || "1");
   const size = parseInt(searchParams.get("size") || "20");
+  const { user } = useSelector((state: RootState) => state.auth);
+  const isPrivileged = user?.role === "teacher" || user?.role === "admin" || user?.role === "superadmin";
+
+  const pidParam = searchParams.get("pid") || "";
+  const verdictParam = searchParams.get("verdict") || "";
+  const languageParam = searchParams.get("language") || "";
+  const usernameParam = searchParams.get("username") || "";
+
+  const [pidInput, setPidInput] = useState(pidParam);
+  const [usernameInput, setUsernameInput] = useState(usernameParam);
+
+  useEffect(() => {
+    setPidInput(searchParams.get("pid") || "");
+    setUsernameInput(searchParams.get("username") || "");
+  }, [searchParams]);
+
+  const updateFilters = (updates: Record<string, string>) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("page", "1");
+    for (const [key, value] of Object.entries(updates)) {
+      if (value) {
+        newParams.set(key, value);
+      } else {
+        newParams.delete(key);
+      }
+    }
+    setSearchParams(newParams);
+  };
+
+  const clearAllFilters = () => {
+    setSearchParams({ page: "1", size: size.toString() });
+    setPidInput("");
+    setUsernameInput("");
+  };
+
+  const hasFilters = pidParam || verdictParam || languageParam || usernameParam;
 
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
-    queryKey: ["submissionPage", current, size],
-    queryFn: () => getSubmissionPage({ current, size }),
+    queryKey: ["submissionPage", current, size, pidParam, verdictParam, languageParam, usernameParam],
+    queryFn: () =>
+      getSubmissionPage({
+        current,
+        size,
+        pid: pidParam || undefined,
+        verdict: verdictParam || undefined,
+        language: languageParam || undefined,
+        username: usernameParam || undefined,
+      }),
     placeholderData: keepPreviousData,
   });
 
   const handlePageChange = (newPage: number) => {
-    setSearchParams({ page: newPage.toString(), size: size.toString() });
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("page", newPage.toString());
+    setSearchParams(newParams);
+  };
+
+  const handlePidKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      updateFilters({ pid: pidInput.trim() });
+    }
+  };
+
+  const handleUsernameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      updateFilters({ username: usernameInput.trim() });
+    }
   };
 
   const records = data?.data?.records || [];
   const total = data?.data?.total || 0;
   const totalPages = Math.ceil(total / size) || 1;
 
+  const titleParts = ["评测记录"];
+  if (pidParam) titleParts.push(pidParam);
+
   return (
     <div className="w-4/5 mx-auto py-6 space-y-6 min-h-screen overflow-x-hidden">
       <Helmet>
-        <title>评测记录 - SeuOJ</title>
+        <title>{titleParts.join(" - ")} - SeuOJ</title>
       </Helmet>
 
       {/* header */}
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-2xl font-semibold">我的评测记录</div>
+          <div className="text-2xl font-semibold">
+            {isPrivileged ? "所有评测记录" : "我的评测记录"}
+            {pidParam && (
+              <span className="text-lg font-normal text-muted-foreground ml-2">
+                — {pidParam}
+              </span>
+            )}
+          </div>
           <div className="text-sm text-muted-foreground mt-1">
-            查看和管理你的所有代码提交状态
+            {isPrivileged ? "查看所有用户的代码提交状态" : "查看和管理你的所有代码提交状态"}
+            {total > 0 && <span className="ml-2">共 {total} 条记录</span>}
           </div>
         </div>
         <Button
@@ -142,6 +248,64 @@ export default function EvaluationPage() {
           />
           刷新状态
         </Button>
+      </div>
+
+      {/* filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <Input
+          placeholder="题号 (如 P1001)"
+          value={pidInput}
+          onChange={(e) => setPidInput(e.target.value)}
+          onKeyDown={handlePidKeyDown}
+          onBlur={() => updateFilters({ pid: pidInput.trim() })}
+          className="w-40 h-9"
+        />
+        {isPrivileged && (
+          <Input
+            placeholder="用户名"
+            value={usernameInput}
+            onChange={(e) => setUsernameInput(e.target.value)}
+            onKeyDown={handleUsernameKeyDown}
+            onBlur={() => updateFilters({ username: usernameInput.trim() })}
+            className="w-36 h-9"
+          />
+        )}
+        <Select
+          value={verdictParam}
+          onValueChange={(v) => updateFilters({ verdict: v })}
+        >
+          <SelectTrigger className="w-48 h-9">
+            <SelectValue placeholder="结果筛选" />
+          </SelectTrigger>
+          <SelectContent>
+            {verdictOptions.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={languageParam}
+          onValueChange={(v) => updateFilters({ language: v })}
+        >
+          <SelectTrigger className="w-36 h-9">
+            <SelectValue placeholder="语言筛选" />
+          </SelectTrigger>
+          <SelectContent>
+            {languageOptions.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {hasFilters && (
+          <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-9 text-muted-foreground">
+            <X className="h-4 w-4 mr-1" />
+            清除筛选
+          </Button>
+        )}
       </div>
 
       <Card className="flex-1 flex flex-col border-none shadow-none bg-transparent">
@@ -157,9 +321,11 @@ export default function EvaluationPage() {
           ) : records.length === 0 ? (
             <div className="flex flex-col items-center justify-center min-h-[400px] text-center bg-muted/20 rounded-lg border border-dashed">
               <Search className="h-10 w-10 text-muted-foreground mb-4 opacity-50" />
-              <p className="text-muted-foreground text-lg mb-2">暂无评测记录</p>
+              <p className="text-muted-foreground text-lg mb-2">
+                {hasFilters ? "未找到匹配的评测记录" : "暂无评测记录"}
+              </p>
               <p className="text-muted-foreground text-sm">
-                去题库找道题试试手吧！
+                {hasFilters ? "试试调整筛选条件" : "去题库找道题试试手吧！"}
               </p>
             </div>
           ) : (
@@ -186,6 +352,9 @@ export default function EvaluationPage() {
                       </TableHead>
                       <TableHead className="w-[120px] text-center h-10 py-2">
                         语言
+                      </TableHead>
+                      <TableHead className="w-[120px] text-center h-10 py-2">
+                        提交者
                       </TableHead>
                       <TableHead className="text-center h-10 py-2">
                         提交时间
@@ -253,6 +422,9 @@ export default function EvaluationPage() {
                           </TableCell>
                           <TableCell className="text-sm text-center py-2">
                             {languageLabel[item.language] ?? item.language}
+                          </TableCell>
+                          <TableCell className="text-sm text-center py-2">
+                            {item.nickname || item.username || "-"}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground font-mono text-center py-2">
                             {formatTime(item.submit_time)}

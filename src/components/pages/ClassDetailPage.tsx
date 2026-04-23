@@ -19,6 +19,7 @@ import {
   Link as LinkIcon,
   UserPlus,
   Upload,
+  Plus,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -58,6 +59,8 @@ import AddMemberModal from "../bussiness/AddMemberModal";
 import BatchImportMembersModal from "../bussiness/BatchImportMembersModal";
 import ClassHomepage from "../bussiness/ClassHomepage";
 import AnnouncementList from "../bussiness/AnnouncementList";
+import AssignmentList from "../bussiness/AssignmentList";
+import CreateAssignmentDialog from "../bussiness/CreateAssignmentDialog";
 import AssignmentOverviewDialog from "../bussiness/AssignmentOverviewDialog";
 import {
   getClassOverview,
@@ -130,6 +133,7 @@ export default function ClassDetailPage() {
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [isBatchImportModalOpen, setIsBatchImportModalOpen] = useState(false);
   const [assignmentDrilldown, setAssignmentDrilldown] = useState<AssignmentProgressItem | null>(null);
+  const [isCreateAssignmentOpen, setIsCreateAssignmentOpen] = useState(false);
 
   const {
     data: overviewData,
@@ -259,6 +263,11 @@ export default function ClassDetailPage() {
               <LinkIcon className="h-4 w-4 mr-2" />关联比赛
             </Button>
           )}
+          {activeTab === "assignments" && (
+            <Button onClick={() => setIsCreateAssignmentOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />新建作业
+            </Button>
+          )}
         </div>
       </div>
 
@@ -268,12 +277,15 @@ export default function ClassDetailPage() {
         onValueChange={setActiveTab}
         className="flex-1 flex flex-col"
       >
-        <TabsList className="grid w-full grid-cols-5 max-w-2xl mb-4">
+        <TabsList className="grid w-full grid-cols-6 max-w-3xl mb-4">
           <TabsTrigger value="homepage">
             <Home className="h-4 w-4 mr-1" />首页
           </TabsTrigger>
           <TabsTrigger value="announcements">
             <Megaphone className="h-4 w-4 mr-1" />公告
+          </TabsTrigger>
+          <TabsTrigger value="assignments">
+            <BookOpen className="h-4 w-4 mr-1" />作业
           </TabsTrigger>
           <TabsTrigger value="members">成员列表</TabsTrigger>
           <TabsTrigger value="contests">已关联比赛</TabsTrigger>
@@ -296,6 +308,7 @@ export default function ClassDetailPage() {
               }}
               onSwitchToOverview={() => setActiveTab("overview")}
               onSwitchToAnnouncements={() => setActiveTab("announcements")}
+              onSwitchToAssignments={() => setActiveTab("assignments")}
             />
           )}
         </TabsContent>
@@ -303,6 +316,11 @@ export default function ClassDetailPage() {
         {/* Announcements tab */}
         <TabsContent value="announcements" className="!mt-0">
           <AnnouncementList classId={classId} canEdit={true} />
+        </TabsContent>
+
+        {/* Assignments tab */}
+        <TabsContent value="assignments" className="!mt-0">
+          <AssignmentList classId={classId} canEdit={true} />
         </TabsContent>
 
         <TabsContent value="members" className="!mt-0">
@@ -581,6 +599,8 @@ export default function ClassDetailPage() {
                               <th scope="col" className="px-6 py-3 font-medium">用户名</th>
                               <th scope="col" className="px-6 py-3 font-medium text-center">AC 数 / 总题数</th>
                               <th scope="col" className="px-6 py-3 font-medium text-center">完成率</th>
+                              <th scope="col" className="px-6 py-3 font-medium text-center">提交次数</th>
+                              <th scope="col" className="px-6 py-3 font-medium text-center">通过率</th>
                               <th scope="col" className="px-6 py-3 font-medium" style={{ minWidth: 200 }}>进度</th>
                             </tr>
                           </thead>
@@ -589,6 +609,9 @@ export default function ClassDetailPage() {
                               const rate = overview.total_problems > 0
                                 ? Math.round((s.ac_count / overview.total_problems) * 100)
                                 : 0;
+                              const passRate = s.submit_count > 0
+                                ? Math.round((s.ac_count / s.submit_count) * 100)
+                                : 0;
                               return (
                                 <tr key={s.user_id} className="bg-card hover:bg-muted/50 transition-colors">
                                   <td className="px-6 py-3 font-medium">{s.nickname || s.username}</td>
@@ -596,6 +619,8 @@ export default function ClassDetailPage() {
                                     {s.ac_count} / {overview.total_problems}
                                   </td>
                                   <td className="px-6 py-3 text-center font-semibold">{rate}%</td>
+                                  <td className="px-6 py-3 text-center font-mono">{s.submit_count}</td>
+                                  <td className="px-6 py-3 text-center font-semibold">{passRate}%</td>
                                   <td className="px-6 py-3">
                                     <Progress value={rate} className="h-2" />
                                   </td>
@@ -757,6 +782,17 @@ export default function ClassDetailPage() {
           classId={classId}
           assignmentId={assignmentDrilldown.assignment_id}
           assignmentTitle={assignmentDrilldown.title}
+        />
+      )}
+      {isCreateAssignmentOpen && (
+        <CreateAssignmentDialog
+          isOpen={isCreateAssignmentOpen}
+          onClose={() => setIsCreateAssignmentOpen(false)}
+          classId={classId}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["assignmentPage", classId] });
+            queryClient.invalidateQueries({ queryKey: ["classOverview", classId] });
+          }}
         />
       )}
     </div>

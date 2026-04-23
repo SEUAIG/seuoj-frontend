@@ -14,6 +14,7 @@ export interface StudentStatItem {
   username: string;
   nickname?: string;
   ac_count: number;
+  submit_count: number;
   problem_count: number;
   submitted_before_deadline: boolean;
 }

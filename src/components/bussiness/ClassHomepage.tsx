@@ -59,6 +59,7 @@ interface ClassHomepageProps {
   onRefresh: () => void;
   onSwitchToOverview?: () => void;
   onSwitchToAnnouncements?: () => void;
+  onSwitchToAssignments?: () => void;
 }
 
 export default function ClassHomepage({
@@ -68,6 +69,7 @@ export default function ClassHomepage({
   onRefresh,
   onSwitchToOverview,
   onSwitchToAnnouncements,
+  onSwitchToAssignments,
 }: ClassHomepageProps) {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isCreateAnnouncementOpen, setIsCreateAnnouncementOpen] = useState(false);
@@ -230,7 +232,7 @@ export default function ClassHomepage({
                     variant="ghost"
                     size="sm"
                     className="w-full text-muted-foreground"
-                    onClick={() => onSwitchToOverview?.()}
+                    onClick={() => onSwitchToAssignments?.()}
                   >
                     查看全部
                     <ChevronRight className="h-4 w-4 ml-1" />

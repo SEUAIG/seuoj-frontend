@@ -14,6 +14,7 @@ export interface StudentOverviewItem {
   username: string;
   nickname?: string;
   ac_count: number;
+  submit_count: number;
 }
 
 export interface ClassOverviewData {

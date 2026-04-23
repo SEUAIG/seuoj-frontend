@@ -16,6 +16,9 @@ import {
   ChevronRight,
   Pencil,
   Info,
+  Trash2,
+  Save,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -33,11 +36,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { getDownloadUrl } from "@/services/file/uploadFile";
 import {
   getAssignmentDetail,
-  type AssignmentDetailData,
 } from "@/services/Assignment/getAssignmentDetail";
 import { getAssignmentProblems } from "@/services/Assignment/getAssignmentProblems";
 import {
@@ -47,8 +57,13 @@ import {
   getAssignmentOverview,
   type AssignmentOverviewData,
 } from "@/services/Class/getAssignmentOverview";
+import { replaceAssignmentProblems } from "@/services/Assignment/replaceAssignmentProblems";
+import { deleteAssignment } from "@/services/Assignment/deleteAssignment";
+import { ContestProblemOverviewInEditPage } from "@/services/Contest/getContestProblemListInEditPage";
 import ClassPagination from "../bussiness/ClassPagination";
 import AssignmentIntroEditorDialog from "../bussiness/AssignmentIntroEditorDialog";
+import AssignmentEditDialog from "../bussiness/AssignmentEditDialog";
+import SortListTable from "../common/SortListTable";
 
 function statusBadge(status: string) {
   switch (status) {
@@ -106,6 +121,12 @@ export default function AssignmentDetailPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [submissionPage, setSubmissionPage] = useState(1);
   const [isIntroEditorOpen, setIsIntroEditorOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditingProblems, setIsEditingProblems] = useState(false);
+  const [editProblems, setEditProblems] = useState<ContestProblemOverviewInEditPage[]>([]);
+  const [isSavingProblems, setIsSavingProblems] = useState(false);
   const submissionSize = 20;
 
   const {
@@ -212,6 +233,25 @@ export default function AssignmentDetailPage() {
               <span>{detail.member_count} 人</span>
             </div>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEditDialogOpen(true)}
+          >
+            <Pencil className="h-4 w-4 mr-1" />
+            编辑
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+            onClick={() => setIsDeleteDialogOpen(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-1" />
+            删除
+          </Button>
         </div>
       </div>
 
@@ -419,61 +459,149 @@ export default function AssignmentDetailPage() {
 
         {/* Tab: Problems */}
         <TabsContent value="problems" className="!mt-0">
-          {isProblemsLoading ? (
+          {isEditingProblems ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">编辑题目列表</h3>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditingProblems(false)}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    取消
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={isSavingProblems}
+                    onClick={async () => {
+                      setIsSavingProblems(true);
+                      try {
+                        const res = await replaceAssignmentProblems(classId, assignmentId, {
+                          problems: editProblems.map((p) => ({
+                            problem_id: Number(p.pid),
+                            weight: 1,
+                          })),
+                        });
+                        if (res.code === 0) {
+                          toast.success("题目列表已保存");
+                          setIsEditingProblems(false);
+                          queryClient.invalidateQueries({
+                            queryKey: ["assignmentProblems", classId, assignmentId],
+                          });
+                          queryClient.invalidateQueries({
+                            queryKey: ["assignmentDetail", classId, assignmentId],
+                          });
+                        } else {
+                          toast.error(res.message || "保存失败");
+                        }
+                      } catch (err: unknown) {
+                        const message = err instanceof Error ? err.message : "保存请求失败";
+                        toast.error(message);
+                      } finally {
+                        setIsSavingProblems(false);
+                      }
+                    }}
+                  >
+                    {isSavingProblems ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                        保存中...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-1" />
+                        保存
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+              <SortListTable
+                problems={editProblems}
+                isFetching={false}
+                setProblems={setEditProblems}
+              />
+            </div>
+          ) : isProblemsLoading ? (
             <div className="flex items-center justify-center min-h-[300px]">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : problems.length === 0 ? (
-            <div className="flex items-center justify-center min-h-[300px] text-muted-foreground">
-              暂无题目
-            </div>
           ) : (
-            <div className="overflow-x-auto border rounded-lg">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs text-muted-foreground bg-muted/50 uppercase border-b">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 font-medium w-12">
-                      #
-                    </th>
-                    <th scope="col" className="px-6 py-3 font-medium w-24">
-                      题号
-                    </th>
-                    <th scope="col" className="px-6 py-3 font-medium">
-                      标题
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 font-medium text-center w-20"
-                    >
-                      权重
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {problems.map((p, i) => (
-                    <tr
-                      key={p.pid}
-                      className="bg-card hover:bg-muted/50 transition-colors cursor-pointer"
-                      onClick={() => nav(`/problemsLibrary/${p.pid}`)}
-                    >
-                      <td className="px-6 py-3 text-muted-foreground">
-                        {i + 1}
-                      </td>
-                      <td className="px-6 py-3 font-mono text-primary">
-                        {p.pid}
-                      </td>
-                      <td className="px-6 py-3 font-medium">{p.title}</td>
-                      <td className="px-6 py-3 text-center">
-                        {p.weight !== 1 ? (
-                          <Badge variant="outline">x{p.weight}</Badge>
-                        ) : (
-                          <span className="text-muted-foreground">1</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-4">
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEditProblems(
+                      problems.map((p, i) => ({
+                        pid: p.pid,
+                        title: p.title,
+                        sort_order: i + 1,
+                      }))
+                    );
+                    setIsEditingProblems(true);
+                  }}
+                >
+                  <Pencil className="h-4 w-4 mr-1" />
+                  编辑题目
+                </Button>
+              </div>
+              {problems.length === 0 ? (
+                <div className="flex items-center justify-center min-h-[300px] text-muted-foreground">
+                  暂无题目
+                </div>
+              ) : (
+                <div className="overflow-x-auto border rounded-lg">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-muted-foreground bg-muted/50 uppercase border-b">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 font-medium w-12">
+                          #
+                        </th>
+                        <th scope="col" className="px-6 py-3 font-medium w-24">
+                          题号
+                        </th>
+                        <th scope="col" className="px-6 py-3 font-medium">
+                          标题
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 font-medium text-center w-20"
+                        >
+                          权重
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {problems.map((p, i) => (
+                        <tr
+                          key={p.pid}
+                          className="bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => nav(`/problemsLibrary/${p.pid}`)}
+                        >
+                          <td className="px-6 py-3 text-muted-foreground">
+                            {i + 1}
+                          </td>
+                          <td className="px-6 py-3 font-mono text-primary">
+                            {p.pid}
+                          </td>
+                          <td className="px-6 py-3 font-medium">{p.title}</td>
+                          <td className="px-6 py-3 text-center">
+                            {p.weight !== 1 ? (
+                              <Badge variant="outline">x{p.weight}</Badge>
+                            ) : (
+                              <span className="text-muted-foreground">1</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
@@ -665,6 +793,18 @@ export default function AssignmentDetailPage() {
                           </th>
                           <th
                             scope="col"
+                            className="px-6 py-3 font-medium text-center"
+                          >
+                            提交次数
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3 font-medium text-center"
+                          >
+                            通过率
+                          </th>
+                          <th
+                            scope="col"
                             className="px-6 py-3 font-medium"
                             style={{ minWidth: 200 }}
                           >
@@ -680,6 +820,12 @@ export default function AssignmentDetailPage() {
                                   (s.ac_count / stats.problem_count) * 100
                                 )
                               : 0;
+                          const passRate =
+                            s.submit_count > 0
+                              ? Math.round(
+                                  (s.ac_count / s.submit_count) * 100
+                                )
+                              : 0;
                           return (
                             <tr
                               key={s.user_id}
@@ -693,6 +839,12 @@ export default function AssignmentDetailPage() {
                               </td>
                               <td className="px-6 py-3 text-center font-semibold">
                                 {rate}%
+                              </td>
+                              <td className="px-6 py-3 text-center font-mono">
+                                {s.submit_count}
+                              </td>
+                              <td className="px-6 py-3 text-center font-semibold">
+                                {passRate}%
                               </td>
                               <td className="px-6 py-3">
                                 <Progress value={rate} className="h-2" />
@@ -723,6 +875,79 @@ export default function AssignmentDetailPage() {
           })
         }
       />
+
+      <AssignmentEditDialog
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        classId={classId}
+        assignmentId={assignmentId}
+        currentData={{
+          title: detail.title,
+          description: detail.description,
+          status: detail.status,
+          deadline: detail.deadline,
+          visible_from: detail.visible_from,
+          visible_to: detail.visible_to,
+        }}
+        onSuccess={() => {
+          queryClient.invalidateQueries({
+            queryKey: ["assignmentDetail", classId, assignmentId],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["assignmentPage", classId],
+          });
+        }}
+      />
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>确认删除作业？</DialogTitle>
+            <DialogDescription>
+              此操作将删除作业 "{detail.title}"，包括其所有关联的题目数据。此操作不可撤销。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isDeleting}
+              onClick={async () => {
+                setIsDeleting(true);
+                try {
+                  const res = await deleteAssignment(classId, assignmentId);
+                  if (res.code === 0) {
+                    toast.success("作业已删除");
+                    nav(`/class/${classId}`);
+                  } else {
+                    toast.error(res.message || "删除失败");
+                  }
+                } catch (err: unknown) {
+                  const message = err instanceof Error ? err.message : "删除请求失败";
+                  toast.error(message);
+                } finally {
+                  setIsDeleting(false);
+                }
+              }}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  删除中...
+                </>
+              ) : (
+                "确认删除"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
