@@ -12,6 +12,7 @@ export interface ProblemStatItem {
 export interface StudentStatItem {
   user_id: number;
   username: string;
+  nickname?: string;
   ac_count: number;
   problem_count: number;
   submitted_before_deadline: boolean;

@@ -12,6 +12,7 @@ export interface AssignmentProgressItem {
 export interface StudentOverviewItem {
   user_id: number;
   username: string;
+  nickname?: string;
   ac_count: number;
 }
 
