@@ -7,6 +7,7 @@ export interface SubmissionPageRequest {
   verdict?: string;
   language?: string;
   username?: string;
+  assignment_id?: number;
 }
 
 export interface SubmissionListItem {

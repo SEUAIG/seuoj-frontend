@@ -51,19 +51,16 @@ import {
 } from "@/services/Assignment/getAssignmentDetail";
 import { getAssignmentProblems } from "@/services/Assignment/getAssignmentProblems";
 import {
-  getAssignmentSubmissionPage,
-} from "@/services/Assignment/getAssignmentSubmissionPage";
-import {
   getAssignmentOverview,
   type AssignmentOverviewData,
 } from "@/services/Class/getAssignmentOverview";
 import { replaceAssignmentProblems } from "@/services/Assignment/replaceAssignmentProblems";
 import { deleteAssignment } from "@/services/Assignment/deleteAssignment";
 import { ContestProblemOverviewInEditPage } from "@/services/Contest/getContestProblemListInEditPage";
-import ClassPagination from "../bussiness/ClassPagination";
 import AssignmentIntroEditorDialog from "../bussiness/AssignmentIntroEditorDialog";
 import AssignmentEditDialog from "../bussiness/AssignmentEditDialog";
 import SortListTable from "../common/SortListTable";
+import SubmissionListPanel from "../bussiness/SubmissionListPanel";
 
 function statusBadge(status: string) {
   switch (status) {
@@ -76,13 +73,6 @@ function statusBadge(status: string) {
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
-}
-
-function verdictColor(verdict: string | null): string {
-  if (!verdict) return "text-muted-foreground";
-  if (verdict === "Accepted") return "text-green-600";
-  if (verdict === "PartiallyAccepted") return "text-yellow-600";
-  return "text-red-600";
 }
 
 function formatFileSize(bytes: number): string {
@@ -119,7 +109,6 @@ export default function AssignmentDetailPage() {
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState("overview");
-  const [submissionPage, setSubmissionPage] = useState(1);
   const [isIntroEditorOpen, setIsIntroEditorOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -127,7 +116,6 @@ export default function AssignmentDetailPage() {
   const [isEditingProblems, setIsEditingProblems] = useState(false);
   const [editProblems, setEditProblems] = useState<ContestProblemOverviewInEditPage[]>([]);
   const [isSavingProblems, setIsSavingProblems] = useState(false);
-  const submissionSize = 20;
 
   const {
     data: detailResp,
@@ -148,29 +136,6 @@ export default function AssignmentDetailPage() {
     enabled: !!classIdStr && !!assignmentIdStr && activeTab === "problems",
   });
   const problems = problemsResp?.data || [];
-
-  const {
-    data: submissionsResp,
-    isLoading: isSubmissionsLoading,
-    isFetching: isSubmissionsFetching,
-  } = useQuery({
-    queryKey: [
-      "assignmentSubmissions",
-      classId,
-      assignmentId,
-      submissionPage,
-      submissionSize,
-    ],
-    queryFn: () =>
-      getAssignmentSubmissionPage(classId, assignmentId, {
-        current: submissionPage,
-        size: submissionSize,
-      }),
-    enabled: !!classIdStr && !!assignmentIdStr && activeTab === "submissions",
-  });
-  const submissions = submissionsResp?.data?.records || [];
-  const submissionTotal = submissionsResp?.data?.total || 0;
-  const submissionTotalPages = Math.ceil(submissionTotal / submissionSize);
 
   const {
     data: statsResp,
@@ -608,88 +573,10 @@ export default function AssignmentDetailPage() {
 
         {/* Tab: Submissions */}
         <TabsContent value="submissions" className="!mt-0">
-          {isSubmissionsLoading ? (
-            <div className="flex items-center justify-center min-h-[300px]">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : submissions.length === 0 ? (
-            <div className="flex items-center justify-center min-h-[300px] text-muted-foreground">
-              暂无提交记录
-            </div>
-          ) : (
-            <div
-              className={`flex-1 flex flex-col ${
-                isSubmissionsFetching ? "opacity-60 transition-opacity" : ""
-              }`}
-            >
-              <div className="overflow-x-auto border rounded-lg">
-                <table className="w-full text-sm text-left">
-                  <thead className="text-xs text-muted-foreground bg-muted/50 uppercase border-b">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 font-medium">
-                        题号
-                      </th>
-                      <th scope="col" className="px-6 py-3 font-medium">
-                        用户
-                      </th>
-                      <th scope="col" className="px-6 py-3 font-medium">
-                        语言
-                      </th>
-                      <th scope="col" className="px-6 py-3 font-medium">
-                        结果
-                      </th>
-                      <th scope="col" className="px-6 py-3 font-medium">
-                        提交时间
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {submissions.map((s) => (
-                      <tr
-                        key={s.submission_no}
-                        className="bg-card hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() =>
-                          nav(`/submission/${s.submission_no}`)
-                        }
-                      >
-                        <td className="px-6 py-3 font-mono text-primary">
-                          {s.pid}
-                        </td>
-                        <td className="px-6 py-3">{s.username}</td>
-                        <td className="px-6 py-3 text-muted-foreground">
-                          {s.language}
-                        </td>
-                        <td
-                          className={`px-6 py-3 font-medium ${verdictColor(
-                            s.verdict
-                          )}`}
-                        >
-                          {s.verdict || s.status}
-                        </td>
-                        <td className="px-6 py-3 text-muted-foreground">
-                          {s.submit_time
-                            ? format(
-                                new Date(s.submit_time),
-                                "MM/dd HH:mm:ss"
-                              )
-                            : "-"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {submissionTotalPages > 1 && (
-                <div className="p-4 mt-auto flex justify-center">
-                  <ClassPagination
-                    totalPages={submissionTotalPages}
-                    currentPage={submissionPage}
-                    onPageChange={setSubmissionPage}
-                  />
-                </div>
-              )}
-            </div>
-          )}
+          <SubmissionListPanel
+            assignmentId={assignmentId}
+            queryKeyPrefix="assignmentSubmissionPanel"
+          />
         </TabsContent>
 
         {/* Tab: Statistics */}
