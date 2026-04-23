@@ -1,119 +1,87 @@
-## Environment (Develoment)
+# SEUOJ Frontend
 
-- Node.js: **18.20.2**
-- npm: **10.5.0**
-请先确保你已经下载nvm
+基于 React 18 / TypeScript 5.6 / Vite 5 的单页应用，为 SEUOJ 在线评测系统提供用户界面。
+
+## 技术栈
+
+| 类别 | 技术 |
+|------|------|
+| 框架 | React 18、TypeScript 5.6、Vite 5 |
+| 样式 | Tailwind CSS、shadcn/ui（Radix UI） |
+| 状态管理 | Redux Toolkit + redux-persist（客户端状态）、TanStack React Query（服务端状态） |
+| 表单 | react-hook-form + zod |
+| 代码编辑器 | Monaco Editor（@monaco-editor/react） |
+| 渲染 | react-markdown + remark-gfm + rehype-katex（Markdown/LaTeX） |
+| 图表 | recharts、d3-force（知识图谱可视化） |
+| 拖拽 | @dnd-kit |
+| 其他 | axios、date-fns、xlsx（Excel 导入导出）、react-helmet-async、sonner（Toast） |
+
+## 快速开始
+
 ```bash
-nvm install 18.20.2
-nvm use 18.20.2
-
+# 要求 Node.js 18.x（推荐 18.20.2）
+nvm use          # 读取 .nvmrc
 npm install
-npm run dev
-```
-第一次进度：（暂时没有前后端交互 待后续完善 已经预留接口）
-1. 登陆注册等页面（交互待完善）
-2. 可访问`http://localhost:5173/problemsLibrary/1` 题目详情 latex分行待后续完善
-3. `http://localhost:5173/submission/1`提交记录 
-
-
-
-## 文件结构
-
-```
-seuoj-frontend/
-├── public/                         # 静态资源目录
-├── src/                            # 源代码目录
-│   ├── app/                        # Redux 状态管理配置
-│   │   ├── store.ts                # Redux store 配置，包含持久化设置
-│   │   └── hooks.ts                # Redux 自定义 hooks (useAppDispatch, useAppSelector)
-│   │
-│   ├── assets/                     # 静态资源文件（图片、SVG 等）
-│   │
-│   ├── components/                 # 组件目录
-│   │   ├── bussiness/             # 业务组件（特定功能的复杂组件）
-│   │   │
-│   │   ├── common/                # 通用组件（可复用的基础组件）
-│   │   │
-│   │   ├── pages/                 # 页面组件
-│   │   │   ├── HomePage.tsx       # 首页
-│   │   │   ├── ProblemsLibraryPage.tsx # 题库页
-│   │   │   ├── ProblemDetailPage.tsx # 题目详情页
-│   │   │   ├── SubmissionPage.tsx # 提交记录详情页
-│   │   │   ├── CompetitionPage.tsx # 比赛页
-│   │   │   ├── EvaluationPage.tsx # 评测页
-│   │   │   ├── RankPage.tsx       # 排名页
-│   │   │   ├── DiscussionPage.tsx # 讨论页
-│   │   │   ├── HelpPage.tsx       # 帮助页
-│   │   │   ├── LoginPage.tsx      # 登录页
-│   │   │   ├── SignupPage.tsx     # 注册页
-│   │   │   ├── ForgetPage.tsx     # 找回密码页
-│   │   │   └── NotFoundPage.tsx   # 404 页面
-│   │   │
-│   │   └── ui/                    # shadcn/ui 组件库（基础 UI 组件）
-│   │       ├── accordion.tsx      # 手风琴组件
-│   │       ├── avatar.tsx         # 头像组件
-│   │       ├── badge.tsx          # 徽章组件
-│   │       ├── button.tsx         # 按钮组件
-│   │       ├── card.tsx           # 卡片组件
-│   │       ├── dropdown-menu.tsx  # 下拉菜单
-│   │       ├── form.tsx           # 表单组件（基于 react-hook-form）
-│   │       ├── input.tsx          # 输入框
-│   │       ├── label.tsx          # 标签
-│   │       ├── navigation-menu.tsx # 导航菜单
-│   │       ├── separator.tsx      # 分割线
-│   │       ├── skeleton.tsx       # 骨架屏
-│   │       ├── sonner.tsx         # Toast 通知
-│   │       ├── table.tsx          # 表格组件
-│   │       ├── textarea.tsx       # 文本域
-│   │       └── tooltip.tsx        # 提示框
-│   │
-│   ├── config/                     # 配置文件
-│   │   └── env.ts                 # 环境变量配置（API 基础地址等）
-│   │
-│   ├── features/                   # Redux 功能模块（按业务划分）
-│   │   └── auth/                  # 认证模块
-│   │       ├── authSlice.ts       # 认证状态管理（登录、注册、登出）
-│   │       └── types.ts           # 认证相关类型定义
-│   │
-│   ├── hooks/                      # 自定义 Hooks
-│   │   ├── useDebounced.ts         # 防抖 Hook
-│   │   └── useSetWebTitle.ts       # 动态设置页面标题
-│   │
-│   ├── layouts/                    # 布局组件
-│   │   ├── AuthLayout.tsx          # 认证页面布局（登录/注册/找回密码）
-│   │   └── MainLayout.tsx          # 主应用布局（带导航栏）
-│   │
-│   ├── lib/                        # 工具库
-│   │   └── utils.ts                # 工具函数（cn 等）
-│   │
-│   ├── services/                   # API 服务层（未来的 Axios 请求封装）
-│   │
-│   ├── types/                      # 全局类型定义
-│   │   ├── login_schema.ts         # 登录表单验证 schema（Zod）
-│   │   ├── signup_schema.ts        # 注册表单验证 schema（Zod）
-│   │   └── forget_schema.ts        # 找回密码表单验证 schema（Zod）
-│   │
-│   ├── App.tsx                     # 根组件（路由配置）
-│   ├── main.tsx                    # 应用入口（React 渲染 + Provider 配置）
-│   ├── index.css                   # 全局样式（Tailwind CSS 基础配置）
-│   └── vite-env.d.ts               # Vite 类型声明
-│
-├── .dockerignore                   # Docker 忽略文件
-├── .gitignore                      # Git 忽略文件
-├── .nvmrc                          # Node 版本配置
-├── components.json                 # shadcn/ui 配置文件
-├── Dockerfile                      # Docker 构建配置（多阶段构建）
-├── eslint.config.js                # ESLint 配置
-├── index.html                      # HTML 入口文件
-├── LICENSE                         # MIT 许可证
-├── package.json                    # 项目依赖配置
-├── postcss.config.js               # PostCSS 配置
-├── README.md                       # 项目说明文档
-├── tailwind.config.js              # Tailwind CSS 配置
-├── tsconfig.json                   # TypeScript 配置
-├── tsconfig.app.json               # TypeScript 应用配置
-├── tsconfig.node.json              # TypeScript Node 配置
-├── vite.config.ts                  # Vite 构建配置
-└── 各模块介绍.md                     # 各技术栈详细说明文档
+npm run dev      # 开发服务器 → http://localhost:5173
+npm run build    # tsc + vite 构建
+npm run lint     # eslint 检查
 ```
 
+## 项目结构
+
+```
+src/
+├── app/                        # Redux store 配置
+├── assets/                     # 静态资源
+├── components/
+│   ├── bussiness/              # 业务组件（61 个）
+│   ├── common/                 # 通用组件（20 个）
+│   │   ├── AIChat.tsx          #   AI 对话组件
+│   │   ├── AIChatWidget.tsx    #   AI 悬浮助手
+│   │   ├── MarkdownRenderer.tsx #  Markdown/KaTeX 渲染
+│   │   ├── NavBar.tsx          #   导航栏
+│   │   ├── SearchBox.tsx       #   搜索框
+│   │   └── ...
+│   ├── pages/                  # 页面组件（38 个）
+│   ├── profile/                # 个人资料组件
+│   └── ui/                     # shadcn/ui 基础组件（27 个）
+├── config/                     # 环境变量配置（env.ts）
+├── features/                   # Redux 功能模块
+│   ├── auth/                   #   认证
+│   ├── Code/                   #   代码编辑
+│   ├── ContestList/            #   比赛列表
+│   ├── ProblemList/            #   题目列表
+│   ├── SubmissionList/         #   提交记录
+│   ├── Tags/                   #   标签
+│   ├── heatmap/                #   提交热力图
+│   └── verification/           #   邮箱验证
+├── hooks/                      # 自定义 Hooks（14 个，含 React Query 封装）
+├── layouts/                    # 布局组件（AuthLayout、MainLayout）
+├── lib/                        # 工具函数
+├── services/                   # API 服务层（Axios 封装）
+│   ├── Assignment/             #   作业 API（9 个接口）
+│   ├── Class/                  #   班级 API（23 个接口）
+│   ├── Contest/                #   比赛 API（13 个接口）
+│   ├── Problem/                #   题目 API
+│   ├── ProblemSet/             #   题单 API（6 个接口）
+│   ├── Submission/             #   提交记录 API
+│   ├── agent/                  #   AI 智能体 API
+│   ├── ai/                     #   AI 服务（Agent Chat、知识学习）
+│   ├── api/                    #   Axios 实例与 Token 管理
+│   ├── file/                   #   文件上传 API
+│   └── user/                   #   用户 API（批量导入、热力图、个人资料）
+└── types/                      # 全局类型定义（Zod schema）
+```
+
+## 功能模块
+
+| 模块 | 页面 | 说明 |
+|------|------|------|
+| 题目管理 | ProblemsLibraryPage、ProblemDetailPage、ProblemCreatePage、ProblemEditPage、ProblemJudgeConfigPage、ProblemTestFilePage | 题库浏览、题目详情（Monaco 编辑器 + Markdown 渲染）、题目创建与编辑、评测配置、测试数据管理 |
+| 比赛 | CompetitionPage、ContestListDetailPage、ContestProblemDetailPage、ContestSubmissionPage、ContestSubmissionListPage、CreateContestPage、ContestEditPage | 比赛列表、详情、题目、提交、排名、创建与编辑 |
+| 班级教学 | ClassPage、ClassDetailPage | 班级管理、成员管理、公告、关联比赛/题单 |
+| 作业 | AssignmentDetailPage | 作业详情与提交 |
+| 题单 | ProblemSetListPage、ProblemSetDetailPage、ProblemSetCreatePage、ProblemSetUpdatePage | 题单浏览、详情、创建与编辑 |
+| AI 辅助 | AgentChatPage、ProblemAgentPage、KnowledgeGraphPage、LearningChainPage | AI 对话、题目智能辅导、知识图谱可视化、学习路径 |
+| 用户 | LoginPage、SignupPage、ForgetPage、PersonalPage、UserProfilePage、AdminUserManagementPage | 认证、个人主页、资料编辑、管理员用户管理 |
+| 其他 | HomePage、EvaluationPage、RankPage、DiscussionPage、HelpPage、SubmissionPage、NotFoundPage、UnauthorizedPage | 首页、评测记录、排名、讨论、帮助等 |
