@@ -5,13 +5,13 @@ import {
 } from "@/services/Contest/getContestDetail";
 
 export default function useQueryToGetContestDetail(
-  contest_public_id: string,
+  contestId: number,
   enabled: boolean = true
 ) {
   return useQuery<ContestDetailData | undefined>({
-    queryKey: ["contestDetail", contest_public_id],
-    queryFn: () => getContestDetail(contest_public_id),
-    enabled: enabled && !!contest_public_id,
+    queryKey: ["contestDetail", contestId],
+    queryFn: () => getContestDetail(contestId),
+    enabled: enabled && !!contestId,
     placeholderData: keepPreviousData,
   });
 }

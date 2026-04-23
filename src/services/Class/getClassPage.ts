@@ -1,7 +1,7 @@
 import { api } from "../api/axios";
 
 export interface ClassItem {
-  class_public_id: string;
+  class_id: number;
   name: string;
   description: string;
   is_public: boolean;

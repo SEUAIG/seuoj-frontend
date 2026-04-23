@@ -15,11 +15,11 @@ export type ContestSubmissionResponse = {
 };
 
 export const submitContestSolution = async (
-  contest_public_id: string,
+  contestId: number,
   payload: ContestSubmissionRequest
 ): Promise<ContestSubmissionResponse> => {
   const res = await api.post<ContestSubmissionResponse>(
-    `/api/contest/${contest_public_id}/submission`,
+    `/api/contest/${contestId}/submission`,
     payload
   );
   return res.data;

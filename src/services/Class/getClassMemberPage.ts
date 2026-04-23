@@ -1,8 +1,9 @@
 import { api } from "../api/axios";
 
 export interface ClassMemberItem {
-  user_public_id: string;
+  user_id: number;
   username: string;
+  nickname?: string;
   joined_at: string;
 }
 
@@ -23,10 +24,10 @@ export interface GetClassMemberPageRequest {
 }
 
 export const getClassMemberPage = async (
-  class_public_id: string,
+  classId: number,
   params: GetClassMemberPageRequest
 ): Promise<ClassMemberPageResponse> => {
-  const response = await api.get(`/api/class/${class_public_id}/member/page`, {
+  const response = await api.get(`/api/class/${classId}/member/page`, {
     params,
   });
   return response.data;

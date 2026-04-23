@@ -10,7 +10,7 @@ export interface CreateClassResponse {
   code: number;
   message: string;
   data: {
-    class_public_id: string;
+    class_id: number;
   };
 }
 

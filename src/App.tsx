@@ -154,26 +154,26 @@ function App() {
           <Route path="/contest">
             <Route index element={<CompetitionPage />} />
             <Route
-              path=":contest_public_id"
+              path=":id"
               element={<ContestListDetailPage />}
             />
             <Route
-              path=":contest_public_id/:id"
+              path=":id/:pid"
               element={<ContestProblemDetailPage />}
             />
             <Route
-              path=":contest_public_id/submissions"
+              path=":id/submissions"
               element={<ContestSubmissionListPage />}
             />
           </Route>
           <Route element={<ProtectedRoute allowRole="student" />}>
             <Route path="/contest/create" element={<CreateContestPage />} />
             <Route
-              path="/contest/:contest_public_id/edit"
+              path="/contest/:id/edit"
               element={<ContestEditPage />}
             />
             <Route
-              path="/contest/:contest_public_id/submission/:submission_no"
+              path="/contest/:id/submission/:submission_no"
               element={<ContestSubmissionPage />}
             />
           </Route>

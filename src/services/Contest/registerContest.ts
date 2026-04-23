@@ -4,18 +4,18 @@ export interface RegisterContestResponse {
   message: string;
 }
 export const registerContest = async (
-  contest_public_id: string
+  contestId: number
 ): Promise<RegisterContestResponse> => {
   const res = await api.post<RegisterContestResponse>(
-    `/api/contest/register?contest_public_id=${contest_public_id}`
+    `/api/contest/register?contest_id=${contestId}`
   );
   return res.data;
 };
 export const unregisterContest = async (
-  contest_public_id: string
+  contestId: number
 ): Promise<RegisterContestResponse> => {
   const res = await api.delete<RegisterContestResponse>(
-    `/api/contest/register?contest_public_id=${contest_public_id}`
+    `/api/contest/register?contest_id=${contestId}`
   );
   return res.data;
 };

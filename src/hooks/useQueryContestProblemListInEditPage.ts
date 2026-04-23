@@ -5,11 +5,11 @@ import {
 } from "@/services/Contest/getContestProblemListInEditPage";
 
 export const useQueryContestProblemListInEditPage = (
-  contest_public_id: string
+  contestId: number
 ) => {
   return useQuery<ContestProblemListInEditPageData | undefined>({
-    queryKey: ["contest-problem-list-edit", contest_public_id],
-    queryFn: () => getContestProblemListInEditPage(contest_public_id),
-    enabled: !!contest_public_id,
+    queryKey: ["contest-problem-list-edit", contestId],
+    queryFn: () => getContestProblemListInEditPage(contestId),
+    enabled: !!contestId,
   });
 };

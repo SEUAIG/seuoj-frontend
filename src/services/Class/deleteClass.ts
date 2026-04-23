@@ -6,8 +6,8 @@ export interface DeleteClassResponse {
 }
 
 export const deleteClass = async (
-  class_public_id: string
+  classId: number
 ): Promise<DeleteClassResponse> => {
-  const response = await api.delete(`/api/class/${class_public_id}`);
+  const response = await api.delete(`/api/class/${classId}`);
   return response.data;
 };

@@ -24,13 +24,13 @@ export type ContestProblemDetailResponse = {
 };
 
 export const getContestProblemDetail = async (
-  contest_public_id: string,
+  contestId: number,
   pid: string
 ): Promise<ContestProblemDetailData | undefined> => {
   const res = await api.get<ContestProblemDetailResponse>(
     `/api/problem/${pid}`,
     {
-      params: { contest_public_id },
+      params: { contest_id: contestId },
     }
   );
   return res.data.data;

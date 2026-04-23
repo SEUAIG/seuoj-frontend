@@ -12,9 +12,9 @@ export interface UpdateClassResponse {
 }
 
 export const updateClass = async (
-  class_public_id: string,
+  classId: number,
   data: UpdateClassRequest
 ): Promise<UpdateClassResponse> => {
-  const response = await api.put(`/api/class/${class_public_id}`, data);
+  const response = await api.put(`/api/class/${classId}`, data);
   return response.data;
 };

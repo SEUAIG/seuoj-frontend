@@ -99,15 +99,21 @@ const authSlice = createSlice({
     setError(state, action) {
       state.error = action.payload;
     },
+    setNickname(state, action) {
+      if (state.user) {
+        state.user.nickname = action.payload;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
       .addCase(login.fulfilled, (state, action) => {
-        const { jwt, username, role } = action.payload.data;
+        const { jwt, username, nickname, role } = action.payload.data;
         state.jwt = jwt;
         state.user = {
           id: "1",
           username: username || "user",
+          nickname: nickname || undefined,
           avatarUrl: "",
           role: role || "student",
         };
@@ -120,5 +126,5 @@ const authSlice = createSlice({
       });
   },
 });
-export const { resetAuth, setError } = authSlice.actions;
+export const { resetAuth, setError, setNickname } = authSlice.actions;
 export const authReducer = authSlice.reducer;

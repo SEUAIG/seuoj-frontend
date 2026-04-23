@@ -6,11 +6,11 @@ export interface AddMemberResponse {
 }
 
 export const addMember = async (
-  class_public_id: string,
-  user_public_id: string
+  classId: number,
+  userId: number
 ): Promise<AddMemberResponse> => {
   const response = await api.post(
-    `/api/class/${class_public_id}/member/${user_public_id}`
+    `/api/class/${classId}/member/${userId}`
   );
   return response.data;
 };

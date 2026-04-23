@@ -52,11 +52,11 @@ export type ContestSubmissionDetailResponse = {
 };
 
 export const getContestSubmissionDetail = async (
-  contest_public_id: string,
+  contestId: number,
   submission_no: string
 ): Promise<ContestSubmissionDetailData | undefined> => {
   const res = await api.get<ContestSubmissionDetailResponse>(
-    `/api/contest/${contest_public_id}/submission/${submission_no}`
+    `/api/contest/${contestId}/submission/${submission_no}`
   );
   return res.data.data;
 };

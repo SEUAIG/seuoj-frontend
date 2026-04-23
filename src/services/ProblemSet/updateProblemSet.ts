@@ -19,11 +19,11 @@ export type UpdateProblemSetResponse = {
 };
 
 export const updateProblemSet = async (
-    problem_set_public_id: string,
+    problemSetId: number,
     data: UpdateProblemSetRequest
 ): Promise<UpdateProblemSetResponse> => {
     const res = await api.put<UpdateProblemSetResponse>(
-        `/api/problem_set/${problem_set_public_id}`,
+        `/api/problem_set/${problemSetId}`,
         data
     );
     return res.data;

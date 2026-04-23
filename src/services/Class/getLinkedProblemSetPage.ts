@@ -22,11 +22,11 @@ export interface GetLinkProblemSetPageRequest {
 }
 
 export const getLinkedProblemSetPage = async (
-  class_public_id: string,
+  classId: number,
   params: GetLinkProblemSetPageRequest
 ): Promise<LinkProblemSetPageResponse> => {
   const response = await api.get(
-    `/api/class/${class_public_id}/problem_set/page`,
+    `/api/class/${classId}/problem_set/page`,
     {
       params,
     }

@@ -15,7 +15,7 @@ export type CreateContestResponse = {
   code: number;
   message: string;
   data?: {
-    contest_public_id: string;
+    contest_id: number;
   };
 };
 

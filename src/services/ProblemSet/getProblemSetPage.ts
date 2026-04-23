@@ -10,7 +10,7 @@ export type ProblemSetRecord = {
     description?: string;
     is_public?: boolean;
     problem_count?: number;
-    problem_set_public_id?: string;
+    problem_set_id?: number;
 };
 
 export type ProblemSetPageData = {

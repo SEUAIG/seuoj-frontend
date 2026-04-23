@@ -11,8 +11,9 @@ export interface GetUserPageRequest {
 }
 
 export interface UserPageRecord {
-  user_public_id: string;
+  user_id: number;
   username: string;
+  nickname: string | null;
   email: string;
   roles: CommonUserRole[];
 }

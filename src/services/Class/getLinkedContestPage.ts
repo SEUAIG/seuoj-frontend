@@ -22,11 +22,11 @@ export interface GetLinkPageRequest {
 }
 
 export const getLinkedContestPage = async (
-  class_public_id: string,
+  classId: number,
   params: GetLinkPageRequest
 ): Promise<LinkPageResponse> => {
   const response = await api.get(
-    `/api/class/${class_public_id}/contest/page`,
+    `/api/class/${classId}/contest/page`,
     {
       params,
     }

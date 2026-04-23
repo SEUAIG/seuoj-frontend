@@ -17,11 +17,11 @@ export interface UpdateContestResponse {
 }
 
 export const updateContest = async (
-  contest_public_id: string,
+  contestId: number,
   data: UpdateContestRequest
 ): Promise<UpdateContestResponse> => {
   const res = await api.put<UpdateContestResponse>(
-    `/api/contest/${contest_public_id}`,
+    `/api/contest/${contestId}`,
     data
   );
   return res.data;

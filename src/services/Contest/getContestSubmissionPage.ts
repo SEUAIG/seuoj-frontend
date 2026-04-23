@@ -31,6 +31,7 @@ export type ContestSubmissionRecord = {
   score: number | null;
   submit_time: string;
   username: string;
+  nickname?: string;
   problem: ContestProblemOverview;
 };
 export type ContestSubmissionPageData = {
@@ -46,11 +47,11 @@ export type ContestSubmissionPageResponse = {
 };
 
 export const getContestSubmissionPage = async (
-  contest_public_id: string,
+  contestId: number,
   params: ContestSubmissionPageQuery
 ): Promise<ContestSubmissionPageData | undefined> => {
   const res = await api.get<ContestSubmissionPageResponse>(
-    `/api/contest/${contest_public_id}/submission/page`,
+    `/api/contest/${contestId}/submission/page`,
     { params }
   );
   return res.data.data;

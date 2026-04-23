@@ -1,7 +1,7 @@
 import { api } from "../api/axios";
 
 export type ContestUnregisterQuery = {
-  contest_public_id?: string;
+  contest_id?: number;
 };
 export type ContestUnregisterResponse = {
   code: number;

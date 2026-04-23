@@ -6,11 +6,11 @@ export interface LinkContestResponse {
 }
 
 export const linkContest = async (
-  class_public_id: string,
-  contest_public_id: string
+  classId: number,
+  contestId: number
 ): Promise<LinkContestResponse> => {
   const response = await api.put(
-    `/api/class/${class_public_id}/contest/${contest_public_id}`
+    `/api/class/${classId}/contest/${contestId}`
   );
   return response.data;
 };

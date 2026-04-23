@@ -8,7 +8,8 @@ export interface ProblemColumn {
 
 export interface StudentRow {
     username: string;
-    user_public_id: string;
+    nickname?: string;
+    user_id: number;
     cells: string[];
     ac_count: number;
 }
@@ -26,11 +27,11 @@ export interface ClassProblemSetMatrixResponse {
 }
 
 export const getClassProblemSetMatrix = async (
-    classPublicId: string,
-    problemSetPublicId: string
+    classId: number,
+    problemSetId: number
 ): Promise<ClassProblemSetMatrixResponse> => {
     const response = await api.get(
-        `/api/class/${classPublicId}/problem_set/${problemSetPublicId}/matrix`
+        `/api/class/${classId}/problem_set/${problemSetId}/matrix`
     );
     return response.data;
 };

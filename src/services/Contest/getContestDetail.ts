@@ -27,10 +27,10 @@ export type ContestDetailResponse = {
 };
 
 export const getContestDetail = async (
-  contest_public_id: string
+  contestId: number
 ): Promise<ContestDetailData | undefined> => {
   const res = await api.get<ContestDetailResponse>(
-    `/api/contest/${contest_public_id}`
+    `/api/contest/${contestId}`
   );
   return res.data.data;
 };

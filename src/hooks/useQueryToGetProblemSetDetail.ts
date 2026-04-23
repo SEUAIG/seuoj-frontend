@@ -5,13 +5,13 @@ import {
 } from "@/services/ProblemSet/getProblemSetDetail";
 
 export default function useQueryToGetProblemSetDetail(
-    problem_set_public_id: string,
+    problemSetId: number,
     enabled: boolean = true
 ) {
     return useQuery<ProblemSetDetailData | undefined>({
-        queryKey: ["problemSetDetail", problem_set_public_id],
-        queryFn: () => getProblemSetDetail(problem_set_public_id),
-        enabled: enabled && !!problem_set_public_id,
+        queryKey: ["problemSetDetail", problemSetId],
+        queryFn: () => getProblemSetDetail(problemSetId),
+        enabled: enabled && !!problemSetId,
         placeholderData: keepPreviousData,
     });
 }

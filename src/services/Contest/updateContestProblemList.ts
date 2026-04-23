@@ -13,11 +13,11 @@ export type UpdateContestProblemListResponse = {
 };
 
 export const updateContestProblemList = async (
-  contest_public_id: string,
+  contestId: number,
   payload: UpdateContestProblemListRequest
 ): Promise<UpdateContestProblemListResponse> => {
   const res = await api.post<UpdateContestProblemListResponse>(
-    `/api/contest/${contest_public_id}/problem`,
+    `/api/contest/${contestId}/problem`,
     payload
   );
   return res.data;

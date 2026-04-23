@@ -17,10 +17,10 @@ export type ContestProblemListInEditPageResponse = {
 };
 
 export const getContestProblemListInEditPage = async (
-  contest_public_id: string
+  contestId: number
 ): Promise<ContestProblemListInEditPageData | undefined> => {
   const res = await api.get<ContestProblemListInEditPageResponse>(
-    `/api/contest/${contest_public_id}/problem/list`
+    `/api/contest/${contestId}/problem/list`
   );
   return res.data.data;
 };

@@ -21,10 +21,10 @@ export type ProblemSetDetailResponse = {
 };
 
 export const getProblemSetDetail = async (
-    problem_set_public_id: string
+    problemSetId: number
 ): Promise<ProblemSetDetailData | undefined> => {
     const res = await api.get<ProblemSetDetailResponse>(
-        `/api/problem_set/${problem_set_public_id}`
+        `/api/problem_set/${problemSetId}`
     );
     return res.data.data;
 };

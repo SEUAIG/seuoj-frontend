@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 interface ContestCodeFileObject {
-  contest_id: string;
+  contest_id: number;
   pid: string;
   codeFile: string;
 }

@@ -6,8 +6,8 @@ export interface JoinClassResponse {
 }
 
 export const joinClass = async (
-  class_public_id: string
+  classId: number
 ): Promise<JoinClassResponse> => {
-  const response = await api.post(`/api/class/${class_public_id}/join`);
+  const response = await api.post(`/api/class/${classId}/join`);
   return response.data;
 };

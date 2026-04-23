@@ -3,6 +3,7 @@ export type UserRole = "guest" | "student" | "teacher" | "admin" | "superadmin";
 export type User = {
     id:string;
     username:string;
+    nickname?:string;
     avatarUrl:string;
     role?:UserRole;
 

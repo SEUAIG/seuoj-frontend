@@ -21,11 +21,12 @@ export type ContestStandingsScoreDetail = {
 export type ContestStandingsRecord = {
   rank: number;
   username: string;
+  nickname?: string;
   score: number;
   score_details: Record<string, ContestStandingsScoreDetail>;
 };
 export type ContestStandingsData = {
-  contest_public_id: string;
+  contest_id: number;
   rule_type: ContestRuleType;
   problems: ContestProblemOverview[];
   records: ContestStandingsRecord[];
@@ -37,11 +38,11 @@ export type ContestStandingsResponse = {
 };
 
 export const getContestStandings = async (
-  contest_public_id: string,
+  contestId: number,
   params: ContestStandingsQuery
 ): Promise<ContestStandingsData | undefined> => {
   const res = await api.get<ContestStandingsResponse>(
-    `/api/contest/${contest_public_id}/standings`,
+    `/api/contest/${contestId}/standings`,
     { params }
   );
   return res.data.data;

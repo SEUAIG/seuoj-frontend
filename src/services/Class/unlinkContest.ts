@@ -6,11 +6,11 @@ export interface UnlinkContestResponse {
 }
 
 export const unlinkContest = async (
-  class_public_id: string,
-  contest_public_id: string
+  classId: number,
+  contestId: number
 ): Promise<UnlinkContestResponse> => {
   const response = await api.delete(
-    `/api/class/${class_public_id}/contest/${contest_public_id}`
+    `/api/class/${classId}/contest/${contestId}`
   );
   return response.data;
 };

@@ -10,6 +10,7 @@ export interface SubmissionListRecord {
   submit_time: string;
   finish_time: string | null;
   username: string;
+  nickname?: string;
 }
 
 export interface SubmissionListData {

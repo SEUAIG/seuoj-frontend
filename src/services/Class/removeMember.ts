@@ -6,11 +6,11 @@ export interface RemoveMemberResponse {
 }
 
 export const removeMember = async (
-  class_public_id: string,
-  user_public_id: string
+  classId: number,
+  userId: number
 ): Promise<RemoveMemberResponse> => {
   const response = await api.delete(
-    `/api/class/${class_public_id}/member/${user_public_id}`
+    `/api/class/${classId}/member/${userId}`
   );
   return response.data;
 };

@@ -2,6 +2,7 @@ import { api } from "@/services/api/axios";
 
 export interface BatchImportUserRow {
     username: string;
+    nickname?: string;
     email: string;
     password?: string;
 }

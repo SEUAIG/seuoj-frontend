@@ -6,11 +6,11 @@ export interface LinkProblemSetResponse {
 }
 
 export const linkProblemSet = async (
-  class_public_id: string,
-  problem_set_id: string
+  classId: number,
+  problemSetId: number
 ): Promise<LinkProblemSetResponse> => {
   const response = await api.put(
-    `/api/class/${class_public_id}/problem_set/${problem_set_id}`
+    `/api/class/${classId}/problem_set/${problemSetId}`
   );
   return response.data;
 };

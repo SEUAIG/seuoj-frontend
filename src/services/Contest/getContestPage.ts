@@ -12,7 +12,7 @@ export type ContestListQuery = {
   rule_type?: ContestRuleType;
 };
 export type ContestRecord = {
-  contest_public_id: string;
+  contest_id: number;
   title?: string;
   subtitle?: string;
   description?: string;

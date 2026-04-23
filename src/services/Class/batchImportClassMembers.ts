@@ -43,11 +43,11 @@ export interface ClassBatchImportResponse {
 }
 
 export const batchImportClassMembers = async (
-    classPublicId: string,
+    classId: number,
     req: ClassBatchImportRequest
 ): Promise<ClassBatchImportResponse> => {
     const response = await api.post<ClassBatchImportResponse>(
-        `/api/class/${classPublicId}/batch-import`,
+        `/api/class/${classId}/batch-import`,
         req
     );
     return response.data;
