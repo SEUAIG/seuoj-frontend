@@ -33,6 +33,7 @@ export default function SubmissionRecord({
     submitTime,
     finishTime,
     username,
+    nickname,
     score,
   } = submission;
   const isError =
@@ -81,8 +82,8 @@ export default function SubmissionRecord({
       </TableHeader>
       <TableBody>
         <TableRow>
-          <TableCell className="text-center">{`#${pid}`}</TableCell>
-          <TableCell className="text-center">{`#${title || pid}`}</TableCell>
+          <TableCell className="text-center">{pid}</TableCell>
+          <TableCell className="text-center">{title || pid}</TableCell>
           {/* 优先使用查询参数的title 否则使用pid */}
           <TableCell className="text-center">
             {verdict && <AnswerState state={verdict} />}
@@ -93,7 +94,7 @@ export default function SubmissionRecord({
           <TableCell className="text-center">{timeDisplay}</TableCell>
           <TableCell className="text-center">{memoryDisplay}</TableCell>
           <TableCell className="text-center">{language}</TableCell>
-          <TableCell className="text-center">{username}</TableCell>
+          <TableCell className="text-center">{nickname || username}</TableCell>
           <TableCell className="text-center">{formattedTime}</TableCell>
         </TableRow>
       </TableBody>

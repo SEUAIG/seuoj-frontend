@@ -46,7 +46,7 @@ export default function ClassPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [classToDelete, setClassToDelete] = useState<ClassItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [joiningClassId, setJoiningClassId] = useState<string | null>(null);
+  const [joiningClassId, setJoiningClassId] = useState<number | null>(null);
 
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["classPage", page, size, isAuthenticated],
@@ -75,7 +75,7 @@ export default function ClassPage() {
     if (!classToDelete) return;
     setIsDeleting(true);
     try {
-      const res = await deleteClass(classToDelete.class_public_id);
+      const res = await deleteClass(classToDelete.class_id);
       if (res.code === 0) {
         toast.success("班级删除成功");
         setIsDeleteDialogOpen(false);
@@ -94,13 +94,13 @@ export default function ClassPage() {
 
   const handleJoinClick = async (e: React.MouseEvent, item: ClassItem) => {
     e.stopPropagation();
-    setJoiningClassId(item.class_public_id);
+    setJoiningClassId(item.class_id);
     try {
-      const res = await joinClass(item.class_public_id);
+      const res = await joinClass(item.class_id);
       if (res.code === 0) {
         toast.success(`成功加入班级: ${item.name}`);
         // 加入成功后清空班级详情成员缓存并刷新列表
-        queryClient.invalidateQueries({ queryKey: ["classMemberPage", item.class_public_id] });
+        queryClient.invalidateQueries({ queryKey: ["classMemberPage", item.class_id] });
         refetch();
       } else {
         toast.error(res.message || "加入失败");
@@ -161,9 +161,9 @@ export default function ClassPage() {
           >
             {records.map((item) => (
               <Card
-                key={item.class_public_id}
+                key={item.class_id}
                 className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => nav(`/class/${item.class_public_id}`)}
+                onClick={() => nav(`/class/${item.class_id}`)}
               >
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
@@ -208,9 +208,9 @@ export default function ClassPage() {
                     size="sm"
                     className="h-8 border-green-200 text-green-600 hover:bg-green-50 hover:text-green-700"
                     onClick={(e) => handleJoinClick(e, item)}
-                    disabled={joiningClassId === item.class_public_id}
+                    disabled={joiningClassId === item.class_id}
                   >
-                    {joiningClassId === item.class_public_id ? (
+                    {joiningClassId === item.class_id ? (
                       <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                     ) : (
                       <UserPlus className="w-4 h-4 mr-1" />

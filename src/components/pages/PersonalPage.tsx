@@ -22,11 +22,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, KeyRound } from "lucide-react";
+import { Loader2, KeyRound, Pencil } from "lucide-react";
 import { api } from "@/services/api/axios";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/app/store";
 import { toast } from "sonner";
+import { setNickname as setNicknameAction } from "@/features/auth/authSlice";
+import { updateProfile } from "@/services/user/updateProfile";
 import AnswerState from "@/components/common/AnswerState";
 import ProblemListPageChoose from "@/components/bussiness/ProblemListPageChoose";
 import { setCurrent as setSubmissionCurrent } from "@/features/SubmissionList/submissionListSlice";
@@ -50,6 +52,35 @@ export default function PersonalPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changePwdLoading, setChangePwdLoading] = useState(false);
+
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [editNickname, setEditNickname] = useState("");
+  const [editProfileLoading, setEditProfileLoading] = useState(false);
+
+  const openEditProfile = () => {
+    setEditNickname(user?.nickname || "");
+    setEditProfileOpen(true);
+  };
+
+  const handleUpdateProfile = async () => {
+    setEditProfileLoading(true);
+    try {
+      const res = await updateProfile({ nickname: editNickname });
+      if (res.code === 0) {
+        toast.success("资料更新成功");
+        dispatch(setNicknameAction(res.data.nickname || undefined));
+        setEditProfileOpen(false);
+      } else {
+        toast.error(res.message || "更新失败");
+      }
+    } catch (err: unknown) {
+      toast.error(
+        "更新失败: " + (err instanceof Error ? err.message : String(err))
+      );
+    } finally {
+      setEditProfileLoading(false);
+    }
+  };
 
   const handleChangePassword = async () => {
     if (!oldPassword || !newPassword || !confirmPassword) {
@@ -172,18 +203,20 @@ export default function PersonalPage() {
                 <div className="flex items-center gap-4">
                   <Avatar className="h-16 w-16">
                     <AvatarImage src={nahida} />
-                    <AvatarFallback>U</AvatarFallback>
+                    <AvatarFallback>{(user?.nickname || user?.username || "U")[0].toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="text-lg font-semibold">用户名</div>
+                    <div className="text-lg font-semibold">{user?.nickname || user?.username || "用户"}</div>
                     <div className="text-sm text-muted-foreground">
-                      Problem Solver
+                      @{user?.username}
                     </div>
                   </div>
                 </div>
-                <div className="text-sm text-muted-foreground">Tagline</div>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm">编辑资料</Button>
+                  <Button size="sm" onClick={openEditProfile}>
+                    <Pencil className="h-4 w-4 mr-1" />
+                    编辑资料
+                  </Button>
                   <Button
                     size="sm"
                     variant="outline"
@@ -343,7 +376,7 @@ export default function PersonalPage() {
                                   </span>
                                 </TableCell>
                                 <TableCell className="text-center">
-                                  #{record.pid}
+                                  {record.pid}
                                 </TableCell>
                                 <TableCell className="text-center">
                                   {record.verdict ? (
@@ -358,7 +391,7 @@ export default function PersonalPage() {
                                   {record.language}
                                 </TableCell>
                                 <TableCell className="text-center">
-                                  {record.username}
+                                  {record.nickname || record.username}
                                 </TableCell>
                                 <TableCell className="text-center">
                                   {record.submit_time}
@@ -480,6 +513,9 @@ export default function PersonalPage() {
                                   用户名
                                 </TableHead>
                                 <TableHead className="text-center">
+                                  昵称
+                                </TableHead>
+                                <TableHead className="text-center">
                                   邮箱
                                 </TableHead>
                                 <TableHead className="text-center">
@@ -489,14 +525,15 @@ export default function PersonalPage() {
                             </TableHeader>
                             <TableBody>
                               {userRecords.map((record) => (
-                                <TableRow key={record.user_public_id}>
+                                <TableRow key={record.user_id}>
                                   <TableCell className="text-center font-mono">
-                                    <span title={record.user_public_id}>
-                                      {record.user_public_id.slice(0, 10)}
-                                    </span>
+                                    {record.user_id}
                                   </TableCell>
                                   <TableCell className="text-center">
                                     {record.username}
+                                  </TableCell>
+                                  <TableCell className="text-center text-muted-foreground">
+                                    {record.nickname || "-"}
                                   </TableCell>
                                   <TableCell className="text-center">
                                     {record.email}
@@ -626,6 +663,47 @@ export default function PersonalPage() {
                 disabled={changePwdLoading}
               >
                 {changePwdLoading ? "提交中..." : "确认修改"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Profile Dialog */}
+        <Dialog open={editProfileOpen} onOpenChange={setEditProfileOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>编辑资料</DialogTitle>
+              <DialogDescription>
+                修改昵称后将在全站展示。
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 py-2">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">昵称</label>
+                <Input
+                  placeholder="输入昵称（留空则显示用户名）"
+                  value={editNickname}
+                  onChange={(e) => setEditNickname(e.target.value)}
+                  maxLength={64}
+                  onKeyDown={(e) => e.key === "Enter" && handleUpdateProfile()}
+                />
+                <p className="text-xs text-muted-foreground">
+                  当前用户名: @{user?.username}
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setEditProfileOpen(false)}
+              >
+                取消
+              </Button>
+              <Button
+                onClick={handleUpdateProfile}
+                disabled={editProfileLoading}
+              >
+                {editProfileLoading ? "保存中..." : "保存"}
               </Button>
             </DialogFooter>
           </DialogContent>

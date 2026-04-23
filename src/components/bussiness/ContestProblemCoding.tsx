@@ -4,7 +4,7 @@ import FileUpload from "./FileUpload";
 import { Button } from "@/components/ui/button";
 import { SquarePen } from "lucide-react";
 interface ContestProblemCodingProps {
-  contest_id: string;
+  contest_id: number;
   pid: string;
   setCodeFile: Dispatch<SetStateAction<string>>;
   handleCodeSubmit: () => void;

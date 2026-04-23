@@ -64,7 +64,7 @@ export default function ContestProblemDetailInfo({
       {/* === 1. 头部标题与标签 === */}
       <div className="space-y-4">
         <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-          #{pid}. {title}
+          {pid}. {title}
         </h1>
         <div className="flex flex-wrap gap-3">
           {/* 题目类型 */}

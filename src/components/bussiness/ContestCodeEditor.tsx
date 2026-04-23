@@ -6,7 +6,7 @@ import { RootState } from "@/app/store";
 import { setContestCodeFile } from "@/features/Code/contestCodeSlice";
 
 interface ContestCodeEditorProps {
-  contest_id: string;
+  contest_id: number;
   pid: string;
 }
 export default function ContestCodeEditor({
@@ -22,7 +22,7 @@ export default function ContestCodeEditor({
   );
 
   const index = codeFileObjectArray.findIndex(
-    (i: { contest_id: string; pid: string }) =>
+    (i: { contest_id: number; pid: string }) =>
       i.contest_id === contest_id && i.pid === pid
   );
   let codeText = "";

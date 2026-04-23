@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 interface LinkProblemSetModalProps {
   isOpen: boolean;
   onClose: () => void;
-  classId: string;
+  classId: number;
 }
 
 export default function LinkProblemSetModal({
@@ -44,8 +44,8 @@ export default function LinkProblemSetModal({
   const records = data?.records || [];
   const totalPages = Math.ceil((data?.total || 0) / size);
 
-  const linkMutation = useMutation<any, Error, string>({
-    mutationFn: (problemSetId: string) => linkProblemSet(classId, problemSetId),
+  const linkMutation = useMutation<any, Error, number>({
+    mutationFn: (problemSetId: number) => linkProblemSet(classId, problemSetId),
     onSuccess: (res) => {
       if (res.code === 0) {
         toast.success("成功关联题单");
@@ -87,7 +87,7 @@ export default function LinkProblemSetModal({
             >
               {records.map((ps) => (
                 <div
-                  key={ps.problem_set_public_id}
+                  key={ps.problem_set_id}
                   className="p-3 flex items-center justify-between hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex-1 min-w-0 pr-4">
@@ -112,12 +112,12 @@ export default function LinkProblemSetModal({
                     variant="outline"
                     className="shrink-0"
                     onClick={() =>
-                      linkMutation.mutate(ps.problem_set_public_id!)
+                      linkMutation.mutate(ps.problem_set_id!)
                     }
                     disabled={linkMutation.isPending}
                   >
                     {linkMutation.isPending &&
-                    linkMutation.variables === ps.problem_set_public_id ? (
+                    linkMutation.variables === ps.problem_set_id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <>

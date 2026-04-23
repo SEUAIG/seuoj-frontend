@@ -26,7 +26,7 @@ export default function ProblemSetDetailPage() {
     isLoading: detailLoading,
     isError,
     error,
-  } = useQueryToGetProblemSetDetail(id || "");
+  } = useQueryToGetProblemSetDetail(Number(id));
 
   if (detailLoading) {
     return (

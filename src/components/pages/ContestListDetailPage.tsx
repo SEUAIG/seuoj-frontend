@@ -32,18 +32,19 @@ import { toast } from "sonner";
 import { useState } from "react";
 
 export default function ContestListDetailPage() {
-  const { contest_public_id } = useParams();
+  const { id } = useParams();
+  const contestId = Number(id);
   const nav = useNavigate();
   const [isRegistering, setIsRegistering] = useState(false);
   const { data, isLoading, isError, error, refetch } =
-    useQueryToGetContestDetail(contest_public_id || "");
+    useQueryToGetContestDetail(contestId || 0);
   const canEdit = true;
 
   const handleRegister = async () => {
-    if (!contest_public_id) return;
+    if (!contestId) return;
     setIsRegistering(true);
     try {
-      const res = await registerContest(contest_public_id);
+      const res = await registerContest(contestId);
       if (res.code === 0) {
         toast.success("报名成功");
         refetch();
@@ -57,10 +58,10 @@ export default function ContestListDetailPage() {
     }
   };
   const handleUnregister = async () => {
-    if (!contest_public_id) return;
+    if (!contestId) return;
     setIsRegistering(true);
     try {
-      const res = await unregisterContest(contest_public_id);
+      const res = await unregisterContest(contestId);
       if (res.code === 0) {
         toast.success("取消报名成功");
         refetch();
@@ -158,7 +159,7 @@ export default function ContestListDetailPage() {
         {canEdit && (
           <Button
             variant="outline"
-            onClick={() => nav(`/contest/${contest_public_id}/edit`)}
+            onClick={() => nav(`/contest/${contestId}/edit`)}
           >
             <Settings className="mr-2 h-4 w-4" />
             编辑比赛
@@ -189,7 +190,7 @@ export default function ContestListDetailPage() {
           <Button
             variant="outline"
             className="ml-2"
-            onClick={() => nav(`/contest/${contest_public_id}/submissions`)}
+            onClick={() => nav(`/contest/${contestId}/submissions`)}
           >
             提交记录
           </Button>
@@ -278,7 +279,7 @@ export default function ContestListDetailPage() {
                             className="font-medium cursor-pointer hover:text-blue-600 hover:underline transition-colors"
                             onClick={() =>
                               nav(
-                                `/contest/${contest_public_id}/${problem.pid}`
+                                `/contest/${contestId}/${problem.pid}`
                               )
                             }
                           >
@@ -291,7 +292,7 @@ export default function ContestListDetailPage() {
                             size="sm"
                             onClick={() =>
                               nav(
-                                `/contest/${contest_public_id}/${problem.pid}`
+                                `/contest/${contestId}/${problem.pid}`
                               )
                             }
                           >

@@ -28,7 +28,7 @@ export default function HomePage() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                  {isAuthenticated ? `欢迎回来, ${user?.username}` : "Welcome to SeuOJ"}
+                  {isAuthenticated ? `欢迎回来, ${user?.nickname || user?.username}` : "Welcome to SeuOJ"}
                 </h1>
                 <p className="text-muted-foreground mt-1">
                   {isAuthenticated

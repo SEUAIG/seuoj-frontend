@@ -17,7 +17,7 @@ type ContestListTableProps = {
   formatContestTime: (start?: string, end?: string) => string;
   statusLabelMap: Map<string, string>;
   getOutlineTagClass: (value: string) => string;
-  onOpenContest: (contestPublicId: string) => void;
+  onOpenContest: (contestId: number) => void;
 };
 export default function ContestListTable({
   records,
@@ -64,11 +64,11 @@ export default function ContestListTable({
             </TableRow>
           ) : (
             records.map((record) => (
-              <TableRow key={record.contest_public_id}>
+              <TableRow key={record.contest_id}>
                 <TableCell className="font-medium py-4">
                   <button
                     type="button"
-                    onClick={() => onOpenContest(record.contest_public_id)}
+                    onClick={() => onOpenContest(record.contest_id)}
                     className="text-left text-blue-600 hover:text-blue-700 hover:underline font-semibold"
                   >
                     {record.title ?? "未命名比赛"}

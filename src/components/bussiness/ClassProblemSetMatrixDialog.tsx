@@ -18,8 +18,8 @@ import {
 interface Props {
     isOpen: boolean;
     onClose: () => void;
-    classId: string;
-    problemSetPublicId: string;
+    classId: number;
+    problemSetId: number;
     problemSetTitle: string;
 }
 
@@ -27,13 +27,13 @@ export default function ClassProblemSetMatrixDialog({
     isOpen,
     onClose,
     classId,
-    problemSetPublicId,
+    problemSetId,
     problemSetTitle,
 }: Props) {
     const { data, isLoading, isError, error } = useQuery({
-        queryKey: ["classProblemSetMatrix", classId, problemSetPublicId],
-        queryFn: () => getClassProblemSetMatrix(classId, problemSetPublicId),
-        enabled: isOpen && !!classId && !!problemSetPublicId,
+        queryKey: ["classProblemSetMatrix", classId, problemSetId],
+        queryFn: () => getClassProblemSetMatrix(classId, problemSetId),
+        enabled: isOpen && !!classId && !!problemSetId,
     });
 
     const matrixData: ClassProblemSetMatrixData | undefined = data?.data;
@@ -49,7 +49,7 @@ export default function ClassProblemSetMatrixDialog({
         ];
 
         const rows = matrixData.students.map((student) => [
-            student.username,
+            student.nickname || student.username,
             ...student.cells.map((c) =>
                 c === "AC" ? "✓" : c === "ATTEMPTED" ? "✗" : ""
             ),
@@ -141,11 +141,11 @@ export default function ClassProblemSetMatrixDialog({
                             <tbody className="divide-y">
                                 {matrixData.students.map((student) => (
                                     <tr
-                                        key={student.user_public_id}
+                                        key={student.user_id}
                                         className="hover:bg-muted/30"
                                     >
                                         <td className="sticky left-0 z-10 bg-card px-3 py-2 font-medium border-r whitespace-nowrap">
-                                            {student.username}
+                                            {student.nickname || student.username}
                                         </td>
                                         {student.cells.map((cell, idx) => (
                                             <td key={idx} className="px-2 py-2 text-center">

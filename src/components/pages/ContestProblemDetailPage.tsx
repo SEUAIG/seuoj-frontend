@@ -15,7 +15,8 @@ import { toast } from "sonner";
 import ContestProblemDetailInfo from "@/components/bussiness/ContestProblemDetailInfo";
 export default function ContestProblemDetailPage() {
   const { isAuthenticated } = useSelector((store: RootState) => store.auth);
-  const { contest_public_id, id } = useParams();
+  const { id, pid: pidParam } = useParams();
+  const contestId = Number(id);
   const [hide, setHide] = useState(false);
   const [codeFile, setCodeFile] = useState("");
   const { language, codeFileObjectArray } = useSelector(
@@ -23,8 +24,8 @@ export default function ContestProblemDetailPage() {
   );
   const nav = useNavigate();
   const { data, isLoading, isError, error } = useQueryToGetContestProblemDetail(
-    contest_public_id || "",
-    id || ""
+    contestId || 0,
+    pidParam || ""
   );
   if (isLoading) {
     return (
@@ -81,8 +82,8 @@ export default function ContestProblemDetailPage() {
   const { title, pid } = problemData;
   const handleContestCodeSubmit = async () => {
     const index = codeFileObjectArray.findIndex(
-      (i: { contest_id: string; pid: string }) =>
-        i.contest_id === contest_public_id && i.pid === pid
+      (i: { contest_id: number; pid: string }) =>
+        i.contest_id === contestId && i.pid === pid
     );
     if (index === -1) {
       toast.error("代码不能为空");
@@ -96,7 +97,7 @@ export default function ContestProblemDetailPage() {
     const data = { pid, language, code };
     try {
       const res = await api.post(
-        `/api/contest/${contest_public_id}/submission`,
+        `/api/contest/${contestId}/submission`,
         data
       );
       const result = res.data;
@@ -104,7 +105,7 @@ export default function ContestProblemDetailPage() {
         toast.success("提交成功");
         const submission_no = result.data.submission_no;
         nav(
-            `/contest/${contest_public_id}/submission/${submission_no}?title=${title}`
+            `/contest/${contestId}/submission/${submission_no}?title=${title}`
           );
         
       } 
@@ -120,7 +121,7 @@ export default function ContestProblemDetailPage() {
   return (
     <>
       <Helmet>
-        <title>{`#${pid}. ${title} - SeuOJ`}</title>
+        <title>{`${pid}. ${title} - SeuOJ`}</title>
       </Helmet>
       <div className="h-[calc(100vh-5.5rem)] w-full max-w-full overflow-x-hidden overflow-y-hidden flex flex-col lg:flex-row bg-white border-t border-gray-200 relative">
         <div className="fixed right-10 z-50 top-16 flex items-center space-x-2">
@@ -149,7 +150,7 @@ export default function ContestProblemDetailPage() {
             {isAuthenticated ? (
               <ContestProblemCoding
                 pid={pid}
-                contest_id={contest_public_id || ""}
+                contest_id={contestId || 0}
                 setCodeFile={setCodeFile}
                 handleCodeSubmit={handleContestCodeSubmit}
               />

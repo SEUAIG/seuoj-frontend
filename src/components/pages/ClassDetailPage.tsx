@@ -14,19 +14,23 @@ import {
   BookOpen,
   BarChart3,
   Eye,
+  Megaphone,
+  ClipboardList,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -55,24 +59,26 @@ import LinkContestModal from "../bussiness/LinkContestModal";
 import LinkProblemSetModal from "../bussiness/LinkProblemSetModal";
 import AddMemberModal from "../bussiness/AddMemberModal";
 import BatchImportMembersModal from "../bussiness/BatchImportMembersModal";
-import ClassProblemSetMatrixDialog from "../bussiness/ClassProblemSetMatrixDialog";
+import AnnouncementList from "../bussiness/AnnouncementList";
+import AssignmentOverviewDialog from "../bussiness/AssignmentOverviewDialog";
 import { Link as LinkIcon, UserPlus, Upload } from "lucide-react";
 import {
   getClassOverview,
-  ProblemSetProgressItem,
+  type AssignmentProgressItem,
 } from "@/services/Class/getClassOverview";
 import { Progress } from "@/components/ui/progress";
 
 export default function ClassDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const classId = Number(id);
   const nav = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const page = parseInt(searchParams.get("page") || "1");
   const size = parseInt(searchParams.get("size") || "20");
 
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
-    queryKey: ["classMemberPage", id, page, size],
-    queryFn: () => getClassMemberPage(id!, { current: page, size }),
+    queryKey: ["classMemberPage", classId, page, size],
+    queryFn: () => getClassMemberPage(classId, { current: page, size }),
     enabled: !!id,
     placeholderData: keepPreviousData,
   });
@@ -88,9 +94,9 @@ export default function ClassDetailPage() {
     error: contestError,
     refetch: refetchContests,
   } = useQuery({
-    queryKey: ["classLinkedContests", id, contestPage, contestSize],
+    queryKey: ["classLinkedContests", classId, contestPage, contestSize],
     queryFn: () =>
-      getLinkedContestPage(id!, { current: contestPage, size: contestSize }),
+      getLinkedContestPage(classId, { current: contestPage, size: contestSize }),
     enabled: !!id,
     placeholderData: keepPreviousData,
   });
@@ -106,14 +112,14 @@ export default function ClassDetailPage() {
     error: psError,
     refetch: refetchPs,
   } = useQuery({
-    queryKey: ["classLinkedProblemSets", id, psPage, psSize],
+    queryKey: ["classLinkedProblemSets", classId, psPage, psSize],
     queryFn: () =>
-      getLinkedProblemSetPage(id!, { current: psPage, size: psSize }),
+      getLinkedProblemSetPage(classId, { current: psPage, size: psSize }),
     enabled: !!id,
     placeholderData: keepPreviousData,
   });
 
-  const [activeTab, setActiveTab] = useState("members");
+  const [activeTab, setActiveTab] = useState("announcements");
 
   const [memberToRemove, setMemberToRemove] = useState<ClassMemberItem | null>(
     null
@@ -137,7 +143,7 @@ export default function ClassDetailPage() {
   const [isLinkPsModalOpen, setIsLinkPsModalOpen] = useState(false);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [isBatchImportModalOpen, setIsBatchImportModalOpen] = useState(false);
-  const [matrixProblemSet, setMatrixProblemSet] = useState<ProblemSetProgressItem | null>(null);
+  const [assignmentDrilldown, setAssignmentDrilldown] = useState<AssignmentProgressItem | null>(null);
 
   const {
     data: overviewData,
@@ -145,8 +151,8 @@ export default function ClassDetailPage() {
     isError: isOverviewError,
     error: overviewError,
   } = useQuery({
-    queryKey: ["classOverview", id],
-    queryFn: () => getClassOverview(id!),
+    queryKey: ["classOverview", classId],
+    queryFn: () => getClassOverview(classId),
     enabled: !!id && activeTab === "overview",
   });
 
@@ -165,7 +171,7 @@ export default function ClassDetailPage() {
     if (!memberToRemove || !id) return;
     setIsRemoving(true);
     try {
-      const res = await removeMember(id, memberToRemove.user_public_id);
+      const res = await removeMember(classId, memberToRemove.user_id);
       if (res.code === 0) {
         toast.success(`已移除成员: ${memberToRemove.username}`);
         setIsRemoveDialogOpen(false);
@@ -193,7 +199,7 @@ export default function ClassDetailPage() {
     if (!contestToUnlink || !id) return;
     setIsUnlinking(true);
     try {
-      const res = await unlinkContest(id, contestToUnlink.id);
+      const res = await unlinkContest(classId, Number(contestToUnlink.id));
       if (res.code === 0) {
         toast.success(`已解除与比赛 "${contestToUnlink.title}" 的关联`);
         setIsUnlinkDialogOpen(false);
@@ -224,7 +230,7 @@ export default function ClassDetailPage() {
     if (!psToUnlink || !id) return;
     setIsUnlinkingPs(true);
     try {
-      const res = await unlinkProblemSet(id, psToUnlink.id);
+      const res = await unlinkProblemSet(classId, Number(psToUnlink.id));
       if (res.code === 0) {
         toast.success(`已解除与题单 "${psToUnlink.title}" 的关联`);
         setIsUnlinkPsDialogOpen(false);
@@ -273,49 +279,64 @@ export default function ClassDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           {activeTab === "members" && (
-            <Button
-              variant="outline"
-              onClick={() => setIsBatchImportModalOpen(true)}
-            >
-              <Upload className="h-4 w-4 mr-2" />批量导入
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setIsBatchImportModalOpen(true)}
+              >
+                <Upload className="h-4 w-4 mr-2" />批量导入
+              </Button>
+              <Button onClick={() => setIsAddMemberModalOpen(true)}>
+                <UserPlus className="h-4 w-4 mr-2" />添加成员
+              </Button>
+            </>
+          )}
+          {activeTab === "contests" && (
+            <Button onClick={() => setIsLinkModalOpen(true)}>
+              <LinkIcon className="h-4 w-4 mr-2" />关联比赛
             </Button>
           )}
-          <Button
-            onClick={() => {
-              if (activeTab === "members") {
-                setIsAddMemberModalOpen(true);
-              } else if (activeTab === "contests") {
-                setIsLinkModalOpen(true);
-              } else if (activeTab === "problem-sets") {
-                setIsLinkPsModalOpen(true);
-              }
-            }}
-          >
-            {activeTab === "members" ? (
-              <><UserPlus className="h-4 w-4 mr-2" />添加成员</>
-            ) : activeTab === "contests" ? (
-              <><LinkIcon className="h-4 w-4 mr-2" />关联比赛</>
-            ) : (
-              <><LinkIcon className="h-4 w-4 mr-2" />关联题单</>
-            )}
-          </Button>
+          {activeTab === "problem-sets" && (
+            <Button onClick={() => setIsLinkPsModalOpen(true)}>
+              <LinkIcon className="h-4 w-4 mr-2" />关联题单
+            </Button>
+          )}
         </div>
       </div>
 
       <Tabs
-        defaultValue="members"
+        defaultValue="announcements"
         value={activeTab}
         onValueChange={setActiveTab}
         className="flex-1 flex flex-col"
       >
-        <TabsList className="grid w-full grid-cols-4 max-w-lg mb-4">
+        <TabsList className="grid w-full grid-cols-5 max-w-2xl mb-4">
+          <TabsTrigger value="announcements">
+            <Megaphone className="h-4 w-4 mr-1" />公告
+          </TabsTrigger>
           <TabsTrigger value="members">成员列表</TabsTrigger>
           <TabsTrigger value="contests">已关联比赛</TabsTrigger>
-          <TabsTrigger value="problem-sets">已关联题单</TabsTrigger>
+          <TabsTrigger value="problem-sets">
+            <ClipboardList className="h-4 w-4 mr-1" />作业
+          </TabsTrigger>
           <TabsTrigger value="overview">
             <BarChart3 className="h-4 w-4 mr-1" />学情概览
           </TabsTrigger>
         </TabsList>
+
+        {/* Announcements tab (default) */}
+        <TabsContent value="announcements" className="!mt-0">
+          <Card className="flex-1 flex flex-col border-none shadow-none bg-transparent">
+            <CardContent className="flex-1 p-0 pt-2 flex flex-col">
+              {id && (
+                <AnnouncementList
+                  classId={classId}
+                  canEdit={true}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="members" className="!mt-0">
           <Card className="flex-1 flex flex-col border-none shadow-none bg-transparent">
@@ -370,14 +391,14 @@ export default function ClassDetailPage() {
                       <tbody className="divide-y">
                         {records.map((member) => (
                           <tr
-                            key={member.user_public_id}
+                            key={member.user_id}
                             className="bg-card hover:bg-muted/50 transition-colors"
                           >
                             <td className="px-6 py-4 font-mono text-muted-foreground">
-                              {member.user_public_id}
+                              {member.user_id}
                             </td>
                             <td className="px-6 py-4 font-medium">
-                              {member.username}
+                              {member.nickname || member.username}
                             </td>
                             <td className="px-6 py-4 text-muted-foreground flex items-center gap-2">
                               <Calendar className="h-4 w-4" />
@@ -615,6 +636,54 @@ export default function ClassDetailPage() {
                 </div>
               ) : (
                 <div className="space-y-6">
+                  {/* 统计卡片 */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="rounded-lg border p-4 text-center">
+                      <div className="text-xs text-muted-foreground">班级人数</div>
+                      <div className="text-2xl font-bold mt-1">{overview.member_count}</div>
+                    </div>
+                    <div className="rounded-lg border p-4 text-center">
+                      <div className="text-xs text-muted-foreground">总题数</div>
+                      <div className="text-2xl font-bold mt-1">{overview.total_problems}</div>
+                    </div>
+                    <div className="rounded-lg border p-4 text-center">
+                      <div className="text-xs text-muted-foreground">已发布作业</div>
+                      <div className="text-2xl font-bold mt-1">{overview.assignments.length}</div>
+                    </div>
+                  </div>
+
+                  {/* 作业完成率柱状图 */}
+                  {overview.assignments.length > 0 && (
+                    <div>
+                      <h3 className="text-base font-semibold mb-3">各作业平均完成率</h3>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart
+                          data={overview.assignments.map((a) => ({
+                            name: a.title.length > 8 ? a.title.slice(0, 8) + "..." : a.title,
+                            avg_completion_rate: a.avg_completion_rate,
+                          }))}
+                          margin={{ top: 5, right: 20, left: 0, bottom: 40 }}
+                        >
+                          <XAxis
+                            dataKey="name"
+                            tick={{ fontSize: 12 }}
+                            angle={-30}
+                            textAnchor="end"
+                          />
+                          <YAxis domain={[0, 100]} unit="%" />
+                          <RechartsTooltip
+                            formatter={(value) => [`${value}%`, "平均完成率"]}
+                          />
+                          <Bar
+                            dataKey="avg_completion_rate"
+                            fill="hsl(221, 83%, 53%)"
+                            radius={[4, 4, 0, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+
                   {/* 学生做题统计表 */}
                   <div>
                     <h3 className="text-base font-semibold mb-3">
@@ -639,8 +708,8 @@ export default function ClassDetailPage() {
                                 ? Math.round((s.ac_count / overview.total_problems) * 100)
                                 : 0;
                               return (
-                                <tr key={s.user_public_id} className="bg-card hover:bg-muted/50 transition-colors">
-                                  <td className="px-6 py-3 font-medium">{s.username}</td>
+                                <tr key={s.user_id} className="bg-card hover:bg-muted/50 transition-colors">
+                                  <td className="px-6 py-3 font-medium">{s.nickname || s.username}</td>
                                   <td className="px-6 py-3 text-center font-mono">
                                     {s.ac_count} / {overview.total_problems}
                                   </td>
@@ -657,36 +726,42 @@ export default function ClassDetailPage() {
                     )}
                   </div>
 
-                  {/* 各题单完成率 */}
+                  {/* 作业列表（可钻取） */}
                   <div>
-                    <h3 className="text-base font-semibold mb-3">各题单完成率</h3>
-                    {overview.problem_sets.length === 0 ? (
-                      <p className="text-muted-foreground">暂无关联题单</p>
+                    <h3 className="text-base font-semibold mb-3">作业列表</h3>
+                    {overview.assignments.length === 0 ? (
+                      <p className="text-muted-foreground">暂无已发布作业</p>
                     ) : (
                       <div className="space-y-3">
-                        {overview.problem_sets.map((ps) => (
+                        {overview.assignments.map((a) => (
                           <div
-                            key={ps.problem_set_public_id}
+                            key={a.assignment_id}
                             className="flex items-center gap-4 p-3 bg-card rounded-lg border hover:border-primary/50 transition-colors cursor-pointer group"
-                            onClick={() => setMatrixProblemSet(ps)}
+                            onClick={() => setAssignmentDrilldown(a)}
                           >
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <BookOpen className="h-4 w-4 text-primary shrink-0" />
                                 <span className="font-medium truncate group-hover:text-primary transition-colors">
-                                  {ps.title}
+                                  {a.title}
                                 </span>
                                 <span className="text-xs text-muted-foreground shrink-0">
-                                  {ps.problem_count} 题
+                                  {a.problem_count} 题
                                 </span>
+                                {a.deadline && (
+                                  <span className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {format(new Date(a.deadline), "MM/dd HH:mm")}
+                                  </span>
+                                )}
                               </div>
                               <div className="mt-2">
-                                <Progress value={ps.avg_completion_rate} className="h-2" />
+                                <Progress value={a.avg_completion_rate} className="h-2" />
                               </div>
                             </div>
                             <div className="text-right shrink-0 w-16">
                               <span className="text-sm font-semibold">
-                                {ps.avg_completion_rate}%
+                                {a.avg_completion_rate}%
                               </span>
                             </div>
                             <Eye className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
@@ -775,38 +850,38 @@ export default function ClassDetailPage() {
         <AddMemberModal
           isOpen={isAddMemberModalOpen}
           onClose={() => setIsAddMemberModalOpen(false)}
-          classId={id}
+          classId={classId}
         />
       )}
       {id && isLinkModalOpen && (
         <LinkContestModal
           isOpen={isLinkModalOpen}
           onClose={() => setIsLinkModalOpen(false)}
-          classId={id}
+          classId={classId}
         />
       )}
       {id && isLinkPsModalOpen && (
         <LinkProblemSetModal
           isOpen={isLinkPsModalOpen}
           onClose={() => setIsLinkPsModalOpen(false)}
-          classId={id}
+          classId={classId}
         />
       )}
       {id && isBatchImportModalOpen && (
         <BatchImportMembersModal
           isOpen={isBatchImportModalOpen}
           onClose={() => setIsBatchImportModalOpen(false)}
-          classId={id}
+          classId={classId}
           onSuccess={() => refetch()}
         />
       )}
-      {id && matrixProblemSet && (
-        <ClassProblemSetMatrixDialog
-          isOpen={!!matrixProblemSet}
-          onClose={() => setMatrixProblemSet(null)}
-          classId={id}
-          problemSetPublicId={matrixProblemSet.problem_set_public_id}
-          problemSetTitle={matrixProblemSet.title}
+      {id && assignmentDrilldown && (
+        <AssignmentOverviewDialog
+          isOpen={!!assignmentDrilldown}
+          onClose={() => setAssignmentDrilldown(null)}
+          classId={classId}
+          assignmentId={assignmentDrilldown.assignment_id}
+          assignmentTitle={assignmentDrilldown.title}
         />
       )}
     </div>

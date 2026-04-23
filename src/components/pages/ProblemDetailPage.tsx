@@ -64,12 +64,12 @@ export default function ProblemDetailPage() {
     const fetchProblem = async () => {
       if (!id) return;
       try {
-        const contest_public_id = searchParams.get("contest_public_id");
-        const problem_set_public_id = searchParams.get("problem_set_public_id");
+        const contest_id = searchParams.get("contest_id");
+        const problem_set_id = searchParams.get("problem_set_id");
         const res = await api.get(`/api/problem/${id}`, {
           params: {
-            contest_public_id: contest_public_id || undefined,
-            problem_set_public_id: problem_set_public_id || undefined,
+            contest_id: contest_id || undefined,
+            problem_set_id: problem_set_id || undefined,
           },
         });
         const result = res.data;

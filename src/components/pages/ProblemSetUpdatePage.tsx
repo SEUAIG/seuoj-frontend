@@ -22,7 +22,8 @@ export default function ProblemSetUpdatePage() {
   const { id } = useParams();
   const nav = useNavigate();
 
-  const { data, isLoading, isError } = useQueryToGetProblemSetDetail(id || "");
+  const problemSetId = Number(id);
+  const { data, isLoading, isError } = useQueryToGetProblemSetDetail(problemSetId);
 
   // 基础信息表单
   const [title, setTitle] = useState("");
@@ -61,7 +62,7 @@ export default function ProblemSetUpdatePage() {
     }
     setIsUpdatingInfo(true);
     try {
-      const res = await updateProblemSet(id, {
+      const res = await updateProblemSet(problemSetId, {
         title: title.trim(),
         description: description.trim(),
         is_public: isPublic,

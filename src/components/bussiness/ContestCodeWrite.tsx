@@ -7,7 +7,7 @@ import { setContestCodeFile } from "@/features/Code/contestCodeSlice";
 import { cn } from "@/lib/utils";
 interface ContestCodeWriteProps {
   setCodeFile: Dispatch<SetStateAction<string>>;
-  contest_id: string;
+  contest_id: number;
   pid: string;
   className?: string;
 }

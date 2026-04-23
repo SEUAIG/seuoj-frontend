@@ -26,6 +26,7 @@ export default function ContestSubmissionRecord({
     score,
     submitTime,
     username,
+    nickname,
   } = submission;
   
   const formattedTime = submitTime ? format(new Date(submitTime), "yyyy-MM-dd HH:mm:ss") : "";
@@ -47,7 +48,7 @@ export default function ContestSubmissionRecord({
         <TableRow>
           <TableCell className="text-center">{submissionNo}</TableCell>
           <TableCell className="text-center">{pid}</TableCell>
-          <TableCell className="text-center">{username}</TableCell>
+          <TableCell className="text-center">{nickname || username}</TableCell>
           <TableCell className="text-center">
             {verdict && <AnswerState state={verdict} />}
           </TableCell>

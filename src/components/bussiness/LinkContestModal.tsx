@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 interface LinkContestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  classId: string;
+  classId: number;
 }
 
 export default function LinkContestModal({
@@ -46,7 +46,7 @@ export default function LinkContestModal({
   const totalPages = Math.ceil((data?.total || 0) / size);
 
   const linkMutation = useMutation({
-    mutationFn: (contestId: string) => linkContest(classId, contestId),
+    mutationFn: (contestId: number) => linkContest(classId, contestId),
     onSuccess: (res) => {
       if (res.code === 0) {
         toast.success("成功关联比赛");
@@ -145,7 +145,7 @@ export default function LinkContestModal({
             >
               {records.map((contest) => (
                 <div
-                  key={contest.contest_public_id}
+                  key={contest.contest_id}
                   className="p-3 flex items-center justify-between hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex-1 min-w-0 pr-4">
@@ -178,12 +178,12 @@ export default function LinkContestModal({
                     variant="outline"
                     className="shrink-0"
                     onClick={() =>
-                      linkMutation.mutate(contest.contest_public_id)
+                      linkMutation.mutate(contest.contest_id)
                     }
                     disabled={linkMutation.isPending}
                   >
                     {linkMutation.isPending &&
-                    linkMutation.variables === contest.contest_public_id ? (
+                    linkMutation.variables === contest.contest_id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <>

@@ -83,8 +83,8 @@ export default function CreateContestPage() {
       const res = await createContest(payload);
       if (res.code === 0) {
         toast.success("比赛创建成功");
-        if (res.data?.contest_public_id) {
-          nav(`/contest/${res.data.contest_public_id}/edit`);
+        if (res.data?.contest_id) {
+          nav(`/contest/${res.data.contest_id}/edit`);
         } else {
           nav("/contest");
         }

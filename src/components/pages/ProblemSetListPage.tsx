@@ -166,14 +166,14 @@ export default function ProblemSetListPage() {
                             ) : records.length > 0 ? (
                                 records.map((record) => (
                                     <TableRow
-                                        key={record.problem_set_public_id}
+                                        key={record.problem_set_id}
                                         className="cursor-pointer hover:bg-muted/50 transition-colors"
                                         onClick={() =>
-                                            nav(`/problemset/${record.problem_set_public_id}`)
+                                            nav(`/problemset/${record.problem_set_id}`)
                                         }
                                     >
                                         <TableCell className="font-mono text-sm py-4 text-muted-foreground">
-                                            {record.problem_set_public_id}
+                                            {record.problem_set_id}
                                         </TableCell>
                                         <TableCell className="font-medium py-4">
                                             <span className="text-blue-600 hover:text-blue-700 hover:underline font-semibold">
@@ -208,7 +208,7 @@ export default function ProblemSetListPage() {
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     nav(
-                                                        `/problemset/${record.problem_set_public_id}`
+                                                        `/problemset/${record.problem_set_id}`
                                                     );
                                                 }}
                                             >

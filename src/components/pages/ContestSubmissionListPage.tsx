@@ -19,16 +19,17 @@ import { AnswerStateNew } from "@/components/common/AnswerState";
 import ProblemListPageChoose from "@/components/bussiness/ProblemListPageChoose";
 
 export default function ContestSubmissionListPage() {
-  const { contest_public_id } = useParams();
+  const { id } = useParams();
+  const contestId = Number(id);
   const nav = useNavigate();
   const [page, setPage] = useState(1);
   const size = 20;
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["contestSubmissions", contest_public_id, page],
+    queryKey: ["contestSubmissions", contestId, page],
     queryFn: () =>
-      getContestSubmissionPage(contest_public_id!, { current: page, size }),
-    enabled: !!contest_public_id,
+      getContestSubmissionPage(contestId!, { current: page, size }),
+    enabled: !!contestId,
   });
 
   const records = data?.records || [];
@@ -46,7 +47,7 @@ export default function ContestSubmissionListPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => nav(`/contest/${contest_public_id}`)}
+            onClick={() => nav(`/contest/${contestId}`)}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -96,7 +97,7 @@ export default function ContestSubmissionListPage() {
                           className="text-blue-600 hover:underline cursor-pointer"
                           onClick={() =>
                             nav(
-                              `/contest/${contest_public_id}/submission/${record.submission_no}`
+                              `/contest/${contestId}/submission/${record.submission_no}`
                             )
                           }
                         >
@@ -108,7 +109,7 @@ export default function ContestSubmissionListPage() {
                           className="hover:underline cursor-pointer text-blue-600"
                           onClick={() =>
                             nav(
-                              `/contest/${contest_public_id}/${record.problem.pid}`
+                              `/contest/${contestId}/${record.problem.pid}`
                             )
                           }
                         >
@@ -125,7 +126,7 @@ export default function ContestSubmissionListPage() {
                         {record.score !== null ? record.score : "-"}
                       </TableCell>
                       <TableCell>{record.language || "Unknown"}</TableCell>
-                      <TableCell>{record.username}</TableCell>
+                      <TableCell>{record.nickname || record.username}</TableCell>
                       <TableCell className="text-muted-foreground text-sm pr-6">
                         {new Date(record.submit_time).toLocaleString()}
                       </TableCell>

@@ -44,10 +44,15 @@ import {
     Info,
 } from "lucide-react";
 import * as XLSX from "xlsx";
+import ColumnMappingStep from "@/components/bussiness/ColumnMappingStep";
+import {
+    detectColumnMappings,
+    type ColumnMapping,
+} from "@/lib/columnDetection";
 
 type PasswordMode = "assigned" | "random";
 type FileType = "csv" | "xlsx" | null;
-type ImportStep = "config" | "preview" | "result";
+type ImportStep = "config" | "mapping" | "preview" | "result";
 
 export default function AdminUserManagementPage() {
     // User list state
@@ -71,6 +76,9 @@ export default function AdminUserManagementPage() {
     const [sendEmail, setSendEmail] = useState(true);
     const [selectedFileType, setSelectedFileType] = useState<FileType>(null);
     const [uploadedFileType, setUploadedFileType] = useState<FileType>(null);
+    const [rawHeaders, setRawHeaders] = useState<string[]>([]);
+    const [rawDataRows, setRawDataRows] = useState<string[][]>([]);
+    const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
 
     // Fetch user list
     const fetchUsers = useCallback(
@@ -118,6 +126,9 @@ export default function AdminUserManagementPage() {
         setSendEmail(true);
         setSelectedFileType(null);
         setUploadedFileType(null);
+        setRawHeaders([]);
+        setRawDataRows([]);
+        setColumnMappings([]);
     };
 
     const openImportDialog = () => {
@@ -125,61 +136,27 @@ export default function AdminUserManagementPage() {
         setImportDialogOpen(true);
     };
 
-    // Parse rows from header + data lines (shared by CSV and XLSX)
-    const parseRows = (
+    const parseFileToRaw = (
         headers: string[],
         dataRows: string[][]
-    ): BatchImportUserRow[] => {
-        const lowerHeaders = headers.map((h) => h.trim().toLowerCase());
-        const usernameIdx = lowerHeaders.indexOf("username");
-        const emailIdx = lowerHeaders.indexOf("email");
-        const passwordIdx = lowerHeaders.indexOf("password");
-
-        if (usernameIdx === -1 || emailIdx === -1) {
-            throw new Error("表头必须包含 username 和 email 列");
-        }
-
-        if (passwordMode === "assigned" && passwordIdx === -1) {
-            throw new Error("指定密码模式下，表头必须包含 password 列");
-        }
-
-        const rows: BatchImportUserRow[] = [];
-        for (const cols of dataRows) {
-            const username = (cols[usernameIdx] || "").trim();
-            const email = (cols[emailIdx] || "").trim();
-            const password =
-                passwordIdx >= 0 ? (cols[passwordIdx] || "").trim() : "";
-
-            if (!username || !email) continue;
-
-            if (passwordMode === "assigned") {
-                if (!password) {
-                    throw new Error(
-                        `指定密码模式下，用户 "${username}" 的密码不能为空`
-                    );
-                }
-                rows.push({ username, email, password });
-            } else {
-                if (password) {
-                    throw new Error(
-                        `随机密码模式下，用户 "${username}" 不应填写密码`
-                    );
-                }
-                rows.push({ username, email });
-            }
-        }
-
-        if (rows.length === 0) {
+    ) => {
+        if (headers.length === 0) throw new Error("文件表头为空");
+        const validRows = dataRows.filter((row) =>
+            row.some((cell) => cell.trim())
+        );
+        if (validRows.length === 0)
             throw new Error("文件中没有有效的数据行");
-        }
-        if (rows.length > 500) {
+        if (validRows.length > 500)
             throw new Error("单次最多导入500个用户");
-        }
 
-        return rows;
+        setRawHeaders(headers);
+        setRawDataRows(validRows);
+        setColumnMappings(detectColumnMappings(headers));
+        setImportResult(null);
+        setImportStep("mapping");
     };
 
-    const parseCSV = (text: string): BatchImportUserRow[] => {
+    const parseCSV = (text: string) => {
         const lines = text
             .split(/\r?\n/)
             .map((l) => l.trim())
@@ -189,10 +166,10 @@ export default function AdminUserManagementPage() {
         }
         const headers = lines[0].split(",");
         const dataRows = lines.slice(1).map((l) => l.split(","));
-        return parseRows(headers, dataRows);
+        parseFileToRaw(headers, dataRows);
     };
 
-    const parseXLSX = (data: ArrayBuffer): BatchImportUserRow[] => {
+    const parseXLSX = (data: ArrayBuffer) => {
         const workbook = XLSX.read(data, { type: "array" });
         const sheetName = workbook.SheetNames[0];
         if (!sheetName) throw new Error("Excel 文件中没有工作表");
@@ -206,7 +183,67 @@ export default function AdminUserManagementPage() {
         }
         const headers = jsonData[0].map(String);
         const dataRows = jsonData.slice(1).map((row) => row.map(String));
-        return parseRows(headers, dataRows);
+        parseFileToRaw(headers, dataRows);
+    };
+
+    const transformWithMappings = (
+        dataRows: string[][],
+        mappings: ColumnMapping[],
+        emailSuffix: string
+    ): BatchImportUserRow[] => {
+        const fieldToIndex = new Map<string, number>();
+        for (const m of mappings) {
+            if (m.mappedField !== "ignore") {
+                fieldToIndex.set(m.mappedField, m.columnIndex);
+            }
+        }
+        const usernameIdx = fieldToIndex.get("username");
+        const nicknameIdx = fieldToIndex.get("nickname");
+        const emailIdx = fieldToIndex.get("email");
+        const passwordIdx = fieldToIndex.get("password");
+
+        if (usernameIdx === undefined)
+            throw new Error("未映射用户名/学号列");
+
+        const rows: BatchImportUserRow[] = [];
+        for (const cols of dataRows) {
+            const username = (cols[usernameIdx] || "").trim();
+            if (!username) continue;
+
+            let email =
+                emailIdx !== undefined
+                    ? (cols[emailIdx] || "").trim()
+                    : "";
+            if (!email) {
+                email = `${username.toLowerCase()}@${emailSuffix}`;
+            }
+
+            const nickname =
+                nicknameIdx !== undefined
+                    ? (cols[nicknameIdx] || "").trim()
+                    : "";
+            const password =
+                passwordIdx !== undefined
+                    ? (cols[passwordIdx] || "").trim()
+                    : "";
+
+            if (passwordMode === "assigned" && !password) {
+                throw new Error(
+                    `指定密码模式下，用户「${username}」的密码不能为空`
+                );
+            }
+
+            rows.push({
+                username,
+                nickname: nickname || undefined,
+                email,
+                password:
+                    passwordMode === "assigned" ? password : undefined,
+            });
+        }
+
+        if (rows.length === 0) throw new Error("文件中没有有效的数据行");
+        return rows;
     };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -231,11 +268,7 @@ export default function AdminUserManagementPage() {
             const reader = new FileReader();
             reader.onload = (event) => {
                 try {
-                    const text = event.target?.result as string;
-                    const rows = parseCSV(text);
-                    setPreviewData(rows);
-                    setImportResult(null);
-                    setImportStep("preview");
+                    parseCSV(event.target?.result as string);
                 } catch (err: unknown) {
                     toast.error(
                         "文件解析失败: " +
@@ -248,11 +281,7 @@ export default function AdminUserManagementPage() {
             const reader = new FileReader();
             reader.onload = (event) => {
                 try {
-                    const data = event.target?.result as ArrayBuffer;
-                    const rows = parseXLSX(data);
-                    setPreviewData(rows);
-                    setImportResult(null);
-                    setImportStep("preview");
+                    parseXLSX(event.target?.result as ArrayBuffer);
                 } catch (err: unknown) {
                     toast.error(
                         "文件解析失败: " +
@@ -338,37 +367,13 @@ export default function AdminUserManagementPage() {
         SUPER_ADMIN: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
     };
 
-    const formatHintCSV =
-        passwordMode === "assigned"
-            ? `第一行为表头，必须包含 username, email, password 三列（顺序不限）。
-每行一个用户，使用英文逗号分隔。示例：
+    const formatHint = `第一行为表头，系统将自动识别列含义。支持中英文表头，列顺序不限。
 
-username,email,password
-zhangsan,zhangsan@example.com,MyPass123
-lisi,lisi@example.com,LiSi456`
-            : `第一行为表头，必须包含 username, email 两列（顺序不限），不要包含 password 列。
-每行一个用户，使用英文逗号分隔。示例：
-
-username,email
-zhangsan,zhangsan@example.com
-lisi,lisi@example.com`;
-
-    const formatHintXLSX =
-        passwordMode === "assigned"
-            ? `第一行为表头，必须包含 username, email, password 三列（顺序不限）。
-从第二行开始每行一个用户。示例：
-
-| username | email                  | password   |
-|----------|------------------------|------------|
-| zhangsan | zhangsan@example.com   | MyPass123  |
-| lisi     | lisi@example.com       | LiSi456    |`
-            : `第一行为表头，必须包含 username, email 两列（顺序不限），不要包含 password 列。
-从第二行开始每行一个用户。示例：
-
-| username | email                  |
-|----------|------------------------|
-| zhangsan | zhangsan@example.com   |
-| lisi     | lisi@example.com       |`;
+支持的列名示例：
+  用户名/学号：username, 用户名, 学号, 一卡通号
+  昵称/姓名：姓名, 名字, name, 昵称
+  邮箱（可选）：email, 邮箱（不填则自动生成）
+  密码（可选）：password, 密码`;
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -427,8 +432,9 @@ lisi,lisi@example.com`;
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[200px]">用户名</TableHead>
-                                    <TableHead className="w-[300px]">邮箱</TableHead>
+                                    <TableHead className="w-[160px]">用户名</TableHead>
+                                    <TableHead className="w-[120px]">昵称</TableHead>
+                                    <TableHead className="w-[280px]">邮箱</TableHead>
                                     <TableHead>角色</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -436,7 +442,7 @@ lisi,lisi@example.com`;
                                 {users.length === 0 ? (
                                     <TableRow>
                                         <TableCell
-                                            colSpan={3}
+                                            colSpan={4}
                                             className="text-center py-8 text-muted-foreground"
                                         >
                                             暂无数据
@@ -444,10 +450,11 @@ lisi,lisi@example.com`;
                                     </TableRow>
                                 ) : (
                                     users.map((user) => (
-                                        <TableRow key={user.user_public_id}>
+                                        <TableRow key={user.user_id}>
                                             <TableCell className="font-medium">
                                                 {user.username}
                                             </TableCell>
+                                            <TableCell className="text-muted-foreground">{user.nickname || "-"}</TableCell>
                                             <TableCell>{user.email}</TableCell>
                                             <TableCell>
                                                 <div className="flex gap-1 flex-wrap">
@@ -534,12 +541,15 @@ lisi,lisi@example.com`;
                         <DialogTitle>
                             批量导入用户
                             {importStep === "config" && " — 导入设置"}
+                            {importStep === "mapping" && " — 列映射确认"}
                             {importStep === "preview" && " — 数据预览"}
                             {importStep === "result" && " — 导入结果"}
                         </DialogTitle>
                         <DialogDescription>
                             {importStep === "config" &&
-                                "配置导入选项，选择文件类型并上传用户数据文件。"}
+                                "上传包含用户信息的文件，系统将自动识别列含义。支持中英文表头。"}
+                            {importStep === "mapping" &&
+                                "系统已自动识别列含义，请确认或调整映射关系。"}
                             {importStep === "preview" &&
                                 "预览解析的数据，确认无误后执行导入。"}
                             {importStep === "result" &&
@@ -632,16 +642,10 @@ lisi,lisi@example.com`;
                                 <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
                                     <div className="flex items-center gap-2 text-sm font-medium">
                                         <Info className="h-4 w-4 text-blue-500" />
-                                        <span>
-                                            {selectedFileType === "csv"
-                                                ? "CSV 文件格式要求"
-                                                : "Excel 文件格式要求"}
-                                        </span>
+                                        <span>格式说明</span>
                                     </div>
                                     <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">
-                                        {selectedFileType === "csv"
-                                            ? formatHintCSV
-                                            : formatHintXLSX}
+                                        {formatHint}
                                     </pre>
                                     <div className="pt-2">
                                         <Button
@@ -657,7 +661,42 @@ lisi,lisi@example.com`;
                         </div>
                     )}
 
-                    {/* Step 2: Preview */}
+                    {/* Step 2: Column Mapping */}
+                    {importStep === "mapping" && (
+                        <ColumnMappingStep
+                            headers={rawHeaders}
+                            sampleRows={rawDataRows.slice(0, 3)}
+                            initialMappings={columnMappings}
+                            passwordMode={passwordMode}
+                            onConfirm={(confirmedMappings, emailSuffix) => {
+                                try {
+                                    const rows = transformWithMappings(
+                                        rawDataRows,
+                                        confirmedMappings,
+                                        emailSuffix
+                                    );
+                                    setPreviewData(rows);
+                                    setColumnMappings(confirmedMappings);
+                                    setImportStep("preview");
+                                } catch (err: unknown) {
+                                    toast.error(
+                                        "数据转换失败: " +
+                                        (err instanceof Error
+                                            ? err.message
+                                            : String(err))
+                                    );
+                                }
+                            }}
+                            onBack={() => {
+                                setImportStep("config");
+                                setRawHeaders([]);
+                                setRawDataRows([]);
+                                setColumnMappings([]);
+                            }}
+                        />
+                    )}
+
+                    {/* Step 3: Preview */}
                     {importStep === "preview" && (
                         <div className="flex-1 overflow-auto space-y-3">
                             <p className="text-sm text-muted-foreground">
@@ -671,6 +710,7 @@ lisi,lisi@example.com`;
                                         <TableRow>
                                             <TableHead className="w-[60px]">序号</TableHead>
                                             <TableHead>用户名</TableHead>
+                                            <TableHead>昵称</TableHead>
                                             <TableHead>邮箱</TableHead>
                                             {passwordMode === "assigned" && (
                                                 <TableHead>密码</TableHead>
@@ -682,6 +722,9 @@ lisi,lisi@example.com`;
                                             <TableRow key={i}>
                                                 <TableCell>{i + 1}</TableCell>
                                                 <TableCell>{row.username}</TableCell>
+                                                <TableCell className="text-muted-foreground">
+                                                    {row.nickname || "-"}
+                                                </TableCell>
                                                 <TableCell>{row.email}</TableCell>
                                                 {passwordMode === "assigned" && (
                                                     <TableCell className="font-mono text-xs">
@@ -767,7 +810,7 @@ lisi,lisi@example.com`;
                                 <Button
                                     variant="outline"
                                     onClick={() => {
-                                        setImportStep("config");
+                                        setImportStep("mapping");
                                         setPreviewData([]);
                                     }}
                                 >

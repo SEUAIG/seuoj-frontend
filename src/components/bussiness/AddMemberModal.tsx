@@ -18,7 +18,7 @@ import ClassPagination from "./ClassPagination";
 interface AddMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
-  classId: string;
+  classId: number;
 }
 
 export default function AddMemberModal({
@@ -45,7 +45,7 @@ export default function AddMemberModal({
   const totalPages = Math.ceil((data?.total || 0) / size);
 
   const addMutation = useMutation({
-    mutationFn: (userPublicId: string) => addMember(classId, userPublicId),
+    mutationFn: (userId: number) => addMember(classId, userId),
     onSuccess: (res) => {
       if (res.code === 0) {
         toast.success("成功添加成员");
@@ -112,11 +112,11 @@ export default function AddMemberModal({
             >
               {records.map((user) => (
                 <div
-                  key={user.user_public_id}
+                  key={user.user_id}
                   className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
                 >
                   <div>
-                    <p className="font-medium">{user.username}</p>
+                    <p className="font-medium">{user.nickname || user.username}</p>
                     <p className="text-xs text-muted-foreground">
                       {user.email}
                     </p>
@@ -124,7 +124,7 @@ export default function AddMemberModal({
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => addMutation.mutate(user.user_public_id)}
+                    onClick={() => addMutation.mutate(user.user_id)}
                     disabled={addMutation.isPending}
                   >
                     {addMutation.isPending ? (

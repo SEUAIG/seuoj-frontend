@@ -273,8 +273,8 @@ export default function CompetitionPage() {
             formatContestTime={formatContestTime}
             statusLabelMap={statusLabelMap}
             getOutlineTagClass={getOutlineTagClass}
-            onOpenContest={(contestPublicId) =>
-              nav(`/contest/${contestPublicId}`)
+            onOpenContest={(contestId) =>
+              nav(`/contest/${contestId}`)
             }
           />
           {!!pages && (

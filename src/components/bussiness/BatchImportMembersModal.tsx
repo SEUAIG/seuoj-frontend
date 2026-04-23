@@ -34,15 +34,20 @@ import {
     Info,
 } from "lucide-react";
 import * as XLSX from "xlsx";
+import ColumnMappingStep from "@/components/bussiness/ColumnMappingStep";
+import {
+    detectColumnMappings,
+    type ColumnMapping,
+} from "@/lib/columnDetection";
 
 type PasswordMode = "assigned" | "random";
 type FileType = "csv" | "xlsx" | null;
-type ImportStep = "config" | "preview" | "result";
+type ImportStep = "config" | "mapping" | "preview" | "result";
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
-    classId: string;
+    classId: number;
     onSuccess?: () => void;
 }
 
@@ -62,6 +67,9 @@ export default function BatchImportMembersModal({
     const [sendEmail, setSendEmail] = useState(true);
     const [selectedFileType, setSelectedFileType] = useState<FileType>(null);
     const [uploadedFileType, setUploadedFileType] = useState<FileType>(null);
+    const [rawHeaders, setRawHeaders] = useState<string[]>([]);
+    const [rawDataRows, setRawDataRows] = useState<string[][]>([]);
+    const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
 
     const resetState = () => {
         setImportStep("config");
@@ -71,6 +79,9 @@ export default function BatchImportMembersModal({
         setSendEmail(true);
         setSelectedFileType(null);
         setUploadedFileType(null);
+        setRawHeaders([]);
+        setRawDataRows([]);
+        setColumnMappings([]);
     };
 
     const handleClose = () => {
@@ -80,60 +91,24 @@ export default function BatchImportMembersModal({
         }
     };
 
-    const parseRows = (
-        headers: string[],
-        dataRows: string[][]
-    ): StudentRow[] => {
-        const trimmedHeaders = headers.map((h) => h.trim());
-        const studentIdIdx = trimmedHeaders.indexOf("一卡通号");
-        const nameIdx = trimmedHeaders.indexOf("姓名");
-        const passwordIdx = trimmedHeaders.indexOf("密码");
-
-        if (studentIdIdx === -1 || nameIdx === -1) {
-            throw new Error("表头必须包含「一卡通号」和「姓名」列");
-        }
-
-        if (passwordMode === "assigned" && passwordIdx === -1) {
-            throw new Error("指定密码模式下，表头必须包含「密码」列");
-        }
-
-        const rows: StudentRow[] = [];
-        for (const cols of dataRows) {
-            const studentId = (cols[studentIdIdx] || "").trim();
-            const name = (cols[nameIdx] || "").trim();
-            const password =
-                passwordIdx >= 0 ? (cols[passwordIdx] || "").trim() : "";
-
-            if (!studentId || !name) continue;
-
-            if (passwordMode === "assigned") {
-                if (!password) {
-                    throw new Error(
-                        `指定密码模式下，学生「${name}」(${studentId}) 的密码不能为空`
-                    );
-                }
-                rows.push({ student_id: studentId, name, password });
-            } else {
-                if (password) {
-                    throw new Error(
-                        `随机密码模式下，学生「${name}」(${studentId}) 不应填写密码`
-                    );
-                }
-                rows.push({ student_id: studentId, name });
-            }
-        }
-
-        if (rows.length === 0) {
+    const parseFileToRaw = (headers: string[], dataRows: string[][]) => {
+        if (headers.length === 0) throw new Error("文件表头为空");
+        const validRows = dataRows.filter((row) =>
+            row.some((cell) => cell.trim())
+        );
+        if (validRows.length === 0)
             throw new Error("文件中没有有效的数据行");
-        }
-        if (rows.length > 500) {
+        if (validRows.length > 500)
             throw new Error("单次最多导入500个学生");
-        }
 
-        return rows;
+        setRawHeaders(headers);
+        setRawDataRows(validRows);
+        setColumnMappings(detectColumnMappings(headers));
+        setImportResult(null);
+        setImportStep("mapping");
     };
 
-    const parseCSV = (text: string): StudentRow[] => {
+    const parseCSV = (text: string) => {
         const lines = text
             .split(/\r?\n/)
             .map((l) => l.trim())
@@ -143,10 +118,10 @@ export default function BatchImportMembersModal({
         }
         const headers = lines[0].split(",");
         const dataRows = lines.slice(1).map((l) => l.split(","));
-        return parseRows(headers, dataRows);
+        parseFileToRaw(headers, dataRows);
     };
 
-    const parseXLSX = (data: ArrayBuffer): StudentRow[] => {
+    const parseXLSX = (data: ArrayBuffer) => {
         const workbook = XLSX.read(data, { type: "array" });
         const sheetName = workbook.SheetNames[0];
         if (!sheetName) throw new Error("Excel 文件中没有工作表");
@@ -160,7 +135,62 @@ export default function BatchImportMembersModal({
         }
         const headers = jsonData[0].map(String);
         const dataRows = jsonData.slice(1).map((row) => row.map(String));
-        return parseRows(headers, dataRows);
+        parseFileToRaw(headers, dataRows);
+    };
+
+    const transformWithMappings = (
+        dataRows: string[][],
+        mappings: ColumnMapping[],
+        emailSuffix: string
+    ): StudentRow[] => {
+        const fieldToIndex = new Map<string, number>();
+        for (const m of mappings) {
+            if (m.mappedField !== "ignore") {
+                fieldToIndex.set(m.mappedField, m.columnIndex);
+            }
+        }
+        const usernameIdx = fieldToIndex.get("username");
+        const nicknameIdx = fieldToIndex.get("nickname");
+        const passwordIdx = fieldToIndex.get("password");
+
+        if (usernameIdx === undefined)
+            throw new Error("未映射用户名/学号列");
+
+        const rows: StudentRow[] = [];
+        for (const cols of dataRows) {
+            const studentId = (cols[usernameIdx] || "").trim();
+            if (!studentId) continue;
+
+            const name =
+                nicknameIdx !== undefined
+                    ? (cols[nicknameIdx] || "").trim()
+                    : "";
+            const password =
+                passwordIdx !== undefined
+                    ? (cols[passwordIdx] || "").trim()
+                    : "";
+
+            if (!name) {
+                throw new Error(
+                    `学生「${studentId}」的姓名不能为空，请映射昵称/姓名列`
+                );
+            }
+
+            if (passwordMode === "assigned" && !password) {
+                throw new Error(
+                    `指定密码模式下，学生「${name}」(${studentId}) 的密码不能为空`
+                );
+            }
+
+            rows.push({
+                student_id: studentId,
+                name,
+                password: passwordMode === "assigned" ? password : undefined,
+            });
+        }
+
+        if (rows.length === 0) throw new Error("文件中没有有效的数据行");
+        return rows;
     };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -186,11 +216,7 @@ export default function BatchImportMembersModal({
             const reader = new FileReader();
             reader.onload = (event) => {
                 try {
-                    const text = event.target?.result as string;
-                    const rows = parseCSV(text);
-                    setPreviewData(rows);
-                    setImportResult(null);
-                    setImportStep("preview");
+                    parseCSV(event.target?.result as string);
                 } catch (err: unknown) {
                     toast.error(
                         "文件解析失败: " +
@@ -203,11 +229,7 @@ export default function BatchImportMembersModal({
             const reader = new FileReader();
             reader.onload = (event) => {
                 try {
-                    const data = event.target?.result as ArrayBuffer;
-                    const rows = parseXLSX(data);
-                    setPreviewData(rows);
-                    setImportResult(null);
-                    setImportStep("preview");
+                    parseXLSX(event.target?.result as ArrayBuffer);
                 } catch (err: unknown) {
                     toast.error(
                         "文件解析失败: " +
@@ -330,37 +352,13 @@ export default function BatchImportMembersModal({
         }
     };
 
-    const formatHintCSV =
-        passwordMode === "assigned"
-            ? `第一行为表头，必须包含「一卡通号」「姓名」「密码」三列（顺序不限）。
-每行一个学生，使用英文逗号分隔。示例：
+    const formatHint = `第一行为表头，系统将自动识别列含义。支持中英文表头，列顺序不限。
 
-一卡通号,姓名,密码
-213241234,张三,MyPass123
-213241235,李四,LiSi456`
-            : `第一行为表头，必须包含「一卡通号」「姓名」两列（顺序不限），不要包含「密码」列。
-每行一个学生，使用英文逗号分隔。示例：
-
-一卡通号,姓名
-213241234,张三
-213241235,李四`;
-
-    const formatHintXLSX =
-        passwordMode === "assigned"
-            ? `第一行为表头，必须包含「一卡通号」「姓名」「密码」三列（顺序不限）。
-从第二行开始每行一个学生。示例：
-
-| 一卡通号    | 姓名 | 密码       |
-|------------|------|-----------|
-| 213241234  | 张三 | MyPass123 |
-| 213241235  | 李四 | LiSi456   |`
-            : `第一行为表头，必须包含「一卡通号」「姓名」两列（顺序不限），不要包含「密码」列。
-从第二行开始每行一个学生。示例：
-
-| 一卡通号    | 姓名 |
-|------------|------|
-| 213241234  | 张三 |
-| 213241235  | 李四 |`;
+支持的列名示例：
+  学号/一卡通号：一卡通号, 学号, username, student_id
+  姓名：姓名, 名字, name, 昵称
+  密码（可选）：密码, password
+  邮箱自动推导为「一卡通号@seu.edu.cn」`;
 
     return (
         <Dialog
@@ -374,12 +372,15 @@ export default function BatchImportMembersModal({
                     <DialogTitle>
                         批量导入学生
                         {importStep === "config" && " — 导入设置"}
+                        {importStep === "mapping" && " — 列映射确认"}
                         {importStep === "preview" && " — 数据预览"}
                         {importStep === "result" && " — 导入结果"}
                     </DialogTitle>
                     <DialogDescription>
                         {importStep === "config" &&
-                            "上传含学生一卡通号和姓名的文件，系统将自动创建账号并加入班级。邮箱自动推导为「一卡通号@seu.edu.cn」。"}
+                            "上传含学生信息的文件，系统将自动识别列含义并创建账号。"}
+                        {importStep === "mapping" &&
+                            "系统已自动识别列含义，请确认或调整映射关系。"}
                         {importStep === "preview" &&
                             "预览解析的数据，确认无误后执行导入。"}
                         {importStep === "result" && "导入完成，查看结果详情。"}
@@ -479,16 +480,10 @@ export default function BatchImportMembersModal({
                             <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
                                 <div className="flex items-center gap-2 text-sm font-medium">
                                     <Info className="h-4 w-4 text-blue-500" />
-                                    <span>
-                                        {selectedFileType === "csv"
-                                            ? "CSV 文件格式要求"
-                                            : "Excel 文件格式要求"}
-                                    </span>
+                                    <span>格式说明</span>
                                 </div>
                                 <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">
-                                    {selectedFileType === "csv"
-                                        ? formatHintCSV
-                                        : formatHintXLSX}
+                                    {formatHint}
                                 </pre>
                                 <div className="pt-2">
                                     <Button
@@ -506,7 +501,42 @@ export default function BatchImportMembersModal({
                     </div>
                 )}
 
-                {/* Step 2: Preview */}
+                {/* Step 2: Column Mapping */}
+                {importStep === "mapping" && (
+                    <ColumnMappingStep
+                        headers={rawHeaders}
+                        sampleRows={rawDataRows.slice(0, 3)}
+                        initialMappings={columnMappings}
+                        passwordMode={passwordMode}
+                        onConfirm={(confirmedMappings, emailSuffix) => {
+                            try {
+                                const rows = transformWithMappings(
+                                    rawDataRows,
+                                    confirmedMappings,
+                                    emailSuffix
+                                );
+                                setPreviewData(rows);
+                                setColumnMappings(confirmedMappings);
+                                setImportStep("preview");
+                            } catch (err: unknown) {
+                                toast.error(
+                                    "数据转换失败: " +
+                                    (err instanceof Error
+                                        ? err.message
+                                        : String(err))
+                                );
+                            }
+                        }}
+                        onBack={() => {
+                            setImportStep("config");
+                            setRawHeaders([]);
+                            setRawDataRows([]);
+                            setColumnMappings([]);
+                        }}
+                    />
+                )}
+
+                {/* Step 3: Preview */}
                 {importStep === "preview" && (
                     <div className="flex-1 overflow-auto space-y-3">
                         <p className="text-sm text-muted-foreground">
@@ -672,7 +702,7 @@ export default function BatchImportMembersModal({
                             <Button
                                 variant="outline"
                                 onClick={() => {
-                                    setImportStep("config");
+                                    setImportStep("mapping");
                                     setPreviewData([]);
                                 }}
                             >

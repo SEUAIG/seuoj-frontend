@@ -18,7 +18,8 @@ import { ContestSubmissionDetailResponse } from "@/services/Contest/getContestSu
 export default function ContestSubmissionPage() {
   const [searchParams] = useSearchParams();
   const title = searchParams.get("title");
-  const { contest_public_id, submission_no } = useParams();
+  const { id, submission_no } = useParams();
+  const contestId = Number(id);
   const nav = useNavigate();
   const [submission, setSubmission] = useState<SubmissionData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,10 +27,10 @@ export default function ContestSubmissionPage() {
   useEffect(() => {
     let intervalId: NodeJS.Timeout | null = null;
     const fetchSubmission = async () => {
-      if (!contest_public_id || !submission_no) return;
+      if (!contestId || !submission_no) return;
       try {
         const res = await api.get<ContestSubmissionDetailResponse>(
-          `/api/contest/${contest_public_id}/submission/${submission_no}`
+          `/api/contest/${contestId}/submission/${submission_no}`
         );
         const result = res.data;
         const { code, message, data } = result;
@@ -82,7 +83,7 @@ export default function ContestSubmissionPage() {
         intervalId = null;
       }
     };
-  }, [contest_public_id, submission_no, isPolling]);
+  }, [contestId, submission_no, isPolling]);
 
   if (loading && !submission) {
     return (
@@ -110,14 +111,14 @@ export default function ContestSubmissionPage() {
           <Button
             variant="outline"
             onClick={() =>
-              nav(`/contest/${contest_public_id}/${submission.pid}`)
+              nav(`/contest/${contestId}/${submission.pid}`)
             }
           >
             返回题目
           </Button>
           <Button
             variant="default"
-            onClick={() => nav(`/contest/${contest_public_id}`)}
+            onClick={() => nav(`/contest/${contestId}`)}
           >
             返回比赛
           </Button>
@@ -140,14 +141,14 @@ export default function ContestSubmissionPage() {
           <Button
             variant="outline"
             onClick={() =>
-              nav(`/contest/${contest_public_id}/${submission.pid}`)
+              nav(`/contest/${contestId}/${submission.pid}`)
             }
           >
             返回题目
           </Button>
           <Button
             variant="default"
-            onClick={() => nav(`/contest/${contest_public_id}`)}
+            onClick={() => nav(`/contest/${contestId}`)}
           >
             返回比赛
           </Button>
@@ -173,14 +174,14 @@ export default function ContestSubmissionPage() {
           <Button
             variant="outline"
             onClick={() =>
-              nav(`/contest/${contest_public_id}/${submission.pid}`)
+              nav(`/contest/${contestId}/${submission.pid}`)
             }
           >
             返回题目
           </Button>
           <Button
             variant="default"
-            onClick={() => nav(`/contest/${contest_public_id}`)}
+            onClick={() => nav(`/contest/${contestId}`)}
           >
             返回比赛
           </Button>
@@ -205,13 +206,13 @@ export default function ContestSubmissionPage() {
       <div className="flex justify-end mb-4 space-x-4">
         <Button
           variant="outline"
-          onClick={() => nav(`/contest/${contest_public_id}/${submission.pid}`)}
+          onClick={() => nav(`/contest/${contestId}/${submission.pid}`)}
         >
           返回题目
         </Button>
         <Button
           variant="default"
-          onClick={() => nav(`/contest/${contest_public_id}`)}
+          onClick={() => nav(`/contest/${contestId}`)}
         >
           返回比赛
         </Button>

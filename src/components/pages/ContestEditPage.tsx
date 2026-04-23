@@ -54,13 +54,14 @@ const contestFormSchema = z.object({
 });
 type ContestFormValues = z.infer<typeof contestFormSchema>;
 export default function ContestEditPage() {
-  const { contest_public_id } = useParams();
+  const { id } = useParams();
+  const contestId = Number(id);
   const nav = useNavigate();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const { data: contestDetail, isLoading: isFetchingDetail } =
-    useQueryToGetContestDetail(contest_public_id || "");
+    useQueryToGetContestDetail(contestId || 0);
   const { data: problemList, isLoading: isFetchingProblems } =
-    useQueryContestProblemListInEditPage(contest_public_id || "");
+    useQueryContestProblemListInEditPage(contestId || 0);
   const [problems, setProblems] = React.useState<
     ContestProblemOverviewInEditPage[]
   >([]);
@@ -104,7 +105,7 @@ export default function ContestEditPage() {
     }
   }, [contestDetail, form]);
   const onSubmit = async (values: ContestFormValues) => {
-    if (!contest_public_id) return;
+    if (!contestId) return;
     setIsSubmitting(true);
     try {
       const payload: UpdateContestRequest = {
@@ -113,7 +114,7 @@ export default function ContestEditPage() {
         end_time: values.end_time.toISOString(),
       };
       // 并行执行更新请求
-      const updateInfoPromise = updateContest(contest_public_id, payload);
+      const updateInfoPromise = updateContest(contestId, payload);
       const problemPayload = {
         problem_list: problems.map((p, index) => ({
           pid: p.pid,
@@ -121,7 +122,7 @@ export default function ContestEditPage() {
         })),
       };
       const updateProblemListPromise = updateContestProblemList(
-        contest_public_id,
+        contestId,
         problemPayload
       );
       const [resInfo, resProblems] = await Promise.all([
@@ -130,7 +131,7 @@ export default function ContestEditPage() {
       ]);
       if (resInfo.code === 0 && resProblems.code === 0) {
         toast.success("比赛信息及题目列表更新成功");
-        nav(`/contest/${contest_public_id}`);
+        nav(`/contest/${contestId}`);
       } else {
         const errorMsg = [];
         if (resInfo.code !== 200 && resInfo.code !== 0)
@@ -418,7 +419,7 @@ export default function ContestEditPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => nav(`/contest/${contest_public_id}`)}
+              onClick={() => nav(`/contest/${contestId}`)}
             >
               取消
             </Button>

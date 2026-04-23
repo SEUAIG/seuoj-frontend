@@ -60,6 +60,7 @@ export interface SubmissionData {
   message?: string;
   code: string; // 用户代码
   username: string; // 提交者用户名
+  nickname?: string;
   score?: number; // 分数
   subtasks?: SubtaskItem[];
 }

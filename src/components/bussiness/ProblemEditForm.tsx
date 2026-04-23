@@ -32,7 +32,7 @@ const exampleSchema = z.object({
   description: z.string().optional(),
 });
 const problemEditSchema = z.object({
-  pid: z.string().optional(),
+  pid: z.string().regex(/^[A-Z][A-Z0-9]{1,19}$/, "PID须以大写字母开头，仅含大写字母和数字").optional(),
   title: z.string().min(1, "题目标题不能为空"),
   is_public: z.boolean().default(true),
   description: z.string().min(1, "题目描述不能为空"),

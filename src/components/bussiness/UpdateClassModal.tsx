@@ -62,7 +62,7 @@ export default function UpdateClassModal({
   const updateMutation = useMutation({
     mutationFn: (values: ClassFormValues) => {
       if (!classItem) throw new Error("班级信息不存在");
-      return updateClass(classItem.class_public_id, {
+      return updateClass(classItem.class_id, {
         name: values.name,
         description: values.description || "",
         is_public: values.is_public,
