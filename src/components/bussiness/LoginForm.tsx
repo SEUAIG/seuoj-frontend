@@ -12,7 +12,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { User, Lock, Eye, EyeOff, EqualApproximatelyIcon, Mail } from "lucide-react";
+import { User, Lock, Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { login, setError } from "@/features/auth/authSlice";
@@ -23,7 +23,7 @@ export default function LoginForm() {
   const form = useForm<login_Values>({
     resolver: zodResolver(login_Schema),
     defaultValues: {
-      email: "",
+      identifier: "",
       password: "",
     },
     // 一定要给初始值 这是react hook form 的要求
@@ -43,7 +43,7 @@ export default function LoginForm() {
     }
   }, [error]);
   useEffect(() => {
-    setFocus("email");
+    setFocus("identifier");
   }, [setFocus]);
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   useEffect(() => {
@@ -58,7 +58,7 @@ export default function LoginForm() {
     try {
       await dispatch(
         login({
-          email: values.email,
+          identifier: values.identifier,
           password: values.password,
         })
       ).unwrap();
@@ -76,15 +76,15 @@ export default function LoginForm() {
         {/* control 用于将这一部分接入RHF的管理 render将RHF提供的field传递 */}
         <FormField
           control={control}
-          name="email"
+          name="identifier"
           render={({ field }) => (
             <FormItem className="space-y-1.5">
-              <FormLabel className="text-foreground font-medium">邮箱</FormLabel>
+              <FormLabel className="text-foreground font-medium">用户名 / 邮箱</FormLabel>
               <FormControl>
                 <div className="relative group">
-                  <Mail className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={20} />
+                  <User className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={20} />
                   <Input
-                    placeholder="请输入您的邮箱"
+                    placeholder="请输入用户名或邮箱"
                     {...field}
                     className="h-12 rounded-lg pl-10 border-input focus:border-primary focus:ring-primary transition-all bg-background/50 hover:bg-background focus:bg-background"
                   />

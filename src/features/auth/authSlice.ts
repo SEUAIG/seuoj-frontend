@@ -5,7 +5,7 @@ import { ENV } from "@/config/env";
 let onLoginSuccess: (() => void) | null = null;
 export const setOnLoginSuccess = (cb: () => void) => { onLoginSuccess = cb; };
 interface LoginPayload {
-  email: string;
+  identifier: string;
   password: string;
 }
 interface SignupPayload {
@@ -25,13 +25,13 @@ const initialState: AuthState = {
 const isSuccessCode = (code: number) => code === 0;
 export const login = createAsyncThunk(
   "auth/login",
-  async ({ email, password }: LoginPayload, thunkAPI) => {
+  async ({ identifier, password }: LoginPayload, thunkAPI) => {
     const res = await fetch(`${ENV.API_BASE_URL}/api/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ identifier, password }),
       // 要把参数序列化json发送出去
     });
     const result = await res.json();
@@ -46,7 +46,7 @@ export const login = createAsyncThunk(
       }
       return thunkAPI.rejectWithValue("登录失败");
     }
-    result.data = { ...result.data, email };
+    result.data = { ...result.data, identifier };
     return result;
     // 异步函数的返回值fulfilled会作为action payload  rejected的error。message 会是reject with value
   }
