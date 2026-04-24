@@ -199,6 +199,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
     const requestPayload = {
       pid,
       title: dirty.title ? values.title : null,
+      is_public: dirty.is_public ? values.is_public : null,
       description: dirty.description ? values.description : null,
       input: dirty.input ? values.input : null,
       output: dirty.output ? values.output : null,
