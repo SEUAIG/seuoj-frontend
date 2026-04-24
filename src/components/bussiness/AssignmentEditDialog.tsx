@@ -45,7 +45,7 @@ interface AssignmentEditDialogProps {
   currentData: {
     title: string;
     description: string | null;
-    status: "DRAFT" | "PUBLISHED" | "CLOSED";
+    status: "DRAFT" | "PUBLISHED";
     deadline: string | null;
     visible_from: string | null;
     visible_to: string | null;
@@ -63,7 +63,7 @@ export default function AssignmentEditDialog({
 }: AssignmentEditDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<"DRAFT" | "PUBLISHED" | "CLOSED">("DRAFT");
+  const [status, setStatus] = useState<"DRAFT" | "PUBLISHED">("DRAFT");
   const [deadline, setDeadline] = useState("");
   const [visibleFrom, setVisibleFrom] = useState("");
   const [visibleTo, setVisibleTo] = useState("");
@@ -143,7 +143,6 @@ export default function AssignmentEditDialog({
               <SelectContent>
                 <SelectItem value="DRAFT">草稿</SelectItem>
                 <SelectItem value="PUBLISHED">已发布</SelectItem>
-                <SelectItem value="CLOSED">已关闭</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -169,7 +168,7 @@ export default function AssignmentEditDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-visible-to">可见结束</Label>
+              <Label htmlFor="edit-visible-to">关闭时间</Label>
               <Input
                 id="edit-visible-to"
                 type="datetime-local"

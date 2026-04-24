@@ -22,7 +22,7 @@ export interface AssignmentDetailData {
   description: string | null;
   introduction: string | null;
   intro_attachments: AssignmentIntroAttachment[];
-  status: "DRAFT" | "PUBLISHED" | "CLOSED";
+  status: "DRAFT" | "PUBLISHED";
   deadline: string | null;
   visible_from: string | null;
   visible_to: string | null;

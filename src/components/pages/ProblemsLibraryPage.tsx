@@ -29,6 +29,8 @@ import { useNavigate } from "react-router-dom";
 
 export default function ProblemsLibraryPage() {
   const nav = useNavigate();
+  const role = useSelector((state: RootState) => state.auth.user?.role ?? "guest");
+  const isTeacherOrAbove = role === "teacher" || role === "admin" || role === "superadmin";
   const { tags } = useSelector((state: RootState) => state.tags);
   const dispatch = useDispatch();
   const [keyword, setKeyword] = useState("");
@@ -77,10 +79,12 @@ export default function ProblemsLibraryPage() {
             浏览和管理题目列表
           </div>
         </div>
-        <Button onClick={() => nav("/problemsLibrary/create")}>
-          <Plus className="mr-2 h-4 w-4" />
-          新建题目
-        </Button>
+        {isTeacherOrAbove && (
+          <Button onClick={() => nav("/problemsLibrary/create")}>
+            <Plus className="mr-2 h-4 w-4" />
+            新建题目
+          </Button>
+        )}
       </div>
 
       <div className="bg-card rounded-xl border shadow-sm p-6 space-y-6">

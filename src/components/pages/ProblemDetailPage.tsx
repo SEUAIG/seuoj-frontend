@@ -94,7 +94,7 @@ export default function ProblemDetailPage() {
     if (!isAdmin) return;
     if (promptedNoTestcasePidRef.current === problem.pid) return;
     promptedNoTestcasePidRef.current = problem.pid;
-    toast.warning(“当前题目没有测试点，请点击”评测配置”上传压缩包并配置测试点”);
+    toast.warning("当前题目没有测试点，请点击“评测配置”上传压缩包并配置测试点");
   }, [problem, hasTestCases, isAdmin]);
   if (!problem) {
     return (

@@ -5,7 +5,7 @@ export interface AssignmentPageItem {
   class_id: number;
   title: string;
   description: string | null;
-  status: "DRAFT" | "PUBLISHED" | "CLOSED";
+  status: "DRAFT" | "PUBLISHED";
   deadline: string | null;
   visible_from: string | null;
   visible_to: string | null;

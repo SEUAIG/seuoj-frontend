@@ -69,12 +69,12 @@ export default function ProblemListTable({
       <Table className="table-fixed">
         <TableHeader>
           <TableRow className="bg-muted/50">
-            <TableHead className="w-[100px]">编号</TableHead>
+            <TableHead className="w-[80px]">编号</TableHead>
             <TableHead>题目名称</TableHead>
-            <TableHead className="w-[300px]">标签</TableHead>
-            <TableHead className="w-[100px] text-right">通过</TableHead>
-            <TableHead className="w-[100px] text-right">提交</TableHead>
-            <TableHead className="w-[120px] text-right">通过率</TableHead>
+            <TableHead className="w-[200px]">标签</TableHead>
+            <TableHead className="w-[80px] text-right">通过</TableHead>
+            <TableHead className="w-[80px] text-right">提交</TableHead>
+            <TableHead className="w-[100px] text-right">通过率</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

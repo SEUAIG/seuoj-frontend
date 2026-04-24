@@ -35,6 +35,8 @@ export default function ClassPage() {
   const nav = useNavigate();
   const queryClient = useQueryClient();
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const role = useSelector((state: RootState) => state.auth.user?.role ?? "guest");
+  const isTeacherOrAbove = role === "teacher" || role === "admin" || role === "superadmin";
   const [searchParams, setSearchParams] = useSearchParams();
   const page = parseInt(searchParams.get("page") || "1");
   const size = parseInt(searchParams.get("size") || "20");
@@ -130,7 +132,7 @@ export default function ClassPage() {
             浏览和管理班级列表
           </div>
         </div>
-        {isAuthenticated && (
+        {isTeacherOrAbove && (
           <Button onClick={() => setIsCreateModalOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             创建班级

@@ -62,12 +62,23 @@ import AssignmentEditDialog from "../bussiness/AssignmentEditDialog";
 import SortListTable from "../common/SortListTable";
 import SubmissionListPanel from "../bussiness/SubmissionListPanel";
 
-function statusBadge(status: string) {
-  switch (status) {
+function computeDisplayStatus(status: string, visibleFrom?: string | null, visibleTo?: string | null): string {
+  if (status === "DRAFT") return "DRAFT";
+  const now = new Date();
+  if (visibleFrom && now < new Date(visibleFrom)) return "NOT_OPEN";
+  if (visibleTo && now > new Date(visibleTo)) return "CLOSED";
+  return "PUBLISHED";
+}
+
+function statusBadge(status: string, visibleFrom?: string | null, visibleTo?: string | null) {
+  const display = computeDisplayStatus(status, visibleFrom, visibleTo);
+  switch (display) {
     case "DRAFT":
       return <Badge variant="secondary">草稿</Badge>;
+    case "NOT_OPEN":
+      return <Badge variant="secondary">未开放</Badge>;
     case "PUBLISHED":
-      return <Badge variant="default">已发布</Badge>;
+      return <Badge variant="default">进行中</Badge>;
     case "CLOSED":
       return <Badge variant="outline">已关闭</Badge>;
     default:
@@ -182,7 +193,7 @@ export default function AssignmentDetailPage() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-bold">{detail.title}</h1>
-              {statusBadge(detail.status)}
+              {statusBadge(detail.status, detail.visible_from, detail.visible_to)}
             </div>
             {detail.description && (
               <p className="text-muted-foreground mt-1">{detail.description}</p>
@@ -301,7 +312,7 @@ export default function AssignmentDetailPage() {
                     {detail.visible_to && (
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3.5 w-3.5" />
-                        可见结束:{" "}
+                        关闭时间:{" "}
                         {format(
                           new Date(detail.visible_to),
                           "yyyy-MM-dd HH:mm"

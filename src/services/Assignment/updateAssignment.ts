@@ -5,7 +5,7 @@ export interface UpdateAssignmentRequest {
   title?: string;
   description?: string;
   introduction?: string;
-  status?: "DRAFT" | "PUBLISHED" | "CLOSED";
+  status?: "DRAFT" | "PUBLISHED";
   deadline?: string;
   visible_from?: string;
   visible_to?: string;

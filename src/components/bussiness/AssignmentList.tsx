@@ -28,12 +28,23 @@ import {
 } from "@/services/Assignment/getAssignmentPage";
 import { deleteAssignment } from "@/services/Assignment/deleteAssignment";
 
-function statusBadge(status: string) {
-  switch (status) {
+function computeDisplayStatus(status: string, visibleFrom?: string | null, visibleTo?: string | null): string {
+  if (status === "DRAFT") return "DRAFT";
+  const now = new Date();
+  if (visibleFrom && now < new Date(visibleFrom)) return "NOT_OPEN";
+  if (visibleTo && now > new Date(visibleTo)) return "CLOSED";
+  return "PUBLISHED";
+}
+
+function statusBadge(status: string, visibleFrom?: string | null, visibleTo?: string | null) {
+  const display = computeDisplayStatus(status, visibleFrom, visibleTo);
+  switch (display) {
     case "DRAFT":
       return <Badge variant="secondary">草稿</Badge>;
+    case "NOT_OPEN":
+      return <Badge variant="secondary">未开放</Badge>;
     case "PUBLISHED":
-      return <Badge variant="default">已发布</Badge>;
+      return <Badge variant="default">进行中</Badge>;
     case "CLOSED":
       return <Badge variant="outline">已关闭</Badge>;
     default:
@@ -129,7 +140,7 @@ export default function AssignmentList({
                       <h4 className="font-medium text-base group-hover:text-primary transition-colors truncate">
                         {assignment.title}
                       </h4>
-                      {statusBadge(assignment.status)}
+                      {statusBadge(assignment.status, assignment.visible_from, assignment.visible_to)}
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                       {assignment.deadline && (

@@ -8,12 +8,14 @@ interface ProblemCodingProps {
   setCodeFile: Dispatch<SetStateAction<string>>;
   handleCodeSubmit: () => void;
   submitDisabled?: boolean;
+  submitDisabledReason?: string;
 }
 export default function ProblemCoding({
   pid,
   setCodeFile,
   handleCodeSubmit,
   submitDisabled = false,
+  submitDisabledReason,
 }: ProblemCodingProps) {
   return (
     <div className="flex flex-col h-full gap-4 p-4 md:p-6 bg-gray-50">
@@ -29,15 +31,20 @@ export default function ProblemCoding({
           <div className="flex-1">
              <FileUpload pid={pid} />
           </div>
-          <Button
-            className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-            size="sm"
-            onClick={handleCodeSubmit}
-            disabled={submitDisabled}
-          >
-            <SquarePen className="mr-2 h-4 w-4" />
-            提交
-          </Button>
+          <div className="flex items-center gap-2">
+            {submitDisabledReason && (
+              <span className="text-sm text-muted-foreground">{submitDisabledReason}</span>
+            )}
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+              size="sm"
+              onClick={handleCodeSubmit}
+              disabled={submitDisabled}
+            >
+              <SquarePen className="mr-2 h-4 w-4" />
+              提交
+            </Button>
+          </div>
         </div>
       </div>
     </div>
