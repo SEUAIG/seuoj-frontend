@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useNavigate, useParams } from "react-router-dom";
 import { FlaskConical, Play, X } from "lucide-react";
@@ -61,7 +61,6 @@ export default function ProblemAgentPage() {
     (store: RootState) => store.code.codeFileObjectArray
   );
   const [problemData, setProblemData] = useState<ProblemData | null>(null);
-  const [hasTestCases, setHasTestCases] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [pseudocode, setPseudocode] = useState("");
   const [language, setLanguage] = useState<AgentCodingLanguage>("cpp");
@@ -72,7 +71,12 @@ export default function ProblemAgentPage() {
   const [runningTests, setRunningTests] = useState(false);
   const [newCaseInput, setNewCaseInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const promptedNoTestcasePidRef = useRef<string | null>(null);
+
+  const hasTestCases = useMemo(() => {
+    if (!problemData) return true;
+    const n = Number(problemData.content?.info?.test_case_number ?? 0);
+    return n > 0;
+  }, [problemData]);
 
   const selectedProblemId = id || "";
   const editorPid = `agent-${selectedProblemId || "temp"}`;
@@ -132,17 +136,8 @@ export default function ProblemAgentPage() {
           return;
         }
         setProblemData(result.data);
-        try {
-          const configRes = await api.get(`/api/problem/config/${selectedProblemId}`);
-          const configResult = configRes.data;
-          const subtasks = configResult?.data?.subtasks;
-          setHasTestCases(Array.isArray(subtasks) && subtasks.length > 0);
-        } catch {
-          setHasTestCases(false);
-        }
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "获取题目详情失败");
-        setHasTestCases(false);
       } finally {
         setLoadingDetail(false);
       }
@@ -150,13 +145,6 @@ export default function ProblemAgentPage() {
     loadProblemDetail();
   }, [dispatch, editorPid, selectedProblemId]);
 
-  useEffect(() => {
-    if (!problemData) return;
-    if (hasTestCases) return;
-    if (promptedNoTestcasePidRef.current === problemData.pid) return;
-    promptedNoTestcasePidRef.current = problemData.pid;
-    toast.warning("当前题目没有测试点，请点击“评测配置”上传压缩包并配置测试点");
-  }, [problemData, hasTestCases]);
 
   const handleGenerateCode = async () => {
     if (!pseudocode.trim()) return;

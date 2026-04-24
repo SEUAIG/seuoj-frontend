@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import { useSelector } from "react-redux";
 import { RootState } from "../../app/store";
@@ -46,13 +46,14 @@ export interface ProblemData {
   tags: string[];
   totalSubmit: number;
   totalAccept: number;
+  submittable?: boolean;
 }
 export default function ProblemDetailPage() {
-  const { isAuthenticated } = useSelector((store: RootState) => store.auth);
+  const { isAuthenticated, user } = useSelector((store: RootState) => store.auth);
+  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const [problem, setProblem] = useState<ProblemData | null>(null);
-  const [hasTestCases, setHasTestCases] = useState(true);
   const [, setCodeFile] = useState("");
   const [hide, setHide] = useState(false);
   const promptedNoTestcasePidRef = useRef<string | null>(null);
@@ -60,6 +61,11 @@ export default function ProblemDetailPage() {
     (store: RootState) => store.code
   );
   const nav = useNavigate();
+  const hasTestCases = useMemo(() => {
+    if (!problem) return true;
+    const n = Number(problem.content?.info?.test_case_number ?? 0);
+    return n > 0;
+  }, [problem]);
   useEffect(() => {
     const fetchProblem = async () => {
       if (!id) return;
@@ -79,24 +85,17 @@ export default function ProblemDetailPage() {
           setProblem(result.data);
         }
       } catch (error) {}
-      try {
-        const configRes = await api.get(`/api/problem/config/${id}`);
-        const configResult = configRes.data;
-        const subtasks = configResult?.data?.subtasks;
-        setHasTestCases(Array.isArray(subtasks) && subtasks.length > 0);
-      } catch (error) {
-        setHasTestCases(false);
-      }
     };
     fetchProblem();
   }, [id, searchParams]);
   useEffect(() => {
     if (!problem) return;
     if (hasTestCases) return;
+    if (!isAdmin) return;
     if (promptedNoTestcasePidRef.current === problem.pid) return;
     promptedNoTestcasePidRef.current = problem.pid;
-    toast.warning("当前题目没有测试点，请点击“评测配置”上传压缩包并配置测试点");
-  }, [problem, hasTestCases]);
+    toast.warning(“当前题目没有测试点，请点击”评测配置”上传压缩包并配置测试点”);
+  }, [problem, hasTestCases, isAdmin]);
   if (!problem) {
     return (
       <div className="min-h-screen bg-gray-50 py-4 pb-10">
@@ -134,7 +133,13 @@ export default function ProblemDetailPage() {
     );
   }
   const { title, pid } = problem;
+  const assignmentId = searchParams.get("assignment_id");
+  const isAssignmentClosed = !!assignmentId && problem.submittable === false;
   const handleCodeSubmit = async () => {
+    if (isAssignmentClosed) {
+      toast.error("作业已关闭，不可提交");
+      return;
+    }
     if (!hasTestCases) {
       toast.error("当前题目没有测试点，请先在左侧点击“评测配置”完善测试数据");
       return;
@@ -144,7 +149,6 @@ export default function ProblemDetailPage() {
     );
     if (index === -1) return;
     const code = codeFileObjectArray[index].codeFile;
-    const assignmentId = searchParams.get("assignment_id");
     const data: Record<string, unknown> = { pid, language, code };
     if (assignmentId) {
       data.assignment_id = Number(assignmentId);
@@ -179,7 +183,6 @@ export default function ProblemDetailPage() {
           <ProblemDetailInfo
             problem={problem}
             isAuthenticated={isAuthenticated}
-            hasTestcases={hasTestCases}
           />
         </div>
         {hide ? null : (
@@ -189,7 +192,8 @@ export default function ProblemDetailPage() {
                 pid={pid}
                 setCodeFile={setCodeFile}
                 handleCodeSubmit={handleCodeSubmit}
-                submitDisabled={!hasTestCases}
+                submitDisabled={!hasTestCases || isAssignmentClosed}
+                submitDisabledReason={isAssignmentClosed ? "作业已关闭，仅供查看" : undefined}
               />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-gray-50">
