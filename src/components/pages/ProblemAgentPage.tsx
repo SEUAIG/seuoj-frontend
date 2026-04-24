@@ -340,7 +340,6 @@ export default function ProblemAgentPage() {
             <ProblemDetailInfo
               problem={problemData}
               isAuthenticated={isAuthenticated}
-              hasTestcases={hasTestCases}
               practiceButtonLabel="传统练习"
               onPracticeClick={(pid) => nav(`/problemsLibrary/${pid}`)}
             />
