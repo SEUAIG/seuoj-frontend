@@ -74,9 +74,9 @@ export default function ContestCodeEditor({
   //TODO ：后续可以使用api文档进行进一步开发 使用其api能力 如代码补全等功能
   return (
     <>
-      <div className="bg-gray-50 rounded-lg overflow-hidden border border-gray-200 shadow-inner">
+      <div className="h-full min-h-0 bg-gray-50 rounded-lg border border-gray-200 shadow-inner">
         <MonacoEditor
-          height="500px"
+          height="100%"
           language={getMonacoLanguage(language)}
           theme="vs-light"
           value={code}
@@ -88,8 +88,9 @@ export default function ContestCodeEditor({
             fontFamily:
               "'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace",
             fontLigatures: true, // 启用连字
-            lineHeight: 1.6 * fontsize,
-            scrollBeyondLastLine: false, // 禁止滚动超过最后一行
+            lineHeight: Math.round(1.6 * fontsize),
+            scrollBeyondLastLine: true,
+            padding: { top: 12, bottom: 12 },
             renderWhitespace: "selection", // 仅在选中时显示空白字符
             cursorBlinking: "smooth", // 平滑光标闪烁
             cursorSmoothCaretAnimation: "on", // 平滑光标移动

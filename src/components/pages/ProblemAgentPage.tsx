@@ -408,7 +408,7 @@ export default function ProblemAgentPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-md border bg-white p-3">
+                <div className="h-[60vh] min-h-[320px] max-h-[640px] rounded-md border bg-white p-3">
                   <CodeEditor pid={editorPid} />
                 </div>
                 <ScrollArea className="h-28 rounded-md border bg-sky-50/50 p-3">

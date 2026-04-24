@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Form,
   FormControl,
@@ -82,7 +84,7 @@ interface SubtaskRow {
   id: number;
   cases: number[];
   pre_subtasks: number[];
-  score: number;
+  score: number | null;
   type: "min" | "sum";
 }
 
@@ -208,7 +210,7 @@ function validateConfig(
   }
 
   // 5. 分数校验（总分应 ≈ 100）
-  const totalScore = subtasks.reduce((sum, st) => sum + st.score, 0);
+  const totalScore = subtasks.reduce((sum, st) => sum + (st.score ?? 0), 0);
   if (subtasks.length > 0 && totalScore !== 100) {
     const diff = 100 - totalScore;
     issues.push({
@@ -225,13 +227,89 @@ function validateConfig(
     if (uncovered.length > 0) {
       issues.push({
         type: "warning",
-        message: `测试点 ${uncovered.map((t) => `#${t.seq}`).join(", ")} 未被任何子任务包含，将按权重均摊得分`,
+        message: `测试点 ${uncovered.map((t) => `#${t.seq}`).join(", ")} 未被任何子任务包含`,
         target: "global",
       });
     }
   }
 
   return issues;
+}
+
+/** 子任务包含用例多选框 */
+function SubtaskCasesMultiSelect({
+  value,
+  onChange,
+  testcases,
+  hasError,
+  blockedCaseIds,
+}: {
+  value: number[];
+  onChange: (next: number[]) => void;
+  testcases: TestcaseRow[];
+  hasError: boolean;
+  blockedCaseIds: Set<number>;
+}) {
+  const idToSeq = useMemo(
+    () => new Map(testcases.map((tc) => [tc.id, tc.seq])),
+    [testcases]
+  );
+  const availableTestcases = useMemo(
+    () => testcases.filter((tc) => value.includes(tc.id) || !blockedCaseIds.has(tc.id)),
+    [testcases, value, blockedCaseIds]
+  );
+  const selectedSeqs = useMemo(
+    () => [...new Set(value)]
+      .map((id) => idToSeq.get(id))
+      .filter((seq): seq is number => seq !== undefined)
+      .sort((a, b) => a - b),
+    [value, idToSeq]
+  );
+
+  const toggleCase = (caseId: number, checked: boolean) => {
+    const nextSet = new Set(value);
+    if (checked) nextSet.add(caseId);
+    else nextSet.delete(caseId);
+    const next = [...nextSet].sort((a, b) => (idToSeq.get(a) ?? a) - (idToSeq.get(b) ?? b));
+    onChange(next);
+  };
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className={`h-7 w-full justify-start bg-background/50 px-2 text-left text-xs font-mono ${hasError ? "border-destructive" : ""}`}
+        >
+          {selectedSeqs.length > 0
+            ? selectedSeqs.map((seq) => `#${seq}`).join(", ")
+            : "选择包含用例"}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-64 p-2">
+        <div className="max-h-56 space-y-1 overflow-y-auto">
+          {testcases.length === 0 ? (
+            <div className="px-2 py-1 text-xs text-muted-foreground">暂无可选测试点</div>
+          ) : (
+            availableTestcases.map((tc) => (
+              <label
+                key={tc._key}
+                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/60"
+              >
+                <Checkbox
+                  checked={value.includes(tc.id)}
+                  onCheckedChange={(checked) => toggleCase(tc.id, checked === true)}
+                />
+                <span className="text-xs font-mono">#{tc.seq}</span>
+                <span className="text-xs text-muted-foreground truncate">{tc.in_path}</span>
+              </label>
+            ))
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 /** 文件路径自动补全输入框 */
@@ -309,6 +387,17 @@ function FilePathInput({
 
 /** 分数分配进度条 */
 function ScoreBar({ testcases, subtasks }: { testcases: TestcaseRow[]; subtasks: SubtaskRow[] }) {
+  const subtaskColorClasses = [
+    "bg-blue-400",
+    "bg-emerald-400",
+    "bg-amber-400",
+    "bg-rose-400",
+    "bg-violet-400",
+    "bg-cyan-400",
+    "bg-lime-400",
+    "bg-fuchsia-400",
+  ] as const;
+
   const segments = useMemo(() => {
     if (subtasks.length === 0) {
       // 无子任务：均摊
@@ -320,10 +409,10 @@ function ScoreBar({ testcases, subtasks }: { testcases: TestcaseRow[]; subtasks:
       }));
     }
     // 有子任务
-    return subtasks.map((st) => ({
+    return subtasks.map((st, i) => ({
       label: `ST#${st.id}`,
-      pct: st.score,
-      color: st.type === "min" ? "bg-amber-400" : "bg-green-400",
+      pct: st.score ?? 0,
+      color: subtaskColorClasses[i % subtaskColorClasses.length],
     }));
   }, [testcases, subtasks]);
 
@@ -524,12 +613,6 @@ export default function ProblemJudgeConfigPage() {
   const parseIdList = (raw: string): number[] =>
     raw.split(",").map((v) => parseInt(v.trim(), 10)).filter((v) => !isNaN(v));
 
-  // 已知服务端 ID → 展示 seq（显示用）
-  const idToSeq = useCallback(
-    (id: number): number => testcases.find((t) => t.id === id)?.seq ?? id,
-    [testcases]
-  );
-
   // 测试点被哪些子任务引用
   const tcReferencedBy = useMemo(() => {
     const m = new Map<number, number[]>();
@@ -628,7 +711,10 @@ export default function ProblemJudgeConfigPage() {
         ans_path: stripDataPrefix(t.ans_path),
         id: t.id === -1 ? 0 : t.id,
       }));
-      const cleanSts: Subtask[] = subtasks.map(({ _key, ...s }) => s);
+      const cleanSts: Subtask[] = subtasks.map(({ _key, ...s }) => ({
+        ...s,
+        score: s.score ?? 0,
+      }));
       let customModules: ProblemConfigPayload["custom_modules"] | undefined;
       if (values.problem_type === "Interactive") {
         customModules = { interactor_path: values.interactor_path?.trim() || "" };
@@ -910,7 +996,6 @@ export default function ProblemJudgeConfigPage() {
                           (i) => i.target === String(st._key) && i.type === "error"
                         );
                         const hasError = stErrors.length > 0;
-                        const caseSeqs = st.cases.map(idToSeq);
                         return (
                           <tr key={st._key} className={hasError ? "bg-destructive/5" : "hover:bg-muted/20"}>
                             <td className="px-2 py-1.5">
@@ -935,23 +1020,28 @@ export default function ProblemJudgeConfigPage() {
                                 type="number"
                                 min={0}
                                 max={100}
-                                value={st.score}
-                                onChange={(e) => updateSubtask(st._key, "score", Number(e.target.value))}
-                                className={`h-7 bg-background/50 text-xs ${st.score > 100 ? "border-amber-400" : ""}`}
+                                value={st.score ?? ""}
+                                onChange={(e) =>
+                                  updateSubtask(
+                                    st._key,
+                                    "score",
+                                    e.target.value === "" ? null : Number(e.target.value)
+                                  )
+                                }
+                                className={`h-7 bg-background/50 text-xs ${st.score !== null && st.score > 100 ? "border-amber-400" : ""}`}
                               />
                             </td>
                             <td className="px-2 py-1.5">
-                              <Input
-                                value={caseSeqs.join(", ")}
-                                onChange={(e) => {
-                                  const seqArr = parseIdList(e.target.value);
-                                  const idArr = seqArr
-                                    .map((seq) => testcases.find((t) => t.seq === seq)?.id)
-                                    .filter((id): id is number => id !== undefined);
-                                  updateSubtask(st._key, "cases", idArr);
-                                }}
-                                className={`h-7 bg-background/50 text-xs font-mono ${hasError ? "border-destructive" : ""}`}
-                                placeholder="1, 2, 3"
+                              <SubtaskCasesMultiSelect
+                                value={st.cases}
+                                onChange={(next) => updateSubtask(st._key, "cases", next)}
+                                testcases={testcases}
+                                hasError={hasError}
+                                blockedCaseIds={new Set(
+                                  subtasks
+                                    .filter((other) => other._key !== st._key)
+                                    .flatMap((other) => other.cases)
+                                )}
                               />
                               {hasError && (
                                 <div className="text-xs text-destructive mt-0.5">{stErrors[0].message}</div>

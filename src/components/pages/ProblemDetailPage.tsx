@@ -166,15 +166,14 @@ export default function ProblemDetailPage() {
         <title>{`#${id}. ${title} - SeuOJ`}</title>
       </Helmet>
       <div className="h-[calc(100vh-5.5rem)] w-full max-w-full overflow-x-hidden overflow-y-hidden flex flex-col lg:flex-row bg-white border-t border-gray-200 relative">
-        <div className="fixed right-10 z-50 top-16 flex items-center bg-white/80 backdrop-blur-sm p-2 rounded-lg border border-gray-100 shadow-sm">
-          {/* 隐藏编辑器开关 */}
-          <div className="flex items-center space-x-2">
-            <Switch id="sethide" checked={hide} onCheckedChange={setHide} />
-            <Label htmlFor="sethide" className="cursor-pointer">
+        {hide ? (
+          <div className="absolute right-4 top-3 z-20 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-2 py-1.5 rounded-md border border-gray-200 shadow-sm">
+            <Switch id="sethide-practice" checked={hide} onCheckedChange={setHide} />
+            <Label htmlFor="sethide-practice" className="cursor-pointer text-sm">
               隐藏编辑器
             </Label>
           </div>
-        </div>
+        ) : null}
         <div
           className={`${
             hide ? "w-full" : "w-full lg:w-1/2"
@@ -194,6 +193,14 @@ export default function ProblemDetailPage() {
                 handleCodeSubmit={handleCodeSubmit}
                 submitDisabled={!hasTestCases || isAssignmentClosed}
                 submitDisabledReason={isAssignmentClosed ? "作业已关闭，仅供查看" : undefined}
+                headerExtra={
+                  <div className="flex items-center gap-2 rounded-md border border-gray-200 px-2 py-1 bg-white">
+                    <Switch id="sethide-practice" checked={hide} onCheckedChange={setHide} />
+                    <Label htmlFor="sethide-practice" className="cursor-pointer text-sm whitespace-nowrap">
+                      隐藏编辑器
+                    </Label>
+                  </div>
+                }
               />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-gray-50">

@@ -10,12 +10,16 @@ interface ContestCodeWriteProps {
   contest_id: number;
   pid: string;
   className?: string;
+  headerExtra?: React.ReactNode;
+  footer?: React.ReactNode;
 }
 export default function ContestCodeWrite({
   setCodeFile,
   contest_id,
   pid,
   className,
+  headerExtra,
+  footer,
 }: ContestCodeWriteProps) {
   const dispatch = useDispatch();
   const handleClear = () => {
@@ -26,16 +30,26 @@ export default function ContestCodeWrite({
   return (
     <div
       className={cn(
-        "flex shadow-md flex-col space-y-6 p-6 bg-gray-50 min-h-36 rounded border",
+        "flex min-h-0 flex-col space-y-3 p-4 bg-gray-50 min-h-36",
         className
       )}
     >
       <div className="flex items-center justify-between space-x-4 ">
         <SelectContestLanguage />
-        <CodeToolsGroup onClear={handleClear} />
+        <div className="flex items-center gap-3">
+          <CodeToolsGroup onClear={handleClear} />
+          {headerExtra}
+        </div>
       </div>
-      <div className="bg-white shadow-sm rounded-lg p-4 flex-1 overflow-hidden">
-        <ContestCodeEditor contest_id={contest_id} pid={pid} />
+      <div className="bg-white shadow-sm rounded-lg flex-1 min-h-0 flex flex-col">
+        <div className="p-4 flex-1 min-h-0">
+          <ContestCodeEditor contest_id={contest_id} pid={pid} />
+        </div>
+        {footer ? (
+          <div className="flex-none px-4 py-2 border-t border-gray-100">
+            {footer}
+          </div>
+        ) : null}
       </div>
     </div>
   );
