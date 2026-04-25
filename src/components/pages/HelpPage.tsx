@@ -153,21 +153,21 @@ export default function HelpPage() {
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value=”evaluation”>
+            <AccordionItem value="evaluation">
               <AccordionTrigger>评测记录与提交详情</AccordionTrigger>
-              <AccordionContent className=”space-y-3 text-sm text-muted-foreground”>
+              <AccordionContent className="space-y-3 text-sm text-muted-foreground">
                 <p>
                   评测页会集中展示你的提交记录，包括题号、状态、结果、语言和提交时间。
                 </p>
                 <p>
-                  支持按题号、评测结果和语言进行筛选；从题目页点击”提交记录”会自动带入题号筛选。
+                  支持按题号、评测结果和语言进行筛选；从题目页点击"提交记录"会自动带入题号筛选。
                 </p>
                 <p>评测中的记录会实时变化，你可以手动刷新查看最新结果。</p>
                 <p>
                   点击任意记录可进入提交详情，查看更完整的评测信息和代码内容。
                 </p>
                 <p>
-                  点击题号可回到题目详情继续练习，形成”做题—提交—复盘”的连续流程。
+                  点击题号可回到题目详情继续练习，形成"做题—提交—复盘"的连续流程。
                 </p>
               </AccordionContent>
             </AccordionItem>
