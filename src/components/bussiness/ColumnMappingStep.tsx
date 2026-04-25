@@ -30,6 +30,7 @@ interface Props {
     sampleRows: string[][];
     initialMappings: ColumnMapping[];
     passwordMode: "assigned" | "random";
+    requirePasswordMapping?: boolean;
     onConfirm: (mappings: ColumnMapping[], emailSuffix: string) => void;
     onBack: () => void;
 }
@@ -47,6 +48,7 @@ export default function ColumnMappingStep({
     sampleRows,
     initialMappings,
     passwordMode,
+    requirePasswordMapping,
     onConfirm,
     onBack,
 }: Props) {
@@ -76,7 +78,9 @@ export default function ColumnMappingStep({
     };
 
     const handleConfirm = () => {
-        const error = validateMappings(mappings, passwordMode);
+        const error = validateMappings(mappings, passwordMode, {
+            requirePasswordMapping,
+        });
         if (error) {
             toast.error(error);
             return;

@@ -23,6 +23,7 @@ export interface AgentChatSession {
 }
 
 const RAG_ANSWER_TIMEOUT_MS = 300000;
+const RAG_STREAM_ENDPOINT = "/agent/rag_answer_stream";
 
 function normalizeRole(role: unknown): AgentChatRole {
   const value = String(role ?? "").toLowerCase();
@@ -142,22 +143,18 @@ export async function askAgent(params: {
   query: string;
   jwt?: string;
   sessionId?: string;
+  onContent?: (fullText: string, deltaText: string) => void;
 }) {
-  const { userId, query, jwt, sessionId } = params;
-  const body: Record<string, string> = {
-    user_id: userId,
-    query,
-  };
-  if (sessionId) body.session_id = sessionId;
+  const { query, jwt, sessionId, onContent } = params;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), RAG_ANSWER_TIMEOUT_MS);
   let response: Response;
   try {
-    response = await fetch("/agent/api/rag/messages/rag_answer/", {
+    response = await fetch(RAG_STREAM_ENDPOINT, {
       method: "POST",
       headers: buildJsonHeaders(jwt),
-      body: JSON.stringify(body),
+      body: JSON.stringify({ query }),
       signal: controller.signal,
     });
   } catch (error) {
@@ -169,20 +166,75 @@ export async function askAgent(params: {
     clearTimeout(timeoutId);
   }
   if (!response.ok) throw new Error(`发送消息失败（${response.status}）`);
+  if (!response.body) throw new Error("流式响应为空");
 
-  const data = await response.json();
-  const rawMessage = data?.message ?? data;
-  const message = mapMessage(rawMessage);
-  const returnedSessionId =
-    response.headers.get("x-session-id") ??
-    response.headers.get("X-Session-Id") ??
-    data?.session_id ??
-    rawMessage?.session_id ??
-    sessionId ??
-    "";
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let content = "";
+  let citations: Array<{ citation_number: number; source_title: string }> = [];
+
+  const consumeEventBlock = (eventBlock: string) => {
+    const lines = eventBlock.split(/\r?\n/);
+    const dataLines = lines
+      .filter((line) => line.startsWith("data:"))
+      .map((line) => line.slice(5).trimStart());
+    if (dataLines.length === 0) return;
+    const payload = dataLines.join("");
+    if (!payload) return;
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(payload);
+    } catch {
+      return;
+    }
+
+    if (parsed?.type === "content") {
+      const deltaText = String(parsed?.text ?? "");
+      if (!deltaText) return;
+      content += deltaText;
+      onContent?.(content, deltaText);
+      return;
+    }
+
+    if (parsed?.type === "done") {
+      const raw = Array.isArray(parsed?.citations) ? parsed.citations : [];
+      citations = raw.map((item: unknown, index: number) => ({
+        citation_number: index + 1,
+        source_title: String(item ?? `参考 ${index + 1}`),
+      }));
+    }
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    while (true) {
+      const delimiterIndex = buffer.indexOf("\n\n");
+      if (delimiterIndex < 0) break;
+      const eventBlock = buffer.slice(0, delimiterIndex);
+      buffer = buffer.slice(delimiterIndex + 2);
+      consumeEventBlock(eventBlock);
+    }
+  }
+
+  if (buffer.trim()) {
+    consumeEventBlock(buffer);
+  }
+
+  const message: AgentChatMessage = {
+    id: `msg-${Date.now()}`,
+    role: "assistant",
+    content,
+    createdAt: new Date().toISOString(),
+    citations,
+  };
 
   return {
     message,
-    sessionId: String(returnedSessionId),
+    sessionId: String(sessionId ?? ""),
   };
 }

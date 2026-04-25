@@ -74,7 +74,7 @@ export default function AdminUserManagementPage() {
     const [importing, setImporting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [passwordMode, setPasswordMode] = useState<PasswordMode>("assigned");
-    const [sendEmail, setSendEmail] = useState(true);
+    const [sendEmail, setSendEmail] = useState(false);
     const [selectedFileType, setSelectedFileType] = useState<FileType>(null);
     const [uploadedFileType, setUploadedFileType] = useState<FileType>(null);
     const [rawHeaders, setRawHeaders] = useState<string[]>([]);
@@ -124,7 +124,7 @@ export default function AdminUserManagementPage() {
         setPreviewData([]);
         setImportResult(null);
         setPasswordMode("assigned");
-        setSendEmail(true);
+        setSendEmail(false);
         setSelectedFileType(null);
         setUploadedFileType(null);
         setRawHeaders([]);
@@ -141,7 +141,14 @@ export default function AdminUserManagementPage() {
         headers: string[],
         dataRows: string[][]
     ) => {
-        if (headers.length === 0) throw new Error("文件表头为空");
+        const cleanedHeaders = headers.map((h) =>
+            String(h ?? "")
+                .replace(/^\uFEFF/, "")
+                .trim()
+        );
+        if (cleanedHeaders.length === 0 || cleanedHeaders.every((h) => !h)) {
+            throw new Error("文件表头为空");
+        }
         const validRows = dataRows.filter((row) =>
             row.some((cell) => cell.trim())
         );
@@ -150,9 +157,9 @@ export default function AdminUserManagementPage() {
         if (validRows.length > 500)
             throw new Error("单次最多导入500个用户");
 
-        setRawHeaders(headers);
+        setRawHeaders(cleanedHeaders);
         setRawDataRows(validRows);
-        setColumnMappings(detectColumnMappings(headers));
+        setColumnMappings(detectColumnMappings(cleanedHeaders));
         setImportResult(null);
         setImportStep("mapping");
     };
@@ -374,13 +381,13 @@ export default function AdminUserManagementPage() {
         SUPER_ADMIN: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
     };
 
-    const formatHint = `第一行为表头，系统将自动识别列含义。支持中英文表头，列顺序不限。
+    const formatHint = `第一行为表头，系统将自动识别列含义。支持中英文表头，列顺序不限，列名可使用下列任一写法。
 
-支持的列名示例：
-  用户名/学号：username, 用户名, 学号, 一卡通号
-  昵称/姓名：姓名, 名字, name, 昵称
-  邮箱（可选）：email, 邮箱（不填则自动生成）
-  密码（可选）：password, 密码`;
+支持的列名示例（可选其一）：
+  用户名/学号：用户名, 学号, 学工号, username, student_id, student id, account id
+  昵称/姓名：昵称, 姓名, 名字, name, full name, nickname, 真实姓名
+  邮箱（可选）：邮箱, 电子邮箱, email, e-mail（未提供将自动推导）
+  密码（可选）：密码, 初始密码, password, pwd`;
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">

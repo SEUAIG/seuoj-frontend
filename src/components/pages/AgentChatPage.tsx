@@ -296,6 +296,14 @@ export default function AgentChatPage() {
       content: trimmed,
       createdAt: nowIso(),
     };
+    const assistantMessageId = createId("msg");
+    const assistantPlaceholder: AgentChatMessage = {
+      id: assistantMessageId,
+      role: "assistant",
+      content: "",
+      createdAt: nowIso(),
+      citations: [],
+    };
 
     setInput("");
     autoResizeTextarea();
@@ -309,7 +317,7 @@ export default function AgentChatPage() {
               title: session.messages.length === 0 ? trimmed.slice(0, 40) : session.title,
               lastMessage: trimmed,
               updatedAt: nowIso(),
-              messages: [...session.messages, userMessage],
+              messages: [...session.messages, userMessage, assistantPlaceholder],
             }
           : session
       )
@@ -322,6 +330,24 @@ export default function AgentChatPage() {
         query: trimmed,
         jwt,
         sessionId: isTempSession ? undefined : targetSessionId,
+        onContent: (fullText) => {
+          setSessions((previous) =>
+            previous.map((session) =>
+              session.id === targetSessionId
+                ? {
+                    ...session,
+                    lastMessage: fullText || session.lastMessage,
+                    updatedAt: nowIso(),
+                    messages: session.messages.map((item) =>
+                      item.id === assistantMessageId
+                        ? { ...item, content: fullText }
+                        : item
+                    ),
+                  }
+                : session
+            )
+          );
+        },
       });
 
       const finalSessionId = returnedSessionId || targetSessionId;
@@ -330,12 +356,22 @@ export default function AgentChatPage() {
       setSessions((previous) => {
         const base = previous.filter((item) => item.id !== targetSessionId);
         const old = previous.find((item) => item.id === targetSessionId);
+        const oldMessages = old?.messages ?? [userMessage, assistantPlaceholder];
         const next: AgentChatSession = {
           id: finalSessionId,
           title: old?.title || trimmed.slice(0, 40) || "新会话",
           lastMessage: message.content,
           updatedAt: nowIso(),
-          messages: [...(old?.messages ?? [userMessage]), message],
+          messages: oldMessages.map((item) =>
+            item.id === assistantMessageId
+              ? {
+                  ...item,
+                  content: message.content,
+                  citations: message.citations ?? [],
+                  createdAt: message.createdAt,
+                }
+              : item
+          ),
         };
         return [next, ...base.filter((item) => item.id !== finalSessionId)];
       });
@@ -348,15 +384,14 @@ export default function AgentChatPage() {
                 ...session,
                 lastMessage: fallback,
                 updatedAt: nowIso(),
-                messages: [
-                  ...session.messages,
-                  {
-                    id: createId("msg"),
-                    role: "assistant",
-                    content: fallback,
-                    createdAt: nowIso(),
-                  },
-                ],
+                messages: session.messages.map((item) =>
+                  item.id === assistantMessageId
+                    ? {
+                        ...item,
+                        content: fallback,
+                      }
+                    : item
+                ),
               }
             : session
         )
