@@ -143,8 +143,8 @@ export default function ProblemStatisticsPage() {
                     <XAxis dataKey="range" tick={{ fontSize: 12 }} />
                     <YAxis allowDecimals={false} />
                     <Tooltip
-                      formatter={(value: number) => [value, "提交数"]}
-                      labelFormatter={(label: string) => `分数段: ${label}`}
+                      formatter={(value) => [`${value}`, "提交数"]}
+                      labelFormatter={(label) => `分数段: ${label}`}
                     />
                     <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                       {stats.scoreDistribution.map((_, i) => (
@@ -189,8 +189,8 @@ export default function ProblemStatisticsPage() {
                   />
                   <YAxis allowDecimals={false} />
                   <Tooltip
-                    formatter={(value: number) => [value, "提交数"]}
-                    labelFormatter={(label: string) => label}
+                    formatter={(value) => [`${value}`, "提交数"]}
+                    labelFormatter={(label) => `${label}`}
                   />
                   <Area
                     type="monotone"
