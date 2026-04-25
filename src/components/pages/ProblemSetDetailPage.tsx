@@ -170,7 +170,7 @@ export default function ProblemSetDetailPage() {
                         <TableCell className="font-mono">
                           <span
                             onClick={() =>
-                              nav(`/problemsLibrary/${problem.pid}`)
+                              nav(`/problemsLibrary/${problem.pid}?problem_set_id=${id}`)
                             }
                             className="hover:text-blue-700 hover:underline cursor-pointer transition-colors"
                           >
@@ -180,7 +180,7 @@ export default function ProblemSetDetailPage() {
                         <TableCell>
                           <span
                             onClick={() =>
-                              nav(`/problemsLibrary/${problem.pid}`)
+                              nav(`/problemsLibrary/${problem.pid}?problem_set_id=${id}`)
                             }
                             className="font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer transition-colors"
                           >
@@ -192,7 +192,7 @@ export default function ProblemSetDetailPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() =>
-                              nav(`/problemsLibrary/${problem.pid}`)
+                              nav(`/problemsLibrary/${problem.pid}?problem_set_id=${id}`)
                             }
                           >
                             <ExternalLink className="h-4 w-4 mr-1" />

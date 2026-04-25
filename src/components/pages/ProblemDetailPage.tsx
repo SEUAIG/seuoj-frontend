@@ -153,6 +153,10 @@ export default function ProblemDetailPage() {
     if (assignmentId) {
       data.assignment_id = Number(assignmentId);
     }
+    const problemSetId = searchParams.get("problem_set_id");
+    if (problemSetId) {
+      data.problem_set_id = Number(problemSetId);
+    }
     const res = await api.post("/api/submission", data);
     const result = res.data;
     const { submissionNo } = result.data;
