@@ -39,6 +39,15 @@ function createId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function createSessionUuid() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random()
+    .toString(16)
+    .slice(2)}`;
+}
+
 function extractCitations(content: string): CitationItem[] {
   const matches = [...content.matchAll(/\[(\d+)\]/g)];
   const uniqueNumbers = [...new Set(matches.map((item) => Number(item[1])))].sort(
@@ -185,6 +194,24 @@ export default function AgentChatPage() {
     textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 140)}px`;
   }
 
+  function handleIndependentWheel(event: React.WheelEvent<HTMLDivElement>) {
+    const el = event.currentTarget;
+    const atTop = el.scrollTop <= 0;
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+    const scrollingUp = event.deltaY < 0;
+    const scrollingDown = event.deltaY > 0;
+
+    // 始终由当前容器接管滚动，防止滚动链传递到其他栏或父容器
+    event.preventDefault();
+    event.stopPropagation();
+
+    if ((scrollingUp && atTop) || (scrollingDown && atBottom)) {
+      return;
+    }
+
+    el.scrollTop += event.deltaY;
+  }
+
   function createNewChat() {
     const tempId = createId("temp-session");
     const newSession: AgentChatSession = {
@@ -314,11 +341,12 @@ export default function AgentChatPage() {
 
     try {
       const isTempSession = targetSessionId.startsWith("temp-session");
+      const requestSessionId = isTempSession ? createSessionUuid() : targetSessionId;
       const { message, sessionId: returnedSessionId } = await askAgent({
         userId,
         query: trimmed,
         jwt,
-        sessionId: isTempSession ? undefined : targetSessionId,
+        sessionId: requestSessionId,
         onContent: (fullText) => {
           setSessions((previous) =>
             previous.map((session) =>
@@ -339,7 +367,7 @@ export default function AgentChatPage() {
         },
       });
 
-      const finalSessionId = returnedSessionId || targetSessionId;
+      const finalSessionId = returnedSessionId || requestSessionId || targetSessionId;
       loadedSessionIdsRef.current.add(finalSessionId);
       setCurrentSessionId(finalSessionId);
       setSessions((previous) => {
@@ -392,14 +420,14 @@ export default function AgentChatPage() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 w-full bg-background">
+    <div className="flex h-full min-h-0 flex-1 w-full overflow-hidden bg-background">
       <Helmet>
         <title>智能体对话 - SeuOJ</title>
       </Helmet>
       <div className="flex min-h-0 flex-1 overflow-hidden border-t bg-card">
         <aside
           style={{ width: leftSidebarWidth }}
-          className="flex shrink-0 flex-col border-r bg-muted/35"
+          className="flex shrink-0 flex-col overflow-hidden border-r bg-muted/35"
         >
           <div className="border-b p-4">
             <div className="mb-3 flex items-center justify-between">
@@ -416,16 +444,12 @@ export default function AgentChatPage() {
                 <Plus className="h-4 w-4" />
               </button>
             </div>
-            <button
-              type="button"
-              onClick={createNewChat}
-              className="w-full rounded-md border border-dashed bg-background px-3 py-2 text-left text-sm transition hover:border-primary hover:text-primary"
-            >
-              开始新对话
-            </button>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
+          <div
+            onWheel={handleIndependentWheel}
+            className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-3"
+          >
             {!isAuthenticated ? (
               <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
                 请先登录后使用智能体对话
@@ -492,7 +516,7 @@ export default function AgentChatPage() {
           className="w-1 shrink-0 cursor-col-resize bg-border transition hover:bg-primary/50"
         />
 
-        <main className="flex min-w-0 flex-1 flex-col">
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {currentMessages.length === 0 ? (
             <div className="flex min-h-0 flex-1 items-center justify-center p-8">
               <div className="max-w-3xl text-center">
@@ -515,7 +539,11 @@ export default function AgentChatPage() {
               </div>
             </div>
           ) : (
-            <div ref={messagesContainerRef} className="min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
+            <div
+              ref={messagesContainerRef}
+              onWheel={handleIndependentWheel}
+              className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-6"
+            >
               {currentMessages.map((message) => {
                 const citations = message.role === "assistant" ? mapMessageCitations(message) : [];
                 return (

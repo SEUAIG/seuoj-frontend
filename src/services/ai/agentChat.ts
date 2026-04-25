@@ -145,7 +145,7 @@ export async function askAgent(params: {
   sessionId?: string;
   onContent?: (fullText: string, deltaText: string) => void;
 }) {
-  const { query, jwt, sessionId, onContent } = params;
+  const { userId, query, jwt, sessionId, onContent } = params;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), RAG_ANSWER_TIMEOUT_MS);
@@ -154,7 +154,11 @@ export async function askAgent(params: {
     response = await fetch(RAG_STREAM_ENDPOINT, {
       method: "POST",
       headers: buildJsonHeaders(jwt),
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({
+        query,
+        user_id: String(userId),
+        session_id: sessionId ?? null,
+      }),
       signal: controller.signal,
     });
   } catch (error) {
