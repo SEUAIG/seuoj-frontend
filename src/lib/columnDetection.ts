@@ -129,6 +129,57 @@ export function detectColumnMappings(headers: string[]): ColumnMapping[] {
     return mappings;
 }
 
+const MAX_SCAN_ROWS = 10;
+
+export function findHeaderRow(
+    rows: string[][]
+): { headerRowIndex: number; mappings: ColumnMapping[] } {
+    let bestIndex = 0;
+    let bestScore = -1;
+    let bestMappings: ColumnMapping[] = [];
+
+    const limit = Math.min(rows.length, MAX_SCAN_ROWS);
+    for (let i = 0; i < limit; i++) {
+        const row = rows[i];
+        if (!row || row.every((cell) => !String(cell ?? "").trim())) continue;
+
+        const headers = row.map((h) =>
+            String(h ?? "")
+                .replace(/^﻿/, "")
+                .trim()
+        );
+        const mappings = detectColumnMappings(headers);
+
+        const hasUsername = mappings.some(
+            (m) => m.mappedField === "username" && m.confidence !== "none"
+        );
+        if (!hasUsername) continue;
+
+        let score = 0;
+        for (const m of mappings) {
+            if (m.confidence === "high") score += 2;
+            else if (m.confidence === "medium") score += 1;
+        }
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestIndex = i;
+            bestMappings = mappings;
+        }
+    }
+
+    if (bestScore <= 0) {
+        const fallbackHeaders = (rows[0] || []).map((h) =>
+            String(h ?? "")
+                .replace(/^﻿/, "")
+                .trim()
+        );
+        return { headerRowIndex: 0, mappings: detectColumnMappings(fallbackHeaders) };
+    }
+
+    return { headerRowIndex: bestIndex, mappings: bestMappings };
+}
+
 export function validateMappings(
     mappings: ColumnMapping[],
     passwordMode: "assigned" | "random",

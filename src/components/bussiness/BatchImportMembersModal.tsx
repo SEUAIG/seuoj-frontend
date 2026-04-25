@@ -37,7 +37,7 @@ import {
 import * as XLSX from "xlsx";
 import ColumnMappingStep from "@/components/bussiness/ColumnMappingStep";
 import {
-    detectColumnMappings,
+    findHeaderRow,
     type ColumnMapping,
 } from "@/lib/columnDetection";
 
@@ -92,15 +92,22 @@ export default function BatchImportMembersModal({
         }
     };
 
-    const parseFileToRaw = (headers: string[], dataRows: string[][]) => {
-        const cleanedHeaders = headers.map((h) =>
+    const parseAllRows = (allRows: string[][]) => {
+        if (allRows.length < 2)
+            throw new Error("文件至少需要包含表头和一行数据");
+
+        const { headerRowIndex, mappings } = findHeaderRow(allRows);
+        const cleanedHeaders = allRows[headerRowIndex].map((h) =>
             String(h ?? "")
-                .replace(/^\uFEFF/, "")
+                .replace(/^﻿/, "")
                 .trim()
         );
         if (cleanedHeaders.length === 0 || cleanedHeaders.every((h) => !h)) {
             throw new Error("文件表头为空");
         }
+        const dataRows = allRows
+            .slice(headerRowIndex + 1)
+            .map((row) => row.map((cell) => String(cell ?? "")));
         const validRows = dataRows.filter((row) =>
             row.some((cell) => cell.trim())
         );
@@ -111,7 +118,7 @@ export default function BatchImportMembersModal({
 
         setRawHeaders(cleanedHeaders);
         setRawDataRows(validRows);
-        setColumnMappings(detectColumnMappings(cleanedHeaders));
+        setColumnMappings(mappings);
         setImportResult(null);
         setImportStep("mapping");
     };
@@ -121,12 +128,8 @@ export default function BatchImportMembersModal({
             .split(/\r?\n/)
             .map((l) => l.trim())
             .filter((l) => l.length > 0);
-        if (lines.length < 2) {
-            throw new Error("文件至少需要包含表头和一行数据");
-        }
-        const headers = lines[0].split(",");
-        const dataRows = lines.slice(1).map((l) => l.split(","));
-        parseFileToRaw(headers, dataRows);
+        const allRows = lines.map((l) => l.split(","));
+        parseAllRows(allRows);
     };
 
     const parseXLSX = (data: ArrayBuffer) => {
@@ -138,12 +141,8 @@ export default function BatchImportMembersModal({
             header: 1,
             defval: "",
         });
-        if (jsonData.length < 2) {
-            throw new Error("文件至少需要包含表头和一行数据");
-        }
-        const headers = jsonData[0].map(String);
-        const dataRows = jsonData.slice(1).map((row) => row.map(String));
-        parseFileToRaw(headers, dataRows);
+        const allRows = jsonData.map((row) => row.map(String));
+        parseAllRows(allRows);
     };
 
     const transformWithMappings = (
@@ -302,7 +301,7 @@ export default function BatchImportMembersModal({
             const csv = allRows.map((row) =>
                 row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
             ).join("\n");
-            const blob = new Blob(["\uFEFF" + csv], {
+            const blob = new Blob(["﻿" + csv], {
                 type: "text/csv;charset=utf-8;",
             });
             const url = URL.createObjectURL(blob);
@@ -314,7 +313,8 @@ export default function BatchImportMembersModal({
         }
     };
 
-    const formatHint = `第一行为表头，系统将自动识别列含义。支持中英文表头，列顺序不限，列名可使用下列任一写法。
+    const formatHint = `系统将自动识别表头行位置及列含义（即使表头前有标题行也能识别）。
+支持中英文表头，列顺序不限，列名可使用下列任一写法。
 
 支持的列名示例（可选其一）：
   学号/一卡通号：一卡通号, 一卡通, 学号, 学工号, username, student_id, student id, account id
