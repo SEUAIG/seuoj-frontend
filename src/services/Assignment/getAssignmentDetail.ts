@@ -29,6 +29,7 @@ export interface AssignmentDetailData {
   problem_count: number;
   member_count: number;
   avg_completion_rate: number | null;
+  can_write?: boolean;
   problems: ProblemItem[];
 }
 

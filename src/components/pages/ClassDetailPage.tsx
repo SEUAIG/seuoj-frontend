@@ -144,7 +144,7 @@ export default function ClassDetailPage() {
   } = useQuery({
     queryKey: ["classOverview", classId],
     queryFn: () => getClassOverview(classId),
-    enabled: !!id && activeTab === "overview",
+    enabled: !!id && canEdit && activeTab === "overview",
   });
 
   const overview = overviewData?.data;
@@ -280,7 +280,7 @@ export default function ClassDetailPage() {
         onValueChange={setActiveTab}
         className="flex-1 flex flex-col"
       >
-        <TabsList className="grid w-full grid-cols-6 max-w-3xl mb-4">
+        <TabsList className={`grid w-full ${canEdit ? "grid-cols-6" : "grid-cols-5"} max-w-3xl mb-4`}>
           <TabsTrigger value="homepage">
             <Home className="h-4 w-4 mr-1" />首页
           </TabsTrigger>
@@ -292,9 +292,11 @@ export default function ClassDetailPage() {
           </TabsTrigger>
           <TabsTrigger value="members">成员列表</TabsTrigger>
           <TabsTrigger value="contests">已关联比赛</TabsTrigger>
-          <TabsTrigger value="overview">
-            <BarChart3 className="h-4 w-4 mr-1" />学情概览
-          </TabsTrigger>
+          {canEdit && (
+            <TabsTrigger value="overview">
+              <BarChart3 className="h-4 w-4 mr-1" />学情概览
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Homepage tab (default) */}
@@ -318,12 +320,12 @@ export default function ClassDetailPage() {
 
         {/* Announcements tab */}
         <TabsContent value="announcements" className="!mt-0">
-          <AnnouncementList classId={classId} canEdit={true} />
+          <AnnouncementList classId={classId} canEdit={canEdit} />
         </TabsContent>
 
         {/* Assignments tab */}
         <TabsContent value="assignments" className="!mt-0">
-          <AssignmentList classId={classId} canEdit={true} />
+          <AssignmentList classId={classId} canEdit={canEdit} />
         </TabsContent>
 
         <TabsContent value="members" className="!mt-0">
@@ -521,6 +523,7 @@ export default function ClassDetailPage() {
           </Card>
         </TabsContent>
 
+        {canEdit && (
         <TabsContent value="overview" className="!mt-0">
           <Card className="flex-1 flex flex-col border-none shadow-none bg-transparent">
             <CardHeader className="flex flex-row items-center justify-between border-b px-0 pt-0 pb-4">
@@ -693,6 +696,7 @@ export default function ClassDetailPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        )}
       </Tabs>
 
       <Dialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>

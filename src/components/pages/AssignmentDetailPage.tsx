@@ -137,6 +137,7 @@ export default function AssignmentDetailPage() {
     enabled: !!classIdStr && !!assignmentIdStr,
   });
   const detail = detailResp?.data;
+  const canEdit = detail?.can_write ?? false;
 
   const {
     data: problemsResp,
@@ -154,7 +155,7 @@ export default function AssignmentDetailPage() {
   } = useQuery({
     queryKey: ["assignmentOverview", classId, assignmentId],
     queryFn: () => getAssignmentOverview(classId, assignmentId),
-    enabled: !!classIdStr && !!assignmentIdStr && activeTab === "statistics",
+    enabled: !!classIdStr && !!assignmentIdStr && canEdit && activeTab === "statistics",
   });
   const stats: AssignmentOverviewData | undefined = statsResp?.data;
 
@@ -210,6 +211,7 @@ export default function AssignmentDetailPage() {
             </div>
           </div>
         </div>
+        {canEdit && (
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -229,6 +231,7 @@ export default function AssignmentDetailPage() {
             删除
           </Button>
         </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -238,7 +241,7 @@ export default function AssignmentDetailPage() {
         onValueChange={setActiveTab}
         className="flex-1 flex flex-col"
       >
-        <TabsList className="grid w-full grid-cols-4 max-w-xl mb-4">
+        <TabsList className={`grid w-full ${canEdit ? "grid-cols-4" : "grid-cols-3"} max-w-xl mb-4`}>
           <TabsTrigger value="overview">
             <FileText className="h-4 w-4 mr-1" />
             概览
@@ -251,10 +254,12 @@ export default function AssignmentDetailPage() {
             <BookOpen className="h-4 w-4 mr-1" />
             提交记录
           </TabsTrigger>
-          <TabsTrigger value="statistics">
-            <BarChart3 className="h-4 w-4 mr-1" />
-            统计
-          </TabsTrigger>
+          {canEdit && (
+            <TabsTrigger value="statistics">
+              <BarChart3 className="h-4 w-4 mr-1" />
+              统计
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Tab: Overview */}
@@ -331,6 +336,7 @@ export default function AssignmentDetailPage() {
                   <Info className="h-5 w-5" />
                   作业介绍
                 </CardTitle>
+                {canEdit && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -339,6 +345,7 @@ export default function AssignmentDetailPage() {
                   <Pencil className="h-4 w-4 mr-1" />
                   编辑
                 </Button>
+                )}
               </CardHeader>
               <CardContent>
                 {detail.introduction ? (
@@ -348,6 +355,7 @@ export default function AssignmentDetailPage() {
                 ) : (
                   <div className="text-muted-foreground text-sm py-8 text-center">
                     暂未设置作业介绍
+                    {canEdit && (
                     <Button
                       variant="link"
                       className="ml-2 h-auto p-0"
@@ -355,6 +363,7 @@ export default function AssignmentDetailPage() {
                     >
                       点击添加
                     </Button>
+                    )}
                   </div>
                 )}
 
@@ -506,6 +515,7 @@ export default function AssignmentDetailPage() {
             </div>
           ) : (
             <div className="space-y-4">
+              {canEdit && (
               <div className="flex justify-end">
                 <Button
                   variant="outline"
@@ -525,6 +535,7 @@ export default function AssignmentDetailPage() {
                   编辑题目
                 </Button>
               </div>
+              )}
               {problems.length === 0 ? (
                 <div className="flex items-center justify-center min-h-[300px] text-muted-foreground">
                   暂无题目
@@ -591,6 +602,7 @@ export default function AssignmentDetailPage() {
         </TabsContent>
 
         {/* Tab: Statistics */}
+        {canEdit && (
         <TabsContent value="statistics" className="!mt-0">
           {isStatsLoading ? (
             <div className="flex items-center justify-center min-h-[300px]">
@@ -758,6 +770,7 @@ export default function AssignmentDetailPage() {
             </div>
           )}
         </TabsContent>
+        )}
       </Tabs>
 
       <AssignmentIntroEditorDialog
