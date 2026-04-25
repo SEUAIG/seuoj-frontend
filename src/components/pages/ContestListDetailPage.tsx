@@ -159,7 +159,7 @@ export default function ContestListDetailPage() {
     <div className="w-4/5 mx-auto py-6 space-y-6 min-h-screen">
       <Helmet>
         <title>
-          {data.title ? `${data.title} - 比赛详情` : "比赛详情"} - SeuOJ
+          {data.title ? `${data.title} - 比赛详情` : "比赛详情"} - SEUOJ
         </title>
       </Helmet>
       <div className="flex items-center gap-4">

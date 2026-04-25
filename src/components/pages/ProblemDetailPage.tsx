@@ -128,7 +128,7 @@ export default function ProblemDetailPage() {
   return (
     <>
       <Helmet>
-        <title>{`#${id}. ${title} - SeuOJ`}</title>
+        <title>{`#${id}. ${title} - SEUOJ`}</title>
       </Helmet>
       <div className="h-[calc(100vh-5.5rem)] w-full max-w-full overflow-x-hidden overflow-y-hidden flex flex-col lg:flex-row bg-white border-t border-gray-200 relative">
         {hide ? (

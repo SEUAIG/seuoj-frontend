@@ -21,7 +21,7 @@ export default function EvaluationPage() {
   return (
     <div className="w-4/5 mx-auto py-6 space-y-6 min-h-screen overflow-x-hidden">
       <Helmet>
-        <title>{titleParts.join(" - ")} - SeuOJ</title>
+        <title>{titleParts.join(" - ")} - SEUOJ</title>
       </Helmet>
 
       {/* header */}

@@ -120,7 +120,7 @@ export default function ContestProblemDetailPage() {
   return (
     <>
       <Helmet>
-        <title>{`${pid}. ${title} - SeuOJ`}</title>
+        <title>{`${pid}. ${title} - SEUOJ`}</title>
       </Helmet>
       <div className="h-[calc(100vh-5.5rem)] w-full max-w-full overflow-x-hidden overflow-y-hidden flex flex-col lg:flex-row bg-white border-t border-gray-200 relative">
         {hide ? (

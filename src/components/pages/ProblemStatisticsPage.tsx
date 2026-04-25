@@ -84,7 +84,7 @@ export default function ProblemStatisticsPage() {
   return (
     <>
       <Helmet>
-        <title>{`#${id} 统计 - SeuOJ`}</title>
+        <title>{`#${id} 统计 - SEUOJ`}</title>
       </Helmet>
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-5xl mx-auto px-6 space-y-6">

@@ -226,7 +226,7 @@ export default function ClassDetailPage() {
   return (
     <div className="container mx-auto py-8 min-h-screen flex flex-col">
       <Helmet>
-        <title>{classDetail?.name || "班级详情"} - SeuOJ</title>
+        <title>{classDetail?.name || "班级详情"} - SEUOJ</title>
       </Helmet>
 
       <div className="flex items-center justify-between mb-6">

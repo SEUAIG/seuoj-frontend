@@ -6,7 +6,7 @@ export default function LoginPage() {
   return (
     <>
       <Helmet>
-        <title>登录 - SeuOJ</title>
+        <title>登录 - SEUOJ</title>
       </Helmet>
       <div className='flex flex-col justify-center items-center pt-[5vh] pb-[10vh] px-4 w-full' >
         <div className="w-[40vw] min-w-[360px] max-w-[550px] space-y-6">

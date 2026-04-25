@@ -422,7 +422,7 @@ export default function AgentChatPage() {
   return (
     <div className="flex h-full min-h-0 flex-1 w-full overflow-hidden bg-background">
       <Helmet>
-        <title>智能体对话 - SeuOJ</title>
+        <title>智能体对话 - SEUOJ</title>
       </Helmet>
       <div className="flex min-h-0 flex-1 overflow-hidden border-t bg-card">
         <aside

@@ -350,7 +350,7 @@ export default function KnowledgeGraphPage() {
   return (
     <div className="flex min-h-0 flex-1 bg-background">
       <Helmet>
-        <title>知识图谱 - SeuOJ</title>
+        <title>知识图谱 - SEUOJ</title>
       </Helmet>
 
       <div className="flex min-h-0 flex-1 overflow-hidden border-t bg-card">

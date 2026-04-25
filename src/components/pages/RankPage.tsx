@@ -15,7 +15,7 @@ export default function RankPage() {
   return (
     <div className="w-4/5 mx-auto">
       <Helmet>
-        <title>排名 - SeuOJ</title>
+        <title>排名 - SEUOJ</title>
       </Helmet>
       <SearchBar
         value={keyword}

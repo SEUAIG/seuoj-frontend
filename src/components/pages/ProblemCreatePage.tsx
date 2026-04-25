@@ -6,7 +6,7 @@ export default function ProblemCreatePage() {
   return (
     <div className="w-4/5 mx-auto py-6">
       <Helmet>
-        <title>新建题目 - SeuOJ</title>
+        <title>新建题目 - SEUOJ</title>
       </Helmet>
       <div className="mb-6">
         <h1 className="text-3xl font-bold">新建题目</h1>

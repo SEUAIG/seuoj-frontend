@@ -186,7 +186,7 @@ export default function AssignmentDetailPage() {
   return (
     <div className="container mx-auto py-8 min-h-screen flex flex-col">
       <Helmet>
-        <title>{detail.title || "作业详情"} - SeuOJ</title>
+        <title>{detail.title || "作业详情"} - SEUOJ</title>
       </Helmet>
 
       {/* Header */}

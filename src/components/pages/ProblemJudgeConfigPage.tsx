@@ -825,7 +825,7 @@ export default function ProblemJudgeConfigPage() {
   return (
     <div className="w-4/5 mx-auto py-6">
       <Helmet>
-        <title>{`配置数据点 #${id} - SeuOJ`}</title>
+        <title>{`配置数据点 #${id} - SEUOJ`}</title>
       </Helmet>
 
       <div className="flex items-center gap-4 mb-6">

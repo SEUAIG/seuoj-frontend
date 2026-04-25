@@ -6,7 +6,7 @@ export default function SignupPage() {
   return (
     <>
       <Helmet>
-        <title>注册 - SeuOJ</title>
+        <title>注册 - SEUOJ</title>
       </Helmet>
       <div className='flex flex-col justify-center items-center pt-[5vh] pb-[10vh] px-4 w-full'>
         <div className="w-[40vw] min-w-[360px] max-w-[550px] space-y-6">

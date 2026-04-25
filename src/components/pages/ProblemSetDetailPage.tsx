@@ -74,7 +74,7 @@ export default function ProblemSetDetailPage() {
     <div className="w-4/5 mx-auto py-6 space-y-6 min-h-screen">
       <Helmet>
         <title>
-          {detail.title ? `${detail.title} - 题单详情` : "题单详情"} - SeuOJ
+          {detail.title ? `${detail.title} - 题单详情` : "题单详情"} - SEUOJ
         </title>
       </Helmet>
       {/* 顶部导航 */}

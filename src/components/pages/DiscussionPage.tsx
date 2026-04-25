@@ -6,7 +6,7 @@ export default function DiscussionPage() {
   return (
     <div>
       <Helmet>
-        <title>讨论 - SeuOJ</title>
+        <title>讨论 - SEUOJ</title>
       </Helmet>
       DiscussionPage
       <AIChat/>

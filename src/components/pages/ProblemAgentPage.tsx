@@ -321,7 +321,7 @@ export default function ProblemAgentPage() {
   return (
     <>
       <Helmet>
-        <title>{`AI 编程练习 #${selectedProblemId || "-"} - SeuOJ`}</title>
+        <title>{`AI 编程练习 #${selectedProblemId || "-"} - SEUOJ`}</title>
       </Helmet>
       <div className="h-[calc(100vh-5.5rem)] w-full max-w-full overflow-x-hidden overflow-y-hidden flex flex-col lg:flex-row bg-white border-t border-gray-200 relative">
         <div className="w-full lg:w-1/2 h-full max-w-full min-w-0 flex-shrink overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent border-r border-gray-200">

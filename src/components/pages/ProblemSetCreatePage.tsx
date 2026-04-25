@@ -51,7 +51,7 @@ export default function ProblemSetCreatePage() {
     return (
         <div className="container mx-auto py-10 max-w-3xl">
             <Helmet>
-                <title>创建题单 - SeuOJ</title>
+                <title>创建题单 - SEUOJ</title>
             </Helmet>
             <div className="flex items-center gap-4 mb-8">
                 <Button variant="ghost" size="icon" onClick={() => nav(-1)}>

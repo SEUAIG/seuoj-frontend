@@ -6,7 +6,7 @@ export default function Logo() {
   return (
     <div className='flex items-center justify-center cursor-pointer' onClick={()=>{nav("/home")}}>
       <img src={LogoSEU} alt='seuLogo' className='w-[30px] h-[30px] cursor-pointer'/>
-      <span className='font-bold text-xl mx-2 cursor-pointer'>SeuOJ</span>
+      <span className='font-bold text-xl mx-2 cursor-pointer'>SEUOJ</span>
     </div>
   )
 }

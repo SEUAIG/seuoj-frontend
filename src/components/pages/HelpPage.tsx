@@ -38,7 +38,7 @@ export default function HelpPage() {
   return (
     <div className="w-4/5 mx-auto py-6 space-y-6 min-h-screen overflow-x-hidden">
       <Helmet>
-        <title>帮助 - SeuOJ</title>
+        <title>帮助 - SEUOJ</title>
       </Helmet>
 
       <div className="flex items-center justify-between">

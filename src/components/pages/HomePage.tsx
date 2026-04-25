@@ -17,7 +17,7 @@ export default function HomePage() {
   return (
     <div className="container mx-auto py-8 px-4">
       <Helmet>
-        <title>首页 - SeuOJ</title>
+        <title>首页 - SEUOJ</title>
       </Helmet>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -28,7 +28,7 @@ export default function HomePage() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                  {isAuthenticated ? `欢迎回来, ${user?.nickname || user?.username}` : "Welcome to SeuOJ"}
+                  {isAuthenticated ? `欢迎回来, ${user?.nickname || user?.username}` : "Welcome to SEUOJ"}
                 </h1>
                 <p className="text-muted-foreground mt-1">
                   {isAuthenticated

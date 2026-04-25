@@ -156,7 +156,7 @@ export default function PersonalPage() {
   return (
     <>
       <Helmet>
-        <title>个人主页 - SeuOJ</title>
+        <title>个人主页 - SEUOJ</title>
       </Helmet>
       <div className="w-4/5 mx-auto py-6">
         <section className="relative overflow-hidden rounded-2xl border">

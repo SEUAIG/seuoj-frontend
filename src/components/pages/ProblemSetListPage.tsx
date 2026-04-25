@@ -113,7 +113,7 @@ export default function ProblemSetListPage() {
     return (
         <div className="w-4/5 mx-auto py-6 space-y-6 min-h-screen overflow-x-hidden">
             <Helmet>
-                <title>题单 - SeuOJ</title>
+                <title>题单 - SEUOJ</title>
             </Helmet>
             <div className="flex items-center justify-between">
                 <div>
