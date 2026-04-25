@@ -15,6 +15,7 @@ export interface ClassDetailData {
   intro_attachments: ClassIntroAttachment[];
   creator_id: number;
   is_public: boolean;
+  can_write?: boolean;
 }
 
 export interface ClassDetailResponse {

@@ -187,24 +187,28 @@ export default function ClassPage() {
                 </CardContent>
                 {isAuthenticated && (
                 <CardFooter className="flex justify-end gap-2 pt-2 pb-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                    onClick={(e) => handleUpdateClick(e, item)}
-                  >
-                    <Edit className="w-4 h-4 mr-1" />
-                    更新
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-                    onClick={(e) => handleDeleteClick(e, item)}
-                  >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    删除
-                  </Button>
+                  {item.can_write && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                        onClick={(e) => handleUpdateClick(e, item)}
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        更新
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        onClick={(e) => handleDeleteClick(e, item)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        删除
+                      </Button>
+                    </>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"

@@ -5,6 +5,7 @@ export interface ClassItem {
   name: string;
   description: string;
   is_public: boolean;
+  can_write?: boolean;
 }
 
 export interface ClassPageResponse {

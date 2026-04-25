@@ -89,6 +89,7 @@ export default function ClassDetailPage() {
     enabled: !!id,
   });
   const classDetail = classDetailResponse?.data;
+  const canEdit = classDetail?.can_write ?? false;
 
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["classMemberPage", classId, page, size],
@@ -244,31 +245,33 @@ export default function ClassDetailPage() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {activeTab === "members" && (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => setIsBatchImportModalOpen(true)}
-              >
-                <Upload className="h-4 w-4 mr-2" />批量导入
+        {canEdit && (
+          <div className="flex items-center gap-2">
+            {activeTab === "members" && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsBatchImportModalOpen(true)}
+                >
+                  <Upload className="h-4 w-4 mr-2" />批量导入
+                </Button>
+                <Button onClick={() => setIsAddMemberModalOpen(true)}>
+                  <UserPlus className="h-4 w-4 mr-2" />添加成员
+                </Button>
+              </>
+            )}
+            {activeTab === "contests" && (
+              <Button onClick={() => setIsLinkModalOpen(true)}>
+                <LinkIcon className="h-4 w-4 mr-2" />关联比赛
               </Button>
-              <Button onClick={() => setIsAddMemberModalOpen(true)}>
-                <UserPlus className="h-4 w-4 mr-2" />添加成员
+            )}
+            {activeTab === "assignments" && (
+              <Button onClick={() => setIsCreateAssignmentOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />新建作业
               </Button>
-            </>
-          )}
-          {activeTab === "contests" && (
-            <Button onClick={() => setIsLinkModalOpen(true)}>
-              <LinkIcon className="h-4 w-4 mr-2" />关联比赛
-            </Button>
-          )}
-          {activeTab === "assignments" && (
-            <Button onClick={() => setIsCreateAssignmentOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />新建作业
-            </Button>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
       <Tabs
@@ -300,7 +303,7 @@ export default function ClassDetailPage() {
             <ClassHomepage
               classId={classId}
               classDetail={classDetail}
-              canEdit={true}
+              canEdit={canEdit}
               onRefresh={() => {
                 refetchClassDetail();
                 queryClient.invalidateQueries({ queryKey: ["classOverview", classId] });
@@ -365,12 +368,14 @@ export default function ClassDetailPage() {
                           <th scope="col" className="px-6 py-4 font-medium">
                             加入时间
                           </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-4 font-medium text-right"
-                          >
-                            操作
-                          </th>
+                          {canEdit && (
+                            <th
+                              scope="col"
+                              className="px-6 py-4 font-medium text-right"
+                            >
+                              操作
+                            </th>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="divide-y">
@@ -394,17 +399,19 @@ export default function ClassDetailPage() {
                                 )
                                 : "-"}
                             </td>
-                            <td className="px-6 py-4 text-right">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => handleRemoveClick(member)}
-                                title="移除成员"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </td>
+                            {canEdit && (
+                              <td className="px-6 py-4 text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => handleRemoveClick(member)}
+                                  title="移除成员"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>
@@ -448,12 +455,14 @@ export default function ClassDetailPage() {
                   <p className="text-muted-foreground text-lg mb-4">
                     暂未关联任何比赛
                   </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsLinkModalOpen(true)}
-                  >
-                    立即关联
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsLinkModalOpen(true)}
+                    >
+                      立即关联
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div
@@ -481,15 +490,17 @@ export default function ClassDetailPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50 z-10"
-                            onClick={(e) => handleUnlinkClick(e, contest)}
-                            title="解除关联"
-                          >
-                            <Unlink className="h-4 w-4" />
-                          </Button>
+                          {canEdit && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 z-10"
+                              onClick={(e) => handleUnlinkClick(e, contest)}
+                              title="解除关联"
+                            >
+                              <Unlink className="h-4 w-4" />
+                            </Button>
+                          )}
                           <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                         </div>
                       </div>
