@@ -41,7 +41,7 @@ export default function EvaluationPage() {
         </div>
       </div>
 
-      <SubmissionListPanel />
+      <SubmissionListPanel pid={pidParam} />
     </div>
   );
 }

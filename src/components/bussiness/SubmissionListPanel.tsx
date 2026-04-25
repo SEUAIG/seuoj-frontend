@@ -135,11 +135,13 @@ function formatTime(iso: string | null) {
 interface SubmissionListPanelProps {
   assignmentId?: number;
   queryKeyPrefix?: string;
+  pid?: string;
 }
 
 export default function SubmissionListPanel({
   assignmentId,
   queryKeyPrefix = "submissionPage",
+  pid: initialPid = "",
 }: SubmissionListPanelProps) {
   const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
@@ -150,9 +152,9 @@ export default function SubmissionListPanel({
 
   const [current, setCurrent] = useState(1);
   const size = 20;
-  const [pidInput, setPidInput] = useState("");
+  const [pidInput, setPidInput] = useState(initialPid);
   const [usernameInput, setUsernameInput] = useState("");
-  const [pidFilter, setPidFilter] = useState("");
+  const [pidFilter, setPidFilter] = useState(initialPid);
   const [usernameFilter, setUsernameFilter] = useState("");
   const [verdictFilter, setVerdictFilter] = useState("");
   const [languageFilter, setLanguageFilter] = useState("");
