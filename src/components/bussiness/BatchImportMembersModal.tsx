@@ -40,6 +40,10 @@ import {
     findHeaderRow,
     type ColumnMapping,
 } from "@/lib/columnDetection";
+import {
+    getBatchImportPreviewPassword,
+    resolveBatchImportPassword,
+} from "@/lib/batchImportPassword";
 
 type FileType = "csv" | "xlsx" | null;
 type ImportStep = "config" | "mapping" | "preview" | "result";
@@ -176,13 +180,16 @@ export default function BatchImportMembersModal({
                 passwordIdx !== undefined
                     ? (cols[passwordIdx] || "").trim()
                     : "";
-            const password = providedPassword || `321${studentId}`;
+            const resolvedPassword = resolveBatchImportPassword(
+                studentId,
+                providedPassword
+            );
 
             rows.push({
                 student_id: studentId,
                 name,
-                password,
-                password_source: providedPassword ? "provided" : "generated",
+                password: resolvedPassword.password,
+                password_source: resolvedPassword.source,
             });
         }
 
@@ -502,9 +509,10 @@ export default function BatchImportMembersModal({
                                                 {row.student_id}@seu.edu.cn
                                             </TableCell>
                                             <TableCell className="font-mono text-xs">
-                                                {row.password_source === "provided"
-                                                    ? "••••（文件已提供）"
-                                                    : row.password}
+                                                {getBatchImportPreviewPassword(
+                                                    row.password || "",
+                                                    row.password_source
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     ))}

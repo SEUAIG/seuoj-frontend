@@ -50,10 +50,17 @@ import {
     findHeaderRow,
     type ColumnMapping,
 } from "@/lib/columnDetection";
+import {
+    getBatchImportPreviewPassword,
+    resolveBatchImportPassword,
+    type BatchImportPasswordSource,
+} from "@/lib/batchImportPassword";
 
-type PasswordMode = "assigned" | "random";
 type FileType = "csv" | "xlsx" | null;
 type ImportStep = "config" | "mapping" | "preview" | "result";
+type PreviewImportUserRow = BatchImportUserRow & {
+    password_source: BatchImportPasswordSource;
+};
 
 export default function AdminUserManagementPage() {
     // User list state
@@ -69,11 +76,10 @@ export default function AdminUserManagementPage() {
     // Batch import state
     const [importDialogOpen, setImportDialogOpen] = useState(false);
     const [importStep, setImportStep] = useState<ImportStep>("config");
-    const [previewData, setPreviewData] = useState<BatchImportUserRow[]>([]);
+    const [previewData, setPreviewData] = useState<PreviewImportUserRow[]>([]);
     const [importResult, setImportResult] = useState<BatchImportResult | null>(null);
     const [importing, setImporting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [passwordMode, setPasswordMode] = useState<PasswordMode>("assigned");
     const [sendEmail, setSendEmail] = useState(false);
     const [selectedFileType, setSelectedFileType] = useState<FileType>(null);
     const [uploadedFileType, setUploadedFileType] = useState<FileType>(null);
@@ -123,7 +129,6 @@ export default function AdminUserManagementPage() {
         setImportStep("config");
         setPreviewData([]);
         setImportResult(null);
-        setPasswordMode("assigned");
         setSendEmail(false);
         setSelectedFileType(null);
         setUploadedFileType(null);
@@ -194,7 +199,7 @@ export default function AdminUserManagementPage() {
         dataRows: string[][],
         mappings: ColumnMapping[],
         emailSuffix: string
-    ): BatchImportUserRow[] => {
+    ): PreviewImportUserRow[] => {
         const fieldToIndex = new Map<string, number>();
         for (const m of mappings) {
             if (m.mappedField !== "ignore") {
@@ -209,7 +214,7 @@ export default function AdminUserManagementPage() {
         if (usernameIdx === undefined)
             throw new Error("未映射用户名/学号列");
 
-        const rows: BatchImportUserRow[] = [];
+        const rows: PreviewImportUserRow[] = [];
         for (const cols of dataRows) {
             const username = (cols[usernameIdx] || "").trim();
             if (!username) continue;
@@ -230,19 +235,14 @@ export default function AdminUserManagementPage() {
                 passwordIdx !== undefined
                     ? (cols[passwordIdx] || "").trim()
                     : "";
-
-            if (passwordMode === "assigned" && !password) {
-                throw new Error(
-                    `指定密码模式下，用户「${username}」的密码不能为空`
-                );
-            }
+            const resolvedPassword = resolveBatchImportPassword(username, password);
 
             rows.push({
                 username,
                 nickname: nickname || undefined,
                 email,
-                password:
-                    passwordMode === "assigned" ? password : undefined,
+                password: resolvedPassword.password,
+                password_source: resolvedPassword.source,
             });
         }
 
@@ -306,9 +306,14 @@ export default function AdminUserManagementPage() {
         setImporting(true);
         try {
             const res = await batchImportUsers({
-                passwordMode,
+                passwordMode: "assigned",
                 sendEmail,
-                users: previewData,
+                users: previewData.map((row) => ({
+                    username: row.username,
+                    nickname: row.nickname,
+                    email: row.email,
+                    password: row.password,
+                })),
             });
             if (res.code === 0) {
                 setImportResult(res.data);
@@ -384,7 +389,7 @@ export default function AdminUserManagementPage() {
   用户名/学号：用户名, 学号, 学工号, username, student_id, student id, account id
   昵称/姓名：昵称, 姓名, 名字, name, full name, nickname, 真实姓名
   邮箱（可选）：邮箱, 电子邮箱, email, e-mail（未提供将自动推导）
-  密码（可选）：密码, 初始密码, password, pwd`;
+  密码（可选）：密码, 初始密码, password, pwd（留空将按规则自动生成：321+用户名）`;
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -571,35 +576,6 @@ export default function AdminUserManagementPage() {
                     {/* Step 1: Config */}
                     {importStep === "config" && (
                         <div className="flex-1 overflow-auto space-y-5 py-2">
-                            {/* Password mode */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium">密码模式</label>
-                                <div className="flex items-center gap-4">
-                                    <label className="flex items-center gap-1.5 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="dlgPasswordMode"
-                                            value="assigned"
-                                            checked={passwordMode === "assigned"}
-                                            onChange={() => setPasswordMode("assigned")}
-                                            className="accent-primary"
-                                        />
-                                        <span className="text-sm">指定密码</span>
-                                    </label>
-                                    <label className="flex items-center gap-1.5 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="dlgPasswordMode"
-                                            value="random"
-                                            checked={passwordMode === "random"}
-                                            onChange={() => setPasswordMode("random")}
-                                            className="accent-primary"
-                                        />
-                                        <span className="text-sm">随机生成</span>
-                                    </label>
-                                </div>
-                            </div>
-
                             {/* Send email toggle */}
                             <div>
                                 <label className="flex items-center gap-2 cursor-pointer">
@@ -678,7 +654,8 @@ export default function AdminUserManagementPage() {
                             headers={rawHeaders}
                             sampleRows={rawDataRows.slice(0, 3)}
                             initialMappings={columnMappings}
-                            passwordMode={passwordMode}
+                            passwordMode="assigned"
+                            requirePasswordMapping={false}
                             onConfirm={(confirmedMappings, emailSuffix) => {
                                 try {
                                     const rows = transformWithMappings(
@@ -712,7 +689,7 @@ export default function AdminUserManagementPage() {
                         <div className="flex-1 overflow-auto space-y-3">
                             <p className="text-sm text-muted-foreground">
                                 共 {previewData.length} 条记录待导入
-                                {passwordMode === "random" && "（密码将随机生成）"}
+                                （密码规则：文件有值则沿用，否则自动生成 321+用户名）
                                 {sendEmail && "，导入后将发送邮件通知"}
                             </p>
                             <div className="border rounded-lg max-h-[400px] overflow-auto">
@@ -723,9 +700,7 @@ export default function AdminUserManagementPage() {
                                             <TableHead>用户名</TableHead>
                                             <TableHead>昵称</TableHead>
                                             <TableHead>邮箱</TableHead>
-                                            {passwordMode === "assigned" && (
-                                                <TableHead>密码</TableHead>
-                                            )}
+                                            <TableHead>密码</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -737,13 +712,12 @@ export default function AdminUserManagementPage() {
                                                     {row.nickname || "-"}
                                                 </TableCell>
                                                 <TableCell>{row.email}</TableCell>
-                                                {passwordMode === "assigned" && (
-                                                    <TableCell className="font-mono text-xs">
-                                                        {"•".repeat(
-                                                            Math.min(row.password?.length || 0, 12)
-                                                        )}
-                                                    </TableCell>
-                                                )}
+                                                <TableCell className="font-mono text-xs">
+                                                    {getBatchImportPreviewPassword(
+                                                        row.password || "",
+                                                        row.password_source
+                                                    )}
+                                                </TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
