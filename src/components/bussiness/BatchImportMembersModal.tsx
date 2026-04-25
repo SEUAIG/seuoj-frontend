@@ -41,9 +41,11 @@ import {
     type ColumnMapping,
 } from "@/lib/columnDetection";
 
-type PasswordMode = "assigned" | "random";
 type FileType = "csv" | "xlsx" | null;
 type ImportStep = "config" | "mapping" | "preview" | "result";
+type PreviewStudentRow = StudentRow & {
+    password_source: "provided" | "generated";
+};
 
 interface Props {
     isOpen: boolean;
@@ -59,13 +61,12 @@ export default function BatchImportMembersModal({
     onSuccess,
 }: Props) {
     const [importStep, setImportStep] = useState<ImportStep>("config");
-    const [previewData, setPreviewData] = useState<StudentRow[]>([]);
+    const [previewData, setPreviewData] = useState<PreviewStudentRow[]>([]);
     const [importResult, setImportResult] =
         useState<ClassBatchImportResult | null>(null);
     const [importing, setImporting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [passwordMode, setPasswordMode] = useState<PasswordMode>("random");
-    const [sendEmail, setSendEmail] = useState(true);
+    const [sendEmail, setSendEmail] = useState(false);
     const [selectedFileType, setSelectedFileType] = useState<FileType>(null);
     const [uploadedFileType, setUploadedFileType] = useState<FileType>(null);
     const [rawHeaders, setRawHeaders] = useState<string[]>([]);
@@ -76,8 +77,7 @@ export default function BatchImportMembersModal({
         setImportStep("config");
         setPreviewData([]);
         setImportResult(null);
-        setPasswordMode("random");
-        setSendEmail(true);
+        setSendEmail(false);
         setSelectedFileType(null);
         setUploadedFileType(null);
         setRawHeaders([]);
@@ -93,7 +93,14 @@ export default function BatchImportMembersModal({
     };
 
     const parseFileToRaw = (headers: string[], dataRows: string[][]) => {
-        if (headers.length === 0) throw new Error("文件表头为空");
+        const cleanedHeaders = headers.map((h) =>
+            String(h ?? "")
+                .replace(/^\uFEFF/, "")
+                .trim()
+        );
+        if (cleanedHeaders.length === 0 || cleanedHeaders.every((h) => !h)) {
+            throw new Error("文件表头为空");
+        }
         const validRows = dataRows.filter((row) =>
             row.some((cell) => cell.trim())
         );
@@ -102,9 +109,9 @@ export default function BatchImportMembersModal({
         if (validRows.length > 500)
             throw new Error("单次最多导入500个学生");
 
-        setRawHeaders(headers);
+        setRawHeaders(cleanedHeaders);
         setRawDataRows(validRows);
-        setColumnMappings(detectColumnMappings(headers));
+        setColumnMappings(detectColumnMappings(cleanedHeaders));
         setImportResult(null);
         setImportStep("mapping");
     };
@@ -143,7 +150,7 @@ export default function BatchImportMembersModal({
         dataRows: string[][],
         mappings: ColumnMapping[],
         emailSuffix: string
-    ): StudentRow[] => {
+    ): PreviewStudentRow[] => {
         const fieldToIndex = new Map<string, number>();
         for (const m of mappings) {
             if (m.mappedField !== "ignore") {
@@ -157,7 +164,7 @@ export default function BatchImportMembersModal({
         if (usernameIdx === undefined)
             throw new Error("未映射用户名/学号列");
 
-        const rows: StudentRow[] = [];
+        const rows: PreviewStudentRow[] = [];
         for (const cols of dataRows) {
             const studentId = (cols[usernameIdx] || "").trim();
             if (!studentId) continue;
@@ -166,21 +173,17 @@ export default function BatchImportMembersModal({
                 nicknameIdx !== undefined
                     ? (cols[nicknameIdx] || "").trim()
                     : "";
-            const password =
+            const providedPassword =
                 passwordIdx !== undefined
                     ? (cols[passwordIdx] || "").trim()
                     : "";
-
-            if (passwordMode === "assigned" && !password) {
-                throw new Error(
-                    `指定密码模式下，学生「${name}」(${studentId}) 的密码不能为空`
-                );
-            }
+            const password = providedPassword || `321${studentId}`;
 
             rows.push({
                 student_id: studentId,
                 name,
-                password: passwordMode === "assigned" ? password : undefined,
+                password,
+                password_source: providedPassword ? "provided" : "generated",
             });
         }
 
@@ -245,9 +248,13 @@ export default function BatchImportMembersModal({
         setImporting(true);
         try {
             const res = await batchImportClassMembers(classId, {
-                password_mode: passwordMode,
+                password_mode: "assigned",
                 send_email: sendEmail,
-                students: previewData,
+                students: previewData.map((row) => ({
+                    student_id: row.student_id,
+                    name: row.name,
+                    password: row.password,
+                })),
             });
             if (res.code === 0) {
                 setImportResult(res.data);
@@ -307,13 +314,14 @@ export default function BatchImportMembersModal({
         }
     };
 
-    const formatHint = `第一行为表头，系统将自动识别列含义。支持中英文表头，列顺序不限。
+    const formatHint = `第一行为表头，系统将自动识别列含义。支持中英文表头，列顺序不限，列名可使用下列任一写法。
 
-支持的列名示例：
-  学号/一卡通号：一卡通号, 学号, username, student_id
-  姓名：姓名, 名字, name, 昵称
-  密码（可选）：密码, password
-  邮箱自动推导为「一卡通号@seu.edu.cn」`;
+支持的列名示例（可选其一）：
+  学号/一卡通号：一卡通号, 一卡通, 学号, 学工号, username, student_id, student id, account id
+  姓名：姓名, 名字, name, full name, student name, nickname, 真实姓名
+  密码（可选）：密码, 初始密码, password, pwd（留空将按规则自动生成：321+学号）
+  邮箱（可选）：邮箱, 电子邮箱, email, e-mail
+  未提供邮箱时自动推导为「一卡通号@seu.edu.cn」`;
 
     return (
         <Dialog
@@ -353,35 +361,6 @@ export default function BatchImportMembersModal({
                 {/* Step 1: Config */}
                 {importStep === "config" && (
                     <div className="flex-1 overflow-auto space-y-5 py-2">
-                        {/* Password mode */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">密码模式</label>
-                            <div className="flex items-center gap-4">
-                                <label className="flex items-center gap-1.5 cursor-pointer">
-                                    <input
-                                        type="radio"
-                                        name="classPwdMode"
-                                        value="random"
-                                        checked={passwordMode === "random"}
-                                        onChange={() => setPasswordMode("random")}
-                                        className="accent-primary"
-                                    />
-                                    <span className="text-sm">随机生成</span>
-                                </label>
-                                <label className="flex items-center gap-1.5 cursor-pointer">
-                                    <input
-                                        type="radio"
-                                        name="classPwdMode"
-                                        value="assigned"
-                                        checked={passwordMode === "assigned"}
-                                        onChange={() => setPasswordMode("assigned")}
-                                        className="accent-primary"
-                                    />
-                                    <span className="text-sm">指定密码</span>
-                                </label>
-                            </div>
-                        </div>
-
                         {/* Send email toggle */}
                         <div>
                             <label className="flex items-center gap-2 cursor-pointer">
@@ -462,7 +441,8 @@ export default function BatchImportMembersModal({
                         headers={rawHeaders}
                         sampleRows={rawDataRows.slice(0, 3)}
                         initialMappings={columnMappings}
-                        passwordMode={passwordMode}
+                        passwordMode="assigned"
+                        requirePasswordMapping={false}
                         onConfirm={(confirmedMappings, emailSuffix) => {
                             try {
                                 const rows = transformWithMappings(
@@ -496,7 +476,7 @@ export default function BatchImportMembersModal({
                     <div className="flex-1 overflow-auto space-y-3">
                         <p className="text-sm text-muted-foreground">
                             共 {previewData.length} 条记录待导入
-                            {passwordMode === "random" && "（密码将随机生成）"}
+                            （密码规则：文件有值则沿用，否则自动生成 321+学号）
                             {sendEmail && "，导入后将发送邮件通知"}
                         </p>
                         <div className="border rounded-lg max-h-[400px] overflow-auto">
@@ -507,9 +487,7 @@ export default function BatchImportMembersModal({
                                         <TableHead>一卡通号</TableHead>
                                         <TableHead>姓名</TableHead>
                                         <TableHead>推导邮箱</TableHead>
-                                        {passwordMode === "assigned" && (
-                                            <TableHead>密码</TableHead>
-                                        )}
+                                        <TableHead>密码</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -523,13 +501,11 @@ export default function BatchImportMembersModal({
                                             <TableCell className="text-muted-foreground">
                                                 {row.student_id}@seu.edu.cn
                                             </TableCell>
-                                            {passwordMode === "assigned" && (
-                                                <TableCell className="font-mono text-xs">
-                                                    {"•".repeat(
-                                                        Math.min(row.password?.length || 0, 12)
-                                                    )}
-                                                </TableCell>
-                                            )}
+                                            <TableCell className="font-mono text-xs">
+                                                {row.password_source === "provided"
+                                                    ? "••••（文件已提供）"
+                                                    : row.password}
+                                            </TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

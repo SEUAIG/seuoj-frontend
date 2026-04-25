@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AnnouncementItem, AttachmentItem } from "@/services/Class/getAnnouncementPage";
-import { getDownloadUrl } from "@/services/file/uploadFile";
+import { downloadFileWithAuth } from "@/services/file/uploadFile";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 
 function formatFileSize(bytes: number): string {
@@ -113,9 +113,12 @@ export default function AnnouncementCard({
               {announcement.attachments.map((att: AttachmentItem) => (
                 <a
                   key={att.id}
-                  href={getDownloadUrl(att.file_path)}
+                  href="#"
                   className="flex items-center gap-2 p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors group"
-                  download
+                  onClick={(e) => {
+                    e.preventDefault();
+                    void downloadFileWithAuth(att.file_path, att.file_name);
+                  }}
                 >
                   {getFileIcon(att.file_name)}
                   <span className="flex-1 text-sm truncate group-hover:text-primary transition-colors">

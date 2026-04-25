@@ -12,16 +12,54 @@ const COLUMN_ALIASES: Record<ColumnRole, string[]> = {
         "username",
         "用户名",
         "学号",
+        "学工号",
+        "学员号",
         "一卡通号",
+        "一卡通",
         "student_id",
         "studentid",
+        "student id",
+        "student no",
+        "student number",
+        "account",
+        "account id",
         "账号",
         "card_number",
+        "card number",
+        "user id",
+        "login id",
         "id",
     ],
-    nickname: ["姓名", "名字", "name", "昵称", "nickname", "真实姓名"],
-    email: ["email", "邮箱", "电子邮箱", "e-mail", "mail", "电子邮件"],
-    password: ["password", "密码", "pwd", "口令"],
+    nickname: [
+        "姓名",
+        "名字",
+        "name",
+        "full name",
+        "student name",
+        "昵称",
+        "nickname",
+        "真实姓名",
+        "name_cn",
+    ],
+    email: [
+        "email",
+        "e-mail",
+        "mail",
+        "邮箱",
+        "电子邮箱",
+        "电子邮件",
+        "邮件地址",
+        "email address",
+    ],
+    password: [
+        "password",
+        "pwd",
+        "passcode",
+        "密码",
+        "初始密码",
+        "登录密码",
+        "口令",
+    ],
 };
 
 export const FIELD_LABELS: Record<ColumnRole | "ignore", string> = {
@@ -31,6 +69,16 @@ export const FIELD_LABELS: Record<ColumnRole | "ignore", string> = {
     password: "密码",
     ignore: "忽略",
 };
+
+const HEADER_NOISE_RE = /[\s_\-.:/\\|()[\]{}（）【】<>《》'"`~!@#$%^&*+=，。；：？！、]/g;
+
+function normalizeHeader(input: string): string {
+    return input
+        .replace(/^\uFEFF/, "")
+        .trim()
+        .toLowerCase()
+        .replace(HEADER_NOISE_RE, "");
+}
 
 export function detectColumnMappings(headers: string[]): ColumnMapping[] {
     const mappings: ColumnMapping[] = headers.map((h, i) => ({
@@ -44,10 +92,10 @@ export function detectColumnMappings(headers: string[]): ColumnMapping[] {
 
     // Pass 1: exact match (high confidence)
     for (const mapping of mappings) {
-        const normalized = mapping.columnHeader.trim().toLowerCase();
+        const normalized = normalizeHeader(mapping.columnHeader);
         for (const [field, aliases] of Object.entries(COLUMN_ALIASES)) {
             if (usedFields.has(field as ColumnRole)) continue;
-            if (aliases.some((a) => a.toLowerCase() === normalized)) {
+            if (aliases.some((a) => normalizeHeader(a) === normalized)) {
                 mapping.mappedField = field as ColumnRole;
                 mapping.confidence = "high";
                 usedFields.add(field as ColumnRole);
@@ -59,15 +107,15 @@ export function detectColumnMappings(headers: string[]): ColumnMapping[] {
     // Pass 2: contains match for remaining (medium confidence)
     for (const mapping of mappings) {
         if (mapping.mappedField !== "ignore") continue;
-        const normalized = mapping.columnHeader.trim().toLowerCase();
+        const normalized = normalizeHeader(mapping.columnHeader);
         if (!normalized) continue;
         for (const [field, aliases] of Object.entries(COLUMN_ALIASES)) {
             if (usedFields.has(field as ColumnRole)) continue;
             if (
                 aliases.some(
                     (a) =>
-                        normalized.includes(a.toLowerCase()) ||
-                        a.toLowerCase().includes(normalized)
+                        normalized.includes(normalizeHeader(a)) ||
+                        normalizeHeader(a).includes(normalized)
                 )
             ) {
                 mapping.mappedField = field as ColumnRole;
@@ -83,15 +131,18 @@ export function detectColumnMappings(headers: string[]): ColumnMapping[] {
 
 export function validateMappings(
     mappings: ColumnMapping[],
-    passwordMode: "assigned" | "random"
+    passwordMode: "assigned" | "random",
+    options?: { requirePasswordMapping?: boolean }
 ): string | null {
     const mapped = new Set(
         mappings
             .filter((m) => m.mappedField !== "ignore")
             .map((m) => m.mappedField)
     );
+    const requirePasswordMapping =
+        options?.requirePasswordMapping ?? passwordMode === "assigned";
     if (!mapped.has("username")) return "必须映射「用户名/学号」列";
-    if (passwordMode === "assigned" && !mapped.has("password"))
+    if (requirePasswordMapping && !mapped.has("password"))
         return "指定密码模式下必须映射「密码」列";
     return null;
 }

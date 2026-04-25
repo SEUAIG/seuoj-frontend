@@ -21,7 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
-import { getDownloadUrl } from "@/services/file/uploadFile";
+import { downloadFileWithAuth } from "@/services/file/uploadFile";
 import { getAnnouncementPage } from "@/services/Class/getAnnouncementPage";
 import { getAssignmentProgress } from "@/services/Assignment/getAssignmentProgress";
 import type { ClassDetailData } from "@/services/Class/getClassDetail";
@@ -143,9 +143,12 @@ export default function ClassHomepage({
                     {classDetail.intro_attachments.map((att) => (
                       <a
                         key={att.id}
-                        href={getDownloadUrl(att.file_path)}
+                        href="#"
                         className="flex items-center gap-2 p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors"
-                        download
+                        onClick={(e) => {
+                          e.preventDefault();
+                          void downloadFileWithAuth(att.file_path, att.file_name);
+                        }}
                       >
                         {getFileIcon(att.file_name)}
                         <span className="flex-1 text-sm truncate">

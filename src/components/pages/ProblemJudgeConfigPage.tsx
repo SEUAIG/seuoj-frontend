@@ -61,7 +61,7 @@ type JudgeConfigValues = z.infer<typeof judgeConfigSchema>;
  * 测试点行
  * - id: 服务端 ID（上传后由服务器分配），-1 表示新增待提交的手动测试点
  * - seq: 展示序号（从 1 开始，顺序跟随列表位置）
- * - weight: 权重，默认 1
+ * - weight: 分数（字段名保持 weight），手动新增默认 0
  */
 interface TestcaseRow {
   _key: number;           // React 渲染用唯一 key
@@ -72,6 +72,32 @@ interface TestcaseRow {
   weight: number;
   time_limit_ms: number | null;
   memory_limit_kb: number | null;
+}
+
+function buildEvenScores(total: number, count: number): number[] {
+  if (count <= 0) return [];
+  const base = Math.floor(total / count);
+  const remainder = total % count;
+  return Array.from({ length: count }, (_, i) => (i < remainder ? base + 1 : base));
+}
+
+function inferAnswerPath(inPath: string, files: string[]): string {
+  const normalized = inPath.trim();
+  if (!normalized) return "";
+  const fileSet = new Set(files);
+
+  const lastSlash = normalized.lastIndexOf("/");
+  const dir = lastSlash >= 0 ? normalized.slice(0, lastSlash + 1) : "";
+  const fileName = lastSlash >= 0 ? normalized.slice(lastSlash + 1) : normalized;
+
+  if (!fileName.toLowerCase().endsWith(".in")) return "";
+  const stem = fileName.slice(0, -3);
+  const candidates = [`${stem}.out`, `${stem}.ans`, `${stem}.answer`, `${stem}.txt`];
+  for (const candidate of candidates) {
+    const fullPath = `${dir}${candidate}`;
+    if (fileSet.has(fullPath)) return fullPath;
+  }
+  return "";
 }
 
 /**
@@ -150,6 +176,27 @@ function validateConfig(
     }
   });
 
+  // 1.1 测试点分数校验（字段名为 weight）
+  testcases.forEach((tc) => {
+    if (!Number.isFinite(tc.weight) || tc.weight < 0) {
+      issues.push({
+        type: "error",
+        message: `测试点 #${tc.seq} 分数必须是大于等于 0 的数字`,
+        target: String(tc._key),
+      });
+    }
+  });
+  if (testcases.length > 0) {
+    const totalWeight = testcases.reduce((sum, tc) => sum + (Number.isFinite(tc.weight) ? tc.weight : 0), 0);
+    if (totalWeight !== 100) {
+      issues.push({
+        type: "error",
+        message: `测试点分数总和必须为 100，当前为 ${totalWeight}`,
+        target: "global",
+      });
+    }
+  }
+
   // 2. 子任务 ID 重复
   const subtaskIds = subtasks.map((s) => s.id);
   const seen = new Set<number>();
@@ -220,7 +267,7 @@ function validateConfig(
     }
   }
 
-  // 5. 分数校验（总分应 ≈ 100）
+  // 5. 子任务分数校验（总分应 ≈ 100）
   const totalScore = subtasks.reduce((sum, st) => sum + (st.score ?? 0), 0);
   if (subtasks.length > 0 && totalScore !== 100) {
     const diff = 100 - totalScore;
@@ -400,11 +447,10 @@ function FilePathInput({
 function ScoreBar({ testcases, subtasks }: { testcases: TestcaseRow[]; subtasks: SubtaskRow[] }) {
   const segments = useMemo(() => {
     if (subtasks.length === 0) {
-      // 无子任务：均摊
-      const w = testcases.reduce((s, t) => s + t.weight, 0);
+      // 无子任务：直接按测试点分数（weight 字段）显示
       return testcases.map((tc) => ({
         label: `#${tc.seq}`,
-        pct: w > 0 ? (tc.weight / w) * 100 : 0,
+        pct: tc.weight,
         color: "bg-blue-400",
       }));
     }
@@ -516,14 +562,15 @@ export default function ProblemJudgeConfigPage() {
 
       // 仅识别 .in 文件，不做前缀匹配
       const inFiles = files.filter((f) => f.endsWith(".in")).sort();
+      const evenScores = buildEvenScores(100, inFiles.length);
       const generatedRows: TestcaseRow[] = inFiles.map((inPath, i) => {
         return {
           _key: Date.now() + i,
           id: i + 1,
           seq: i + 1,
           in_path: inPath,
-          ans_path: "",
-          weight: 1,
+          ans_path: inferAnswerPath(inPath, files),
+          weight: evenScores[i] ?? 0,
           time_limit_ms: null,
           memory_limit_kb: null,
         };
@@ -563,7 +610,7 @@ export default function ProblemJudgeConfigPage() {
         seq: nextSeq,
         in_path: "",
         ans_path: "",
-        weight: 1,
+        weight: 0,
         time_limit_ms: null,
         memory_limit_kb: null,
       },
@@ -840,11 +887,11 @@ export default function ProblemJudgeConfigPage() {
                     <thead className="bg-muted/50">
                       <tr>
                         <th className="px-2 py-2 text-left font-medium w-12">ID</th>
-                        <th className="px-2 py-2 text-left font-medium">输入文件</th>
-                        <th className="px-2 py-2 text-left font-medium">答案文件</th>
-                        <th className="px-2 py-2 text-left font-medium w-16">权重</th>
-                        <th className="px-2 py-2 text-left font-medium w-16">时间 ms</th>
-                        <th className="px-2 py-2 text-left font-medium w-16">内存 KB</th>
+                        <th className="px-2 py-2 text-left font-medium w-[24%]">输入文件</th>
+                        <th className="px-2 py-2 text-left font-medium w-[18%]">答案文件</th>
+                        <th className="px-2 py-2 text-left font-medium w-24">分数</th>
+                        <th className="px-2 py-2 text-left font-medium w-24">时间 ms</th>
+                        <th className="px-2 py-2 text-left font-medium w-24">内存 KB</th>
                         <th className="px-2 py-2 text-left font-medium">分组</th>
                         <th className="px-2 py-2 text-left font-medium w-10"></th>
                       </tr>
@@ -883,11 +930,17 @@ export default function ProblemJudgeConfigPage() {
                             </td>
                             <td className="px-2 py-1.5">
                               <Input
-                                type="number"
-                                min={1}
-                                value={tc.weight}
-                                onChange={(e) => updateTestcase(tc._key, "weight", Number(e.target.value))}
-                                className="h-7 bg-background/50 text-xs"
+                                type="text"
+                                inputMode="decimal"
+                                value={Number.isFinite(tc.weight) ? tc.weight : ""}
+                                onChange={(e) =>
+                                  updateTestcase(
+                                    tc._key,
+                                    "weight",
+                                    e.target.value.trim() === "" ? Number.NaN : Number(e.target.value)
+                                  )
+                                }
+                                className="bg-background/50 text-xs"
                               />
                             </td>
                             <td className="px-2 py-1.5">
@@ -898,7 +951,7 @@ export default function ProblemJudgeConfigPage() {
                                 onChange={(e) =>
                                   updateTestcase(tc._key, "time_limit_ms", e.target.value ? Number(e.target.value) : null)
                                 }
-                                className="h-7 bg-background/50 text-xs"
+                                className="bg-background/50 text-xs"
                               />
                             </td>
                             <td className="px-2 py-1.5">
@@ -909,7 +962,7 @@ export default function ProblemJudgeConfigPage() {
                                 onChange={(e) =>
                                   updateTestcase(tc._key, "memory_limit_kb", e.target.value ? Number(e.target.value) : null)
                                 }
-                                className="h-7 bg-background/50 text-xs"
+                                className="bg-background/50 text-xs"
                               />
                             </td>
                             <td className="px-2 py-1.5">
@@ -953,7 +1006,7 @@ export default function ProblemJudgeConfigPage() {
                 <CardTitle className="text-lg font-semibold">子任务</CardTitle>
                 {subtasks.length > 0 && (
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    子任务分数总和应尽量为 100%
+                    子任务分数总和应为 100%
                   </p>
                 )}
               </div>
@@ -970,7 +1023,7 @@ export default function ProblemJudgeConfigPage() {
 
               {subtasks.length === 0 ? (
                 <div className="text-sm text-muted-foreground text-center py-6">
-                  无子任务时所有测试点按权重均摊分值（无需配置）
+                  无子任务时按测试点分数（weight）计分，总分必须为 100
                 </div>
               ) : (
                 <div className="rounded-md border overflow-hidden">
@@ -1012,15 +1065,14 @@ export default function ProblemJudgeConfigPage() {
                             </td>
                             <td className="px-2 py-1.5">
                               <Input
-                                type="number"
-                                min={0}
-                                max={100}
+                                type="text"
+                                inputMode="decimal"
                                 value={st.score ?? ""}
                                 onChange={(e) =>
                                   updateSubtask(
                                     st._key,
                                     "score",
-                                    e.target.value === "" ? null : Number(e.target.value)
+                                    e.target.value.trim() === "" ? null : Number(e.target.value)
                                   )
                                 }
                                 className={`h-7 bg-background/50 text-xs ${st.score !== null && st.score > 100 ? "border-amber-400" : ""}`}
