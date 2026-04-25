@@ -62,3 +62,23 @@ export interface ProblemFileTreeData {
 }
 
 export type ProblemFileTreeResponse = ApiResponse<ProblemFileTreeData | unknown>;
+
+export interface ScoreDistributionItem {
+  range: string;
+  count: number;
+}
+
+export interface SubmissionTrendItem {
+  date: string;
+  count: number;
+}
+
+export interface ProblemStatisticsData {
+  totalSubmit: number;
+  totalAccept: number;
+  acceptRate: number;
+  scoreDistribution: ScoreDistributionItem[];
+  submissionTrend: SubmissionTrendItem[];
+}
+
+export type ProblemStatisticsResponse = ApiResponse<ProblemStatisticsData>;

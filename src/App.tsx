@@ -74,6 +74,9 @@ const ProblemTestFilePage = React.lazy(
 const ProblemJudgeConfigPage = React.lazy(
   () => import("./components/pages/ProblemJudgeConfigPage")
 );
+const ProblemStatisticsPage = React.lazy(
+  () => import("./components/pages/ProblemStatisticsPage")
+);
 const ContestListDetailPage = React.lazy(
   () => import("./components/pages/ContestListDetailPage")
 );
@@ -143,6 +146,12 @@ function App() {
             <Route
               path="/problemsLibrary/:id/judgeConfig"
               element={<ProblemJudgeConfigPage />}
+            />
+          </Route>
+          <Route element={<ProtectedRoute allowRole="teacher" />}>
+            <Route
+              path="/problemsLibrary/:id/statistics"
+              element={<ProblemStatisticsPage />}
             />
           </Route>
           <Route element={<ProtectedRoute allowRole="student" />}>

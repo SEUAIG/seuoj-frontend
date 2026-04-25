@@ -36,6 +36,8 @@ export default function ProblemDetailInfo({
   const nav = useNavigate();
   const { user } = useSelector((store: RootState) => store.auth);
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+  const isTeacherOrAbove =
+    user?.role === "teacher" || user?.role === "admin" || user?.role === "superadmin";
   const { title, content, tags, pid, totalSubmit, totalAccept } = problem;
   const { description, info = {}, input, output, example, hint } = content;
   const {
@@ -162,13 +164,15 @@ export default function ProblemDetailInfo({
           <ListChecks className="mr-2 h-4 w-4" />
           提交记录
         </Button>
-        <Button
-          onClick={() => nav(`/evaluation?pid=${pid}`)}
-          className="bg-orange-600 hover:bg-orange-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
-        >
-          <Activity className="mr-2 h-4 w-4" />
-          统计
-        </Button>
+        {isTeacherOrAbove && (
+          <Button
+            onClick={() => nav(`/problemsLibrary/${pid}/statistics`)}
+            className="bg-orange-600 hover:bg-orange-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
+          >
+            <Activity className="mr-2 h-4 w-4" />
+            统计
+          </Button>
+        )}
         <Button className="bg-amber-600 hover:bg-amber-700 text-white transition duration-300 ease-in-out transform hover:scale-105">
           <MessageCircle className="mr-2 h-4 w-4" />
           讨论
