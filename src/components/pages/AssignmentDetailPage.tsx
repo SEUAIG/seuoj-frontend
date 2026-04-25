@@ -62,16 +62,17 @@ import AssignmentEditDialog from "../bussiness/AssignmentEditDialog";
 import SortListTable from "../common/SortListTable";
 import SubmissionListPanel from "../bussiness/SubmissionListPanel";
 
-function computeDisplayStatus(status: string, visibleFrom?: string | null, visibleTo?: string | null): string {
+function computeDisplayStatus(status: string, visibleFrom?: string | null, visibleTo?: string | null, deadline?: string | null): string {
   if (status === "DRAFT") return "DRAFT";
   const now = new Date();
   if (visibleFrom && now < new Date(visibleFrom)) return "NOT_OPEN";
   if (visibleTo && now > new Date(visibleTo)) return "CLOSED";
+  if (deadline && now > new Date(deadline)) return "DEADLINE_PASSED";
   return "PUBLISHED";
 }
 
-function statusBadge(status: string, visibleFrom?: string | null, visibleTo?: string | null) {
-  const display = computeDisplayStatus(status, visibleFrom, visibleTo);
+function statusBadge(status: string, visibleFrom?: string | null, visibleTo?: string | null, deadline?: string | null) {
+  const display = computeDisplayStatus(status, visibleFrom, visibleTo, deadline);
   switch (display) {
     case "DRAFT":
       return <Badge variant="secondary">草稿</Badge>;
@@ -79,6 +80,8 @@ function statusBadge(status: string, visibleFrom?: string | null, visibleTo?: st
       return <Badge variant="secondary">未开放</Badge>;
     case "PUBLISHED":
       return <Badge variant="default">进行中</Badge>;
+    case "DEADLINE_PASSED":
+      return <Badge variant="outline">已截止</Badge>;
     case "CLOSED":
       return <Badge variant="outline">已关闭</Badge>;
     default:
@@ -131,6 +134,8 @@ export default function AssignmentDetailPage() {
   const {
     data: detailResp,
     isLoading: isDetailLoading,
+    isError: isDetailError,
+    error: detailError,
   } = useQuery({
     queryKey: ["assignmentDetail", classId, assignmentId],
     queryFn: () => getAssignmentDetail(classId, assignmentId),
@@ -168,9 +173,12 @@ export default function AssignmentDetailPage() {
   }
 
   if (!detail) {
+    const errorMessage = isDetailError && detailError instanceof Error
+      ? detailError.message
+      : "作业不存在";
     return (
       <div className="container mx-auto py-8 min-h-screen flex items-center justify-center text-muted-foreground">
-        作业不存在
+        {errorMessage}
       </div>
     );
   }
@@ -194,7 +202,7 @@ export default function AssignmentDetailPage() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-bold">{detail.title}</h1>
-              {statusBadge(detail.status, detail.visible_from, detail.visible_to)}
+              {statusBadge(detail.status, detail.visible_from, detail.visible_to, detail.deadline)}
             </div>
             {detail.description && (
               <p className="text-muted-foreground mt-1">{detail.description}</p>
@@ -269,7 +277,7 @@ export default function AssignmentDetailPage() {
               <Card>
                 <CardContent className="pt-6 text-center">
                   <div className="text-xs text-muted-foreground">状态</div>
-                  <div className="mt-1">{statusBadge(detail.status)}</div>
+                  <div className="mt-1">{statusBadge(detail.status, detail.visible_from, detail.visible_to, detail.deadline)}</div>
                 </CardContent>
               </Card>
               <Card>

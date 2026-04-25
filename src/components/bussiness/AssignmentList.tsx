@@ -28,16 +28,17 @@ import {
 } from "@/services/Assignment/getAssignmentPage";
 import { deleteAssignment } from "@/services/Assignment/deleteAssignment";
 
-function computeDisplayStatus(status: string, visibleFrom?: string | null, visibleTo?: string | null): string {
+function computeDisplayStatus(status: string, visibleFrom?: string | null, visibleTo?: string | null, deadline?: string | null): string {
   if (status === "DRAFT") return "DRAFT";
   const now = new Date();
   if (visibleFrom && now < new Date(visibleFrom)) return "NOT_OPEN";
   if (visibleTo && now > new Date(visibleTo)) return "CLOSED";
+  if (deadline && now > new Date(deadline)) return "DEADLINE_PASSED";
   return "PUBLISHED";
 }
 
-function statusBadge(status: string, visibleFrom?: string | null, visibleTo?: string | null) {
-  const display = computeDisplayStatus(status, visibleFrom, visibleTo);
+function statusBadge(status: string, visibleFrom?: string | null, visibleTo?: string | null, deadline?: string | null) {
+  const display = computeDisplayStatus(status, visibleFrom, visibleTo, deadline);
   switch (display) {
     case "DRAFT":
       return <Badge variant="secondary">草稿</Badge>;
@@ -45,6 +46,8 @@ function statusBadge(status: string, visibleFrom?: string | null, visibleTo?: st
       return <Badge variant="secondary">未开放</Badge>;
     case "PUBLISHED":
       return <Badge variant="default">进行中</Badge>;
+    case "DEADLINE_PASSED":
+      return <Badge variant="outline">已截止</Badge>;
     case "CLOSED":
       return <Badge variant="outline">已关闭</Badge>;
     default:
@@ -140,7 +143,7 @@ export default function AssignmentList({
                       <h4 className="font-medium text-base group-hover:text-primary transition-colors truncate">
                         {assignment.title}
                       </h4>
-                      {statusBadge(assignment.status, assignment.visible_from, assignment.visible_to)}
+                      {statusBadge(assignment.status, assignment.visible_from, assignment.visible_to, assignment.deadline)}
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                       {assignment.deadline && (
