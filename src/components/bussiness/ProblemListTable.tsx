@@ -86,15 +86,24 @@ export default function ProblemListTable({
                   ) + "%"
                 : "0.00%";
             return (
-              <TableRow key={problem.pid} className="hover:bg-muted/50">
+              <TableRow
+                key={problem.pid}
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => {
+                  nav(`/problemsLibrary/${problem.pid}`);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    nav(`/problemsLibrary/${problem.pid}`);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+              >
                 <TableCell className="font-medium">{problem.pid}</TableCell>
                 <TableCell>
-                  <span
-                    onClick={() => {
-                      nav(`/problemsLibrary/${problem.pid}`);
-                    }}
-                    className="font-semibold text-primary hover:text-primary/80 hover:underline cursor-pointer transition-colors"
-                  >
+                  <span className="font-semibold text-primary transition-colors">
                     {problem.title}
                   </span>
                 </TableCell>

@@ -64,15 +64,23 @@ export default function ContestListTable({
             </TableRow>
           ) : (
             records.map((record) => (
-              <TableRow key={record.contest_id}>
+              <TableRow
+                key={record.contest_id}
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => onOpenContest(record.contest_id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onOpenContest(record.contest_id);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+              >
                 <TableCell className="font-medium py-4">
-                  <button
-                    type="button"
-                    onClick={() => onOpenContest(record.contest_id)}
-                    className="text-left text-blue-600 hover:text-blue-700 hover:underline font-semibold"
-                  >
+                  <span className="text-left text-blue-600 font-semibold">
                     {record.title ?? "未命名比赛"}
-                  </button>
+                  </span>
                   {record.subtitle && (
                     <div className="text-xs text-muted-foreground mt-1">
                       {record.subtitle}

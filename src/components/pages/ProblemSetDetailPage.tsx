@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import useQueryToGetProblemSetDetail from "@/hooks/useQueryToGetProblemSetDetail";
 import { deleteProblemSet } from "@/services/ProblemSet/deleteProblemSet";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ import { toast } from "sonner";
 export default function ProblemSetDetailPage() {
   const { id } = useParams();
   const nav = useNavigate();
+  const queryClient = useQueryClient();
 
   const {
     data: detail,
@@ -238,6 +240,9 @@ export default function ProblemSetDetailPage() {
                   const res = await deleteProblemSet(Number(id));
                   if (res.code === 0) {
                     toast.success("题单已删除");
+                    await queryClient.invalidateQueries({
+                      queryKey: ["problemSetPage"],
+                    });
                     nav("/problemset");
                   } else {
                     toast.error(res.message || "删除失败");

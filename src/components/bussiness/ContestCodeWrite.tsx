@@ -1,9 +1,6 @@
 import React, { Dispatch, SetStateAction } from "react";
 import SelectContestLanguage from "./SelectContestLanguage";
-import CodeToolsGroup from "./CodeToolsGroup";
 import ContestCodeEditor from "./ContestCodeEditor";
-import { useDispatch } from "react-redux";
-import { setContestCodeFile } from "@/features/Code/contestCodeSlice";
 import { cn } from "@/lib/utils";
 interface ContestCodeWriteProps {
   setCodeFile: Dispatch<SetStateAction<string>>;
@@ -21,12 +18,6 @@ export default function ContestCodeWrite({
   headerExtra,
   footer,
 }: ContestCodeWriteProps) {
-  const dispatch = useDispatch();
-  const handleClear = () => {
-    dispatch(
-      setContestCodeFile({ contest_id: contest_id, pid: pid, codeFile: "" })
-    );
-  };
   return (
     <div
       className={cn(
@@ -36,10 +27,7 @@ export default function ContestCodeWrite({
     >
       <div className="flex items-center justify-between space-x-4 ">
         <SelectContestLanguage />
-        <div className="flex items-center gap-3">
-          <CodeToolsGroup onClear={handleClear} />
-          {headerExtra}
-        </div>
+        <div className="flex items-center gap-3">{headerExtra}</div>
       </div>
       <div className="bg-white shadow-sm rounded-lg flex-1 min-h-0 flex flex-col">
         <div className="p-4 flex-1 min-h-0">
