@@ -3,21 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   Code,
   Clock,
   BookCopy,
   Download,
   Tag,
-  Zap,
-  Layers,
   Activity,
-  Monitor,
   ListChecks,
   Database,
   Edit,
@@ -48,13 +39,10 @@ export default function ProblemDetailInfo({
   const { title, content, tags, pid, totalSubmit, totalAccept } = problem;
   const { description, info = {}, input, output, example, hint } = content;
   const {
-    max_cpu_time_ms = "1000",
-    max_real_time_ms = "2000",
+    max_cpu_time_ms,
+    max_real_time_ms,
     max_memory_kb,
-    max_memory_byte = "134217728",
-    max_stack_byte = "33554432",
-    max_process_number = "1",
-    max_output_size = "10000",
+    max_memory_byte,
     min_cpu_time_ms,
     min_memory_kb,
     min_memory_byte,
@@ -62,30 +50,68 @@ export default function ProblemDetailInfo({
     problem_type = "Standard",
     checker_type = "Standard",
   } = info as Info;
-  const formatTime = (val: string | number) =>
-    String(val) === "-1" ? "∞" : `${val} ms`;
-  const formatMemory = (val: string | number) => {
+  const formatTimeValue = (val: string | number | undefined) => {
+    if (val === undefined || val === null || val === "") return "--";
+    if (String(val) === "-1") return "∞";
+    return String(val);
+  };
+  const formatTimeRange = (
+    minVal: string | number | undefined,
+    maxVal: string | number | undefined
+  ) => {
+    const min = formatTimeValue(minVal);
+    const max = formatTimeValue(maxVal);
+    if (min === "--" && max === "--") return "--";
+    if (min === "--") return max === "∞" ? "∞" : `${max}ms`;
+    if (max === "--") return min === "∞" ? "∞" : `${min}ms`;
+    if (min === "∞" || max === "∞") return "∞";
+    return min === max ? `${min}ms` : `${min}-${max}ms`;
+  };
+  const formatMemory = (val: string | number | undefined) => {
+    if (val === undefined || val === null || val === "") return "--";
     if (String(val) === "-1") return "∞";
     const kb = Number(val);
-    if (kb >= 1024) return `${(kb / 1024).toFixed(0)} MiB`;
-    return `${kb} KiB`;
+    if (Number.isNaN(kb)) return "--";
+    if (kb >= 1024) return `${(kb / 1024).toFixed(0)}MiB`;
+    return `${kb}KiB`;
   };
-  const formatCount = (val: string | number) =>
-    String(val) === "-1" ? "∞" : val;
-  const formatSize = (val: string | number) => {
-    if (String(val) === "-1") return "∞";
-    const bytes = Number(val);
-    if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KiB`;
-    return `${bytes} B`;
+  const formatMemoryRange = (
+    minVal: string | number | undefined,
+    maxVal: string | number | undefined
+  ) => {
+    const min = formatMemory(minVal);
+    const max = formatMemory(maxVal);
+    if (min === "--" && max === "--") return "--";
+    if (min === "--") return max;
+    if (max === "--") return min;
+    if (min === "∞" || max === "∞") return "∞";
+    return min === max ? min : `${min}-${max}`;
   };
   const maxMemoryValue =
-    max_memory_kb ?? (Number(max_memory_byte) / 1024).toString();
+    max_memory_kb ??
+    (max_memory_byte !== undefined
+      ? (Number(max_memory_byte) / 1024).toString()
+      : undefined);
   const minMemoryValue =
     min_memory_kb ??
     (min_memory_byte !== undefined
       ? (Number(min_memory_byte) / 1024).toString()
       : undefined);
   const missingTestcases = Number(test_case_number ?? 0) <= 0;
+  const timeLimitText = formatTimeRange(
+    min_cpu_time_ms ?? max_cpu_time_ms,
+    max_real_time_ms ?? max_cpu_time_ms
+  );
+  const memoryLimitText = formatMemoryRange(
+    minMemoryValue ?? maxMemoryValue,
+    maxMemoryValue
+  );
+  const problemTypeLabel =
+    checker_type === "Special"
+      ? "SPJ"
+      : problem_type === "Interactive"
+        ? "交互"
+        : "传统";
   return (
     <div className="space-y-8 p-4 md:p-6">
       {/* === 1. 头部标题与标签 === */}
@@ -94,151 +120,25 @@ export default function ProblemDetailInfo({
           {pid}. {title}
         </h1>
         <div className="flex flex-wrap gap-3">
-          {/* 通过率 */}
-          <TooltipProvider delayDuration={300}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span tabIndex={0} className="cursor-help outline-none">
-                  <Badge
-                    variant="secondary"
-                    className="bg-green-100 text-green-800 hover:bg-green-200 flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none border border-green-200"
-                  >
-                    {totalSubmit > 0
-                      ? ((totalAccept / totalSubmit) * 100).toFixed(1)
-                      : "0.0"}
-                    % 通过率
-                  </Badge>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  通过: {totalAccept} / 提交: {totalSubmit}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-            {/* 题目类型 */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span tabIndex={0} className="cursor-help outline-none">
-                  <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none">
-                    <Code size={16} />{" "}
-                    {problem_type === "Interactive" ? "交互" : "传统"}
-                  </Badge>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  题目类型:{" "}
-                  {problem_type === "Interactive" ? "交互题" : "传统题"}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span tabIndex={0} className="cursor-help outline-none">
-                  <Badge className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none">
-                    <BookCopy size={16} />{" "}
-                    {checker_type === "Special" ? "SPJ" : "文本比对"}
-                  </Badge>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  评测方式:{" "}
-                  {checker_type === "Special"
-                    ? "Special Judge (特判)"
-                    : "标准文本比对 (忽略行末空格)"}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span tabIndex={0} className="cursor-help outline-none">
-                  <Badge className="bg-pink-600 hover:bg-pink-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none">
-                    <Clock size={16} /> {formatTime(max_cpu_time_ms)}
-                  </Badge>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="space-y-1 text-xs">
-                  <p className="flex items-center gap-2">
-                    <Clock size={14} /> CPU 时间限制:{" "}
-                    {formatTime(max_cpu_time_ms)}
-                  </p>
-                  {min_cpu_time_ms && (
-                    <p className="flex items-center gap-2">
-                      <Clock size={14} /> 最小 CPU 时间:{" "}
-                      {formatTime(min_cpu_time_ms)}
-                    </p>
-                  )}
-                  <p className="flex items-center gap-2">
-                    <Zap size={14} /> 实际时间限制:{" "}
-                    {formatTime(max_real_time_ms)}
-                  </p>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span tabIndex={0} className="cursor-help outline-none">
-                  <Badge className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none">
-                    <Database size={16} /> {formatMemory(maxMemoryValue)}
-                  </Badge>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="space-y-1 text-xs">
-                  <p className="flex items-center gap-2">
-                    <Database size={14} /> 内存限制:{" "}
-                    {formatMemory(maxMemoryValue)}
-                  </p>
-                  {minMemoryValue && (
-                    <p className="flex items-center gap-2">
-                      <Database size={14} /> 最小内存限制:{" "}
-                      {formatMemory(minMemoryValue)}
-                    </p>
-                  )}
-                  <p className="flex items-center gap-2">
-                    <Layers size={14} /> 栈空间限制:{" "}
-                    {formatMemory(max_stack_byte)}
-                  </p>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span tabIndex={0} className="cursor-help outline-none">
-                  <Badge className="bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none">
-                    <Activity size={16} /> 进程/输出
-                  </Badge>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="space-y-1 text-xs">
-                  <p className="flex items-center gap-2">
-                    <Activity size={14} /> 最大进程数:{" "}
-                    {formatCount(max_process_number)}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <Monitor size={14} /> 最大输出大小:{" "}
-                    {formatSize(max_output_size)}
-                  </p>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span tabIndex={0} className="cursor-help outline-none">
-                  <Badge className="bg-cyan-600 hover:bg-cyan-700 text-white flex items-center gap-2 px-3 py-1 rounded-lg pointer-events-none">
-                    <ListChecks size={16} /> {test_case_number} 测试点
-                  </Badge>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>测试点数量: {test_case_number}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Badge variant="outline" className="bg-emerald-600 text-white flex items-center gap-2 px-3 py-1 rounded-lg">
+            <Code size={16} /> {problemTypeLabel}
+          </Badge>
+          <Badge variant="outline" className="bg-pink-600 text-white flex items-center gap-2 px-3 py-1 rounded-lg">
+            <Clock size={16} /> {timeLimitText}
+          </Badge>
+          <Badge variant="outline" className="bg-blue-600 text-white flex items-center gap-2 px-3 py-1 rounded-lg">
+            <Database size={16} /> {memoryLimitText}
+          </Badge>
+          <Badge variant="outline" className="bg-cyan-600 text-white flex items-center gap-2 px-3 py-1 rounded-lg">
+            <ListChecks size={16} /> {test_case_number} 测试点
+          </Badge>
+          <Badge
+            variant="outline"
+            className="bg-green-100 text-green-800 flex items-center gap-2 px-3 py-1 rounded-lg border border-green-200"
+          >
+            {totalSubmit > 0 ? ((totalAccept / totalSubmit) * 100).toFixed(1) : "0.0"}%
+            通过率 ({totalAccept}/{totalSubmit})
+          </Badge>
         </div>
         {tags && tags.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-1">
@@ -255,17 +155,6 @@ export default function ProblemDetailInfo({
         )}
       </div>
       <div className="flex flex-wrap gap-4 justify-start">
-        {isAdmin && (
-          <>
-            <Button
-              className="bg-purple-600 hover:bg-purple-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
-              onClick={() => nav(`/problemsLibrary/${pid}/edit`)}
-            >
-              <Edit className="mr-2 h-4 w-4" />
-              编辑题面
-            </Button>
-          </>
-        )}
         <Button
           onClick={() => nav(`/evaluation?pid=${pid}`)}
           className="bg-green-600 hover:bg-green-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
@@ -280,8 +169,34 @@ export default function ProblemDetailInfo({
           <Activity className="mr-2 h-4 w-4" />
           统计
         </Button>
+        <Button className="bg-amber-600 hover:bg-amber-700 text-white transition duration-300 ease-in-out transform hover:scale-105">
+          <MessageCircle className="mr-2 h-4 w-4" />
+          讨论
+        </Button>
+        {isAuthenticated && (
+          <Button
+            className="bg-teal-600 hover:bg-teal-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
+            onClick={() => {
+              if (onPracticeClick) {
+                onPracticeClick(pid);
+                return;
+              }
+              nav(`/problemsAgent/${pid}`);
+            }}
+          >
+            <Rocket className="mr-2 h-4 w-4" />
+            {practiceButtonLabel || "AI练习"}
+          </Button>
+        )}
         {isAdmin && (
           <>
+            <Button
+              className="bg-purple-600 hover:bg-purple-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
+              onClick={() => nav(`/problemsLibrary/${pid}/edit`)}
+            >
+              <Edit className="mr-2 h-4 w-4" />
+              编辑题面
+            </Button>
             <Button
               onClick={() => {
                 nav(`/problemsLibrary/${pid}/judgeConfig`);
@@ -305,25 +220,6 @@ export default function ProblemDetailInfo({
               下载文件
             </Button>
           </>
-        )}
-        <Button className="bg-amber-600 hover:bg-amber-700 text-white transition duration-300 ease-in-out transform hover:scale-105">
-          <MessageCircle className="mr-2 h-4 w-4" />
-          讨论
-        </Button>
-        {isAuthenticated && (
-          <Button
-            className="bg-teal-600 hover:bg-teal-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
-            onClick={() => {
-              if (onPracticeClick) {
-                onPracticeClick(pid);
-                return;
-              }
-              nav(`/problemsAgent/${pid}`);
-            }}
-          >
-            <Rocket className="mr-2 h-4 w-4" />
-            {practiceButtonLabel || "AI练习"}
-          </Button>
         )}
       </div>
       {/* === 3. 题目内容区 === */}

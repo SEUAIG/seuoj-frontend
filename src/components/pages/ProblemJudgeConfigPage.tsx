@@ -317,19 +317,19 @@ function FilePathInput({
   value,
   onChange,
   files,
+  placeholder,
 }: {
   value: string;
   onChange: (v: string) => void;
   files: string[];
+  placeholder?: string;
 }) {
   const wrapperRef = React.useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
 
   const filtered = useMemo(() => {
-    const q = value.trim().toLowerCase();
-    if (!q) return files.slice(0, 50);
-    return files.filter((f) => f.toLowerCase().includes(q)).slice(0, 50);
-  }, [files, value]);
+    return files.slice(0, 200);
+  }, [files]);
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -355,7 +355,7 @@ function FilePathInput({
         onClick={() => setOpen(true)}
         onFocus={() => setOpen(true)}
         className="bg-background/50 font-mono text-xs"
-        placeholder="1.in"
+        placeholder={placeholder ?? "输入文件路径"}
       />
       {open && (
         <div className="absolute z-[120] mt-1 min-w-[280px] rounded-md border bg-popover shadow-lg">
@@ -375,7 +375,7 @@ function FilePathInput({
               ))
             ) : (
               <div className="px-3 py-2 text-xs text-muted-foreground">
-                没有匹配的文件
+                没有可选文件
               </div>
             )}
           </div>
@@ -510,24 +510,19 @@ export default function ProblemJudgeConfigPage() {
       toast.success("测试用例上传成功，正在解析...", { position: "top-center" });
 
       // 上传只解压文件到 data/ 目录，不会自动更新 info.toml，
-      // 因此需要通过文件树接口获取 data/ 下的文件列表，自动匹配 .in/.ans 文件对生成测试点
+      // 因此通过文件树接口获取 data/ 下的 .in 文件生成测试点（答案文件由用户显式选择）
       const files = await getProblemFileTree(pid);
       setAvailableFiles(files);
 
-      // 匹配 .in 文件与对应的 .ans / .out 文件
+      // 仅识别 .in 文件，不做前缀匹配
       const inFiles = files.filter((f) => f.endsWith(".in")).sort();
-      const ansSet = new Set(files.filter((f) => f.endsWith(".ans") || f.endsWith(".out")));
       const generatedRows: TestcaseRow[] = inFiles.map((inPath, i) => {
-        const basePath = inPath.replace(/\.in$/, "");
-        let ansPath = "";
-        if (ansSet.has(basePath + ".ans")) ansPath = basePath + ".ans";
-        else if (ansSet.has(basePath + ".out")) ansPath = basePath + ".out";
         return {
           _key: Date.now() + i,
           id: i + 1,
           seq: i + 1,
           in_path: inPath,
-          ans_path: ansPath,
+          ans_path: "",
           weight: 1,
           time_limit_ms: null,
           memory_limit_kb: null,
@@ -566,8 +561,8 @@ export default function ProblemJudgeConfigPage() {
         _key: Date.now(),
         id: -1,            // -1 表示新增（服务器分配）
         seq: nextSeq,
-        in_path: `${nextSeq}.in`,
-        ans_path: `${nextSeq}.ans`,
+        in_path: "",
+        ans_path: "",
         weight: 1,
         time_limit_ms: null,
         memory_limit_kb: null,
@@ -844,7 +839,6 @@ export default function ProblemJudgeConfigPage() {
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50">
                       <tr>
-                        <th className="px-2 py-2 text-left font-medium w-8">#</th>
                         <th className="px-2 py-2 text-left font-medium w-12">ID</th>
                         <th className="px-2 py-2 text-left font-medium">输入文件</th>
                         <th className="px-2 py-2 text-left font-medium">答案文件</th>
@@ -864,7 +858,6 @@ export default function ProblemJudgeConfigPage() {
                         const refs = tcReferencedBy.get(tc.id) ?? [];
                         return (
                           <tr key={tc._key} className={hasError ? "bg-destructive/5" : "hover:bg-muted/20"}>
-                            <td className="px-2 py-1.5 text-muted-foreground font-mono text-xs">{tc.seq}</td>
                             <td className="px-2 py-1.5">
                               {tc.id === -1 ? (
                                 <span className="text-xs text-muted-foreground italic">新增</span>
@@ -877,6 +870,7 @@ export default function ProblemJudgeConfigPage() {
                                 value={tc.in_path}
                                 onChange={(v) => updateTestcase(tc._key, "in_path", v)}
                                 files={availableFiles}
+                                placeholder="输入文件路径"
                               />
                             </td>
                             <td className="px-2 py-1.5">
@@ -884,6 +878,7 @@ export default function ProblemJudgeConfigPage() {
                                 value={tc.ans_path}
                                 onChange={(v) => updateTestcase(tc._key, "ans_path", v)}
                                 files={availableFiles}
+                                placeholder="答案文件路径"
                               />
                             </td>
                             <td className="px-2 py-1.5">
@@ -1201,10 +1196,11 @@ export default function ProblemJudgeConfigPage() {
                       <FormItem className="md:col-span-2">
                         <FormLabel>checker 路径</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="checker 源代码路径，如 checker.cpp"
-                            className="bg-background/50 font-mono"
-                            {...field}
+                          <FilePathInput
+                            value={field.value ?? ""}
+                            onChange={(v) => field.onChange(v)}
+                            files={availableFiles}
+                            placeholder="选择 checker 文件路径"
                           />
                         </FormControl>
                         <FormMessage />
@@ -1220,10 +1216,11 @@ export default function ProblemJudgeConfigPage() {
                       <FormItem className="md:col-span-2">
                         <FormLabel>interactor 路径</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="interactor 源代码路径，如 interactor.cpp"
-                            className="bg-background/50 font-mono"
-                            {...field}
+                          <FilePathInput
+                            value={field.value ?? ""}
+                            onChange={(v) => field.onChange(v)}
+                            files={availableFiles}
+                            placeholder="选择 interactor 文件路径"
                           />
                         </FormControl>
                         <FormMessage />
