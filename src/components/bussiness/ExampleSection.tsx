@@ -64,7 +64,7 @@ export function ExampleSection({
                 )}
               </Button>
             </div>
-            <pre className="bg-gray-100 p-4 rounded-lg border border-gray-200 font-mono text-sm">
+            <pre className="w-full min-w-0 overflow-x-auto whitespace-pre-wrap break-words bg-gray-100 p-4 rounded-lg border border-gray-200 font-mono text-sm">
               {input}
             </pre>
           </div>
@@ -95,7 +95,7 @@ export function ExampleSection({
                 )}
               </Button>
             </div>
-            <pre className="bg-gray-100 p-4 rounded-lg border border-gray-200 font-mono text-sm">
+            <pre className="w-full min-w-0 overflow-x-auto whitespace-pre-wrap break-words bg-gray-100 p-4 rounded-lg border border-gray-200 font-mono text-sm">
               {output}
             </pre>
           </div>
@@ -107,7 +107,7 @@ export function ExampleSection({
                   样例解释
                 </span>
               </div>
-              <pre className="bg-gray-100 p-4 rounded-lg border border-gray-200 font-normal text-sm">
+              <pre className="w-full min-w-0 overflow-x-auto whitespace-pre-wrap break-words bg-gray-100 p-4 rounded-lg border border-gray-200 font-normal text-sm">
                 {explain}
               </pre>
             </div>
