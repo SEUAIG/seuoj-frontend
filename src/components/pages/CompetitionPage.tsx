@@ -1,16 +1,13 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
-import type { DateRange } from "react-day-picker";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { RootState } from "@/app/store";
 import {
   setCurrent,
-  setEndTime,
   setRuleType,
-  setStartTime,
   setStatus,
-  setTitleKeyword,
+  setTitle,
   clear,
 } from "@/features/ContestList/contestListSlice";
 import { format, isValid, parseISO } from "date-fns";
@@ -29,32 +26,14 @@ export default function CompetitionPage() {
   const {
     current,
     size,
-    start_time,
-    end_time,
     status,
     rule_type,
-    title_keyword,
+    title,
   } = useSelector((state: RootState) => state.contestList);
-  const [range, setRange] = useState<DateRange | undefined>();
-  const [startHour, setStartHour] = useState<string>("");
-  const [startMinute, setStartMinute] = useState<string>("");
-  const [endHour, setEndHour] = useState<string>("");
-  const [endMinute, setEndMinute] = useState<string>("");
-  const hourOptions = useMemo(
-    () => Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")),
-    []
-  );
-  const minuteOptions = useMemo(() => ["00", "15", "30", "45"], []);
 
-  // 进入页面时重置筛选条件
   useEffect(() => {
     dispatch(clear());
     dispatch(setCurrent(1));
-    setRange(undefined);
-    setStartHour("");
-    setStartMinute("");
-    setEndHour("");
-    setEndMinute("");
   }, [dispatch]);
 
   const statusOptions = useMemo(
@@ -149,36 +128,21 @@ export default function CompetitionPage() {
       current: Number(current),
       size: Number(size),
       status: status ?? undefined,
-      title_keyword: title_keyword ?? undefined,
-      start_time: start_time ?? undefined,
-      end_time: end_time ?? undefined,
+      title: title ?? undefined,
       rule_type: rule_type ?? undefined,
     }),
-    [current, size, status, title_keyword, start_time, end_time, rule_type]
+    [current, size, status, title, rule_type]
   );
 
   const { data, refetch, isFetching, isLoading } = useQueryToGetContestList(
     queryParams,
-    true // 改为 true，让 React Query 在组件挂载时默认发起一次请求
+    true
   );
   const records = data?.records ?? [];
   const total = data?.total ?? 0;
   const pages = Math.ceil(total / Number(size));
   const handleSearch = () => {
     refetch();
-  };
-  const buildDateTime = (
-    baseDate: Date | undefined,
-    hours: string,
-    minutes: string
-  ) => {
-    if (!baseDate || hours === "" || minutes === "") return null;
-    const newDate = new Date(baseDate);
-    newDate.setHours(Number(hours));
-    newDate.setMinutes(Number(minutes));
-    newDate.setSeconds(0);
-    newDate.setMilliseconds(0);
-    return newDate.toISOString();
   };
   const formatContestTime = (start?: string, end?: string) => {
     const formatOne = (value?: string) => {
@@ -194,18 +158,6 @@ export default function CompetitionPage() {
     }
     return startText || endText || "-";
   };
-  useEffect(() => {
-    const nextStart = buildDateTime(range?.from, startHour, startMinute);
-    if (nextStart !== start_time) {
-      dispatch(setStartTime(nextStart));
-    }
-  }, [dispatch, range?.from, startHour, startMinute, start_time]);
-  useEffect(() => {
-    const nextEnd = buildDateTime(range?.to, endHour, endMinute);
-    if (nextEnd !== end_time) {
-      dispatch(setEndTime(nextEnd));
-    }
-  }, [dispatch, range?.to, endHour, endMinute, end_time]);
   return (
     <div className="w-4/5 mx-auto py-6 space-y-6 min-h-screen overflow-x-hidden">
       <Helmet>
@@ -221,11 +173,11 @@ export default function CompetitionPage() {
       </div>
       <div className="flex flex-col gap-6">
         <ContestFilterPanel
-          titleKeyword={title_keyword}
+          titleKeyword={title}
           onTitleChange={(value) =>
-            dispatch(setTitleKeyword(value === "" ? null : value))
+            dispatch(setTitle(value === "" ? null : value))
           }
-          onTitleClear={() => dispatch(setTitleKeyword(null))}
+          onTitleClear={() => dispatch(setTitle(null))}
           statusOptions={statusOptions}
           status={status}
           statusLabelMap={statusLabelMap}
@@ -238,18 +190,6 @@ export default function CompetitionPage() {
             dispatch(setRuleType(rule_type === value ? null : value))
           }
           getTagClass={getTagClass}
-          range={range}
-          onRangeChange={setRange}
-          hourOptions={hourOptions}
-          minuteOptions={minuteOptions}
-          startHour={startHour}
-          startMinute={startMinute}
-          endHour={endHour}
-          endMinute={endMinute}
-          onStartHourChange={setStartHour}
-          onStartMinuteChange={setStartMinute}
-          onEndHourChange={setEndHour}
-          onEndMinuteChange={setEndMinute}
           isFetching={isFetching}
           onSearch={handleSearch}
         />
