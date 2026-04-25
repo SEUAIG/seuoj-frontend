@@ -14,9 +14,7 @@ export interface ContestListQuery {
   current?: number;
   size?: number;
   status?: ContestStatus;
-  title_keyword?: string;
-  start_time?: string;
-  end_time?: string;
+  title?: string;
   rule_type?: ContestRuleType;
 }
 

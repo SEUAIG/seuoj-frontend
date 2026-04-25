@@ -37,7 +37,7 @@ export default function LinkContestModal({
     {
       current: page,
       size,
-      title_keyword: searchTitle || undefined,
+      title: searchTitle || undefined,
     },
     isOpen
   );
