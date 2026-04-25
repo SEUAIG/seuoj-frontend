@@ -156,6 +156,7 @@ function App() {
               path="/problemsLibrary/:id/statistics"
               element={<ProblemStatisticsPage />}
             />
+            <Route path="/user/:userId" element={<UserProfilePage />} />
           </Route>
           <Route element={<ProtectedRoute allowRole="student" />}>
             <Route path="/submission">
@@ -163,7 +164,6 @@ function App() {
               <Route path=":submissionNo" element={<SubmissionPage />} />
             </Route>
             <Route path="/personal" element={<PersonalPage />} />
-            <Route path="/user/:userId" element={<UserProfilePage />} />
             <Route path="/problemsAgent/:id" element={<ProblemAgentPage />} />
           </Route>
           <Route
