@@ -38,6 +38,7 @@ import {
   CreateContestRequest,
 } from "@/services/Contest/createContest";
 import { useSaveShortcut } from "@/hooks/useSaveShortcut";
+import { useQueryClient } from "@tanstack/react-query";
 const contestFormSchema = z
   .object({
     title: z.string().min(1, "标题不能为空"),
@@ -56,6 +57,7 @@ const contestFormSchema = z
 type ContestFormValues = z.infer<typeof contestFormSchema>;
 export default function CreateContestPage() {
   const nav = useNavigate();
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const form = useForm<ContestFormValues>({
     resolver: zodResolver(contestFormSchema) as any,
@@ -84,6 +86,7 @@ export default function CreateContestPage() {
       const res = await createContest(payload);
       if (res.code === 0) {
         toast.success("比赛创建成功");
+        await queryClient.invalidateQueries({ queryKey: ["contestPage"] });
         if (res.data?.contest_id) {
           nav(`/contest/${res.data.contest_id}/edit`);
         } else {

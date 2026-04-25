@@ -10,9 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { createProblemSet } from "@/services/ProblemSet/createProblemSet";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function ProblemSetCreatePage() {
     const nav = useNavigate();
+    const queryClient = useQueryClient();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [title, setTitle] = useState("");
     const [discription, setDiscription] = useState("");
@@ -33,6 +35,7 @@ export default function ProblemSetCreatePage() {
             });
             if (res.code === 0) {
                 toast.success("题单创建成功");
+                await queryClient.invalidateQueries({ queryKey: ["problemSetPage"] });
                 nav("/problemset");
             } else {
                 toast.error(res.message || "创建失败");
