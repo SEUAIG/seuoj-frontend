@@ -17,18 +17,22 @@ export default function HelpPage() {
     },
     {
       title: "比赛",
-      desc: "支持按时间、状态、赛制筛选比赛，并可报名/取消报名。",
+      desc: "支持按状态、赛制筛选比赛，报名参赛并查看排名。",
     },
-    { title: "班级", desc: "支持创建、加入、成员管理、关联比赛与题单。" },
+    { title: "班级", desc: "创建或加入班级，管理成员、关联比赛与题单，布置作业。" },
     {
       title: "题单",
-      desc: "支持创建题单、维护题单信息、查看题单题目数量与公开性。",
+      desc: "创建题单、维护题目顺序，按专题组织练习内容。",
     },
     {
       title: "评测",
-      desc: "查看提交记录分页列表，快速跳转到提交详情与题目详情。",
+      desc: "查看提交记录，支持按题号、结果、语言筛选，快速跳转详情。",
     },
-    { title: "个人中心", desc: "查看个人提交统计、热力图与历史提交信息。" },
+    {
+      title: "智能学习",
+      desc: "AI 助教问答、知识图谱可视化、学习链推荐，辅助高效学习。",
+    },
+    { title: "个人中心", desc: "查看提交统计、热力图与历史提交，也可访问他人主页。" },
   ];
 
   return (
@@ -84,14 +88,16 @@ export default function HelpPage() {
                   在题库中可通过关键词和标签快速找题，适合按知识点或题目类型安排练习。
                 </p>
                 <p>
-                  进入题目详情后可查看题面、限制和样例，并选择语言进行提交。
+                  进入题目详情后可查看题面、限制和样例，并选择语言进行提交。目前支持 C/C++/Java/Python/Go/Node.js。
+                </p>
+                <p>
+                  题目详情页还提供"AI 练习"入口，可借助 AI 辅助分析题意、生成思路并调试代码。
                 </p>
                 <p>
                   提交后可在提交详情查看评测结果、测试点信息与提交代码，便于复盘。
                 </p>
                 <p>
-                  常见结果包括
-                  AC、WA、TLE、MLE、RE、CE，你可以据此快速判断问题方向。
+                  常见结果包括 AC、WA、TLE、MLE、RE、CE、PA（部分通过），你可以据此快速判断问题方向。
                 </p>
               </AccordionContent>
             </AccordionItem>
@@ -102,12 +108,12 @@ export default function HelpPage() {
               </AccordionTrigger>
               <AccordionContent className="space-y-3 text-sm text-muted-foreground">
                 <p>
-                  比赛列表支持按标题、状态、赛制和时间范围筛选，方便快速定位目标比赛。
+                  比赛列表支持按标题、状态和赛制筛选，方便快速定位目标比赛。
                 </p>
                 <p>
                   比赛详情页会展示比赛时间、赛制、说明与题目列表，并支持报名或取消报名。
                 </p>
-                <p>报名后可进入比赛题目进行提交，并查看比赛内的提交记录。</p>
+                <p>报名后可进入比赛题目进行提交，并查看比赛内的提交记录与排名。</p>
                 <p>
                   比赛组织者可创建和维护比赛信息，如标题、赛制、时间区间与可见性设置。
                 </p>
@@ -128,47 +134,74 @@ export default function HelpPage() {
 
             <AccordionItem value="class">
               <AccordionTrigger>
-                班级模块（成员、关联比赛、关联题单）
+                班级模块（成员、比赛、题单、作业）
               </AccordionTrigger>
               <AccordionContent className="space-y-3 text-sm text-muted-foreground">
                 <p>
-                  班级列表支持创建、加入、更新和删除班级，便于组织课程与作业练习。
+                  班级列表支持创建、加入、更新和删除班级，便于组织课程与练习。
                 </p>
                 <p>
-                  班级详情分为成员列表、已关联比赛、已关联题单三部分，管理结构清晰。
+                  班级详情分为成员列表、已关联比赛、已关联题单、作业列表等部分，管理结构清晰。
                 </p>
                 <p>
-                  你可以在班级中管理成员，也可以把比赛和题单加入班级统一学习。
+                  教师可在班级中布置作业，设置截止时间与题目列表；学生可查看作业要求并提交。
+                </p>
+                <p>
+                  作业详情页展示题目完成进度、提交记录和统计图表，方便教师和学生追踪进展。
                 </p>
                 <p>如果内容不再需要，可随时解除班级与比赛/题单的关联。</p>
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="evaluation">
+            <AccordionItem value=”evaluation”>
               <AccordionTrigger>评测记录与提交详情</AccordionTrigger>
-              <AccordionContent className="space-y-3 text-sm text-muted-foreground">
+              <AccordionContent className=”space-y-3 text-sm text-muted-foreground”>
                 <p>
                   评测页会集中展示你的提交记录，包括题号、状态、结果、语言和提交时间。
+                </p>
+                <p>
+                  支持按题号、评测结果和语言进行筛选；从题目页点击”提交记录”会自动带入题号筛选。
                 </p>
                 <p>评测中的记录会实时变化，你可以手动刷新查看最新结果。</p>
                 <p>
                   点击任意记录可进入提交详情，查看更完整的评测信息和代码内容。
                 </p>
                 <p>
-                  点击题号可回到题目详情继续练习，形成“做题—提交—复盘”的连续流程。
+                  点击题号可回到题目详情继续练习，形成”做题—提交—复盘”的连续流程。
                 </p>
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="personal">
-              <AccordionTrigger>个人中心与统计</AccordionTrigger>
+              <AccordionTrigger>个人中心与用户主页</AccordionTrigger>
               <AccordionContent className="space-y-3 text-sm text-muted-foreground">
                 <p>个人中心可查看个人资料、提交统计、近期活跃情况与热力图。</p>
                 <p>
                   你可以按时间查看历史提交，快速找到最近做过的题目和对应结果。
                 </p>
                 <p>
+                  点击评测记录中的用户名可访问对方的个人主页，查看其提交统计与活跃情况。
+                </p>
+                <p>
                   通过右上角头像菜单可快速进入个人中心，也可安全退出当前账号。
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="ai">
+              <AccordionTrigger>智能学习（AI 助教、知识图谱、学习链）</AccordionTrigger>
+              <AccordionContent className="space-y-3 text-sm text-muted-foreground">
+                <p>
+                  智能体助教支持自然语言问答，可以询问算法思路、数据结构知识、解题策略等，对话内容自动保存为会话。
+                </p>
+                <p>
+                  知识图谱以可视化方式展示算法与数据结构的知识体系，节点按类别着色，帮助你理解知识间的关联。
+                </p>
+                <p>
+                  学习链根据知识点推荐分阶段的学习路径，按入门、进阶、挑战三个难度组织题目，适合系统性刷题。
+                </p>
+                <p>
+                  题目详情页的"AI 练习"按钮可进入 AI 辅助做题模式，获取针对当前题目的分析与代码建议。
                 </p>
               </AccordionContent>
             </AccordionItem>
