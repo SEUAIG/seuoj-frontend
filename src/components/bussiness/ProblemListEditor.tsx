@@ -2,6 +2,7 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import {
     Table,
     TableBody,
@@ -10,6 +11,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import ProblemSearchSelect, {
+    ProblemSearchOption,
+} from "@/components/bussiness/ProblemSearchSelect";
 
 export type ProblemListItem = {
     pid: string;
@@ -26,15 +30,27 @@ export default function ProblemListEditor({
     problemList,
     onChange,
 }: ProblemListEditorProps) {
+    const [selectedProblem, setSelectedProblem] =
+        React.useState<ProblemSearchOption | null>(null);
+
     const handleAdd = () => {
+        if (!selectedProblem) {
+            toast.error("请选择题目");
+            return;
+        }
+        if (problemList.some((item) => item.pid === selectedProblem.pid)) {
+            toast.error("题目已存在");
+            return;
+        }
         onChange([
             ...problemList,
             {
-                pid: "",
-                title: "",
+                pid: selectedProblem.pid,
+                title: selectedProblem.title,
                 order_id: String(problemList.length + 1),
             },
         ]);
+        setSelectedProblem(null);
     };
 
     const handleRemove = (index: number) => {
@@ -55,18 +71,26 @@ export default function ProblemListEditor({
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">题目列表</h3>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAdd}
-                    className="flex items-center gap-1"
-                >
-                    <Plus className="h-4 w-4" />
-                    添加题目
-                </Button>
+            <div className="space-y-3 rounded-md border bg-muted/20 p-3">
+                <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-lg font-semibold">添加题目</h3>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleAdd}
+                        disabled={!selectedProblem}
+                        className="flex shrink-0 items-center gap-1"
+                    >
+                        <Plus className="h-4 w-4" />
+                        添加题目
+                    </Button>
+                </div>
+                <ProblemSearchSelect
+                    value={selectedProblem}
+                    onChange={setSelectedProblem}
+                    excludedPids={problemList.map((item) => item.pid)}
+                />
             </div>
             <div className="rounded-md border">
                 <Table>
@@ -81,7 +105,7 @@ export default function ProblemListEditor({
                     <TableBody>
                         {problemList.length > 0 ? (
                             problemList.map((item, index) => (
-                                <TableRow key={index}>
+                                <TableRow key={`${item.pid}-${index}`}>
                                     <TableCell>
                                         <Input
                                             value={item.order_id}
@@ -93,24 +117,12 @@ export default function ProblemListEditor({
                                         />
                                     </TableCell>
                                     <TableCell>
-                                        <Input
-                                            value={item.pid}
-                                            onChange={(e) =>
-                                                handleChange(index, "pid", e.target.value)
-                                            }
-                                            className="h-8"
-                                            placeholder="输入题目ID"
-                                        />
+                                        <span className="font-mono text-sm">{item.pid}</span>
                                     </TableCell>
                                     <TableCell>
-                                        <Input
-                                            value={item.title}
-                                            onChange={(e) =>
-                                                handleChange(index, "title", e.target.value)
-                                            }
-                                            className="h-8"
-                                            placeholder="输入标题"
-                                        />
+                                        <span className="line-clamp-2 text-sm font-medium">
+                                            {item.title}
+                                        </span>
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Button
