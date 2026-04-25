@@ -175,7 +175,7 @@ export default function ClassPage() {
                     >
                       {item.name}
                     </CardTitle>
-                    <Badge variant={item.is_public ? "secondary" : "outline"}>
+                    <Badge variant={item.is_public ? "secondary" : "outline"} className="shrink-0 whitespace-nowrap">
                       {item.is_public ? "公开" : "私有"}
                     </Badge>
                   </div>
