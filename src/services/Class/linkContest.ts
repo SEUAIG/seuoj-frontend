@@ -1,16 +1,13 @@
 import { api } from "../api/axios";
+import { classEndpoints } from "@/services/endpoints";
+import type { LinkContestResponse } from "@/models/class";
 
-export interface LinkContestResponse {
-  code: number;
-  message: string;
-}
+export type { LinkContestResponse };
 
 export const linkContest = async (
   classId: number,
   contestId: number
 ): Promise<LinkContestResponse> => {
-  const response = await api.put(
-    `/api/class/${classId}/contest/${contestId}`
-  );
+  const response = await api.put(classEndpoints.linkedContestById(classId, contestId));
   return response.data;
 };

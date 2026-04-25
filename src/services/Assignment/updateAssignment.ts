@@ -1,23 +1,11 @@
 import { api } from "../api/axios";
-import type { IntroAttachmentInput } from "../Class/updateClass";
+import { assignmentEndpoints } from "@/services/endpoints";
+import type {
+  UpdateAssignmentRequest,
+  UpdateAssignmentResponse,
+} from "@/models/assignment";
 
-export interface UpdateAssignmentRequest {
-  title?: string;
-  description?: string;
-  introduction?: string;
-  status?: "DRAFT" | "PUBLISHED";
-  deadline?: string;
-  visible_from?: string;
-  visible_to?: string;
-  add_intro_attachments?: IntroAttachmentInput[];
-  remove_intro_attachment_ids?: number[];
-}
-
-export interface UpdateAssignmentResponse {
-  code: number;
-  message: string;
-  data: null;
-}
+export type { UpdateAssignmentRequest, UpdateAssignmentResponse };
 
 export const updateAssignment = async (
   classId: number,
@@ -25,7 +13,7 @@ export const updateAssignment = async (
   data: UpdateAssignmentRequest
 ): Promise<UpdateAssignmentResponse> => {
   const response = await api.put(
-    `/api/class/${classId}/assignment/${assignmentId}`,
+    assignmentEndpoints.byId(classId, assignmentId),
     data
   );
   return response.data;

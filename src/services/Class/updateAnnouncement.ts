@@ -1,12 +1,8 @@
 import { api } from "../api/axios";
+import { classEndpoints } from "@/services/endpoints";
+import type { UpdateAnnouncementRequest } from "@/models/class";
 
-export interface UpdateAnnouncementRequest {
-  title?: string;
-  content?: string;
-  is_pinned?: boolean;
-  add_attachments?: { file_path: string; file_name: string; file_size: number }[];
-  remove_attachment_ids?: number[];
-}
+export type { UpdateAnnouncementRequest };
 
 export const updateAnnouncement = async (
   classId: number,
@@ -14,7 +10,7 @@ export const updateAnnouncement = async (
   body: UpdateAnnouncementRequest
 ): Promise<{ code: number; message: string }> => {
   const response = await api.put(
-    `/api/class/${classId}/announcement/${announcementId}`,
+    classEndpoints.announcementById(classId, announcementId),
     body
   );
   return response.data;

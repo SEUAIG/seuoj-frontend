@@ -1,19 +1,17 @@
 import { api } from "../api/axios";
+import { contestEndpoints } from "@/services/endpoints";
+import type {
+  ContestUnregisterQuery,
+  ContestUnregisterResponse,
+} from "@/models/contest";
 
-export type ContestUnregisterQuery = {
-  contest_id?: number;
-};
-export type ContestUnregisterResponse = {
-  code: number;
-  message: string;
-};
+export type { ContestUnregisterQuery, ContestUnregisterResponse };
 
 export const unregisterContest = async (
   params: ContestUnregisterQuery
 ): Promise<ContestUnregisterResponse> => {
-  const res = await api.delete<ContestUnregisterResponse>(
-    "/api/contest/register",
-    { params }
-  );
+  const res = await api.delete<ContestUnregisterResponse>(contestEndpoints.register, {
+    params,
+  });
   return res.data;
 };

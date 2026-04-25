@@ -1,14 +1,12 @@
 import { api } from "../api/axios";
+import { problemSetEndpoints } from "@/services/endpoints";
+import type { DeleteProblemSetResponse } from "@/models/problemSet";
 
-export interface DeleteProblemSetResponse {
-  code: number;
-  message: string;
-  data: null;
-}
+export type { DeleteProblemSetResponse };
 
 export const deleteProblemSet = async (
   problemSetId: number
 ): Promise<DeleteProblemSetResponse> => {
-  const response = await api.delete(`/api/problem_set/${problemSetId}`);
+  const response = await api.delete(problemSetEndpoints.byId(problemSetId));
   return response.data;
 };

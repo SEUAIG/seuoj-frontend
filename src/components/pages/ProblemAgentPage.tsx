@@ -13,14 +13,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import ProblemDetailInfo from "@/components/bussiness/ProblemDetailInfo";
 import CodeEditor from "@/components/bussiness/CodeEditor";
-import { api } from "@/services/api/axios";
 import { agentCodingApi } from "@/services/agent/coding";
 import { setCodeFile, setLanguage as setCodeLanguage } from "@/features/Code/codeSlice";
 import type {
   AgentCodeGenerationResponse,
   AgentCodingLanguage,
 } from "@/types/agentCoding";
-import type { ProblemData } from "./ProblemDetailPage";
+import type { ProblemData } from "@/models/problem";
+import { getProblemDetail } from "@/services/Problem/getProblemDetail";
+import { submitSolution } from "@/services/Submission/submitSolution";
 
 type TestStatus = "pending" | "running" | "passed" | "failed" | "error";
 
@@ -45,12 +46,6 @@ const submitLanguageMap: Record<AgentCodingLanguage, string> = {
   go: "Go1_22",
   nodejs: "Nodejs22",
 };
-
-interface SeuojProblemResponse {
-  code: number | string;
-  message?: string;
-  data?: ProblemData;
-}
 
 export default function ProblemAgentPage() {
   const nav = useNavigate();
@@ -127,11 +122,8 @@ export default function ProblemAgentPage() {
       setStdinCode("");
       setTestCases([]);
       try {
-        const res = await api.get<SeuojProblemResponse>(
-          `/api/problem/${selectedProblemId}`
-        );
-        const result = res.data;
-        if ((result.code !== 0 && result.code !== "0") || !result.data) {
+        const result = await getProblemDetail(selectedProblemId);
+        if (result.code !== 0 || !result.data) {
           toast.error(result.message || "获取题目详情失败");
           return;
         }
@@ -304,12 +296,11 @@ export default function ProblemAgentPage() {
     }
     setIsSubmitting(true);
     try {
-      const res = await api.post("/api/submission", {
+      const result = await submitSolution({
         pid: selectedProblemId,
         language: submitLanguageMap[language],
         code,
       });
-      const result = res.data;
       const submissionNo = result?.data?.submissionNo || result?.data?.submission_no;
       if (submissionNo) {
         nav(

@@ -3,13 +3,14 @@ import SubmissionRecord from "../bussiness/SubmissionRecord";
 import CodeShow from "../common/CodeShow";
 import TestPoints from "../bussiness/TestPoints";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { api } from "@/services/api/axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import type { ResultDetailItem, SubmissionData, SubtaskItem } from "@/models/submission";
+import { getSubmissionDetail } from "@/services/Submission/getSubmissionDetail";
 export enum SubmissionStatus {
   Pending = "Pending", // 还没有发送给评测端
   Running = "Running", // 成功发送给评测端，正在判题
@@ -29,48 +30,6 @@ export enum SubmissionVerdict {
   PartiallyAccepted = "PartiallyAccepted",
   Skipped = "Skipped",
 }
-export interface ResultDetailItem {
-  id?: number;
-  in: string;
-  out: string;
-  ans: string;
-  sys: string;
-  time: number;
-  mem: number;
-  type: string;
-  score?: number;
-}
-export interface SubtaskItem {
-  id: number;
-  cases: number[];
-  pre_subtasks: number[];
-  score: number;
-  type: "min" | "sum";
-}
-export interface SubmissionData {
-  submissionNo: string; // 提交记录uuid
-  pid: string;
-  language: string;
-  status: SubmissionStatus; // 提交生命周期状态
-  verdict: SubmissionVerdict | null; // 评测未结束时候为null，为评测的最终判定结果
-  resultDetail: ResultDetailItem[] | null; // 评测结束且verdict不为JudgeError、CompileError时不为空
-  errorDetail: string | null; // 评测结束且verdict为JudgeError、CompileError时不为空
-  submitTime: string; // 提交时间
-  finishTime: string;
-  message?: string;
-  code: string; // 用户代码
-  username: string; // 提交者用户名
-  nickname?: string;
-  userId?: number;
-  score?: number; // 分数
-  subtasks?: SubtaskItem[];
-}
-export interface SubmissionResponse {
-  code: number;
-  message: string;
-  data: SubmissionData;
-}
-
 // 参考http://eoj.seucpc.com/submission/63869
 export default function SubmissionPage() {
   const [searchParams] = useSearchParams();
@@ -87,10 +46,7 @@ export default function SubmissionPage() {
     const fetchSubmission = async () => {
       if (!submissionNo) return;
       try {
-        const res = await api.get<SubmissionResponse>(
-          `/api/submission/${submissionNo}`
-        );
-        const result = res.data;
+        const result = await getSubmissionDetail(submissionNo);
         const { code, message, data } = result;
         console.log("Submission data:", result);
         if (data) {

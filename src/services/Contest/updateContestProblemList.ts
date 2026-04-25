@@ -1,15 +1,15 @@
 import { api } from "../api/axios";
+import { contestEndpoints } from "@/services/endpoints";
+import type {
+  ContestProblemEditItem,
+  UpdateContestProblemListRequest,
+  UpdateContestProblemListResponse,
+} from "@/models/contest";
 
-export type ContestProblemEditItem = {
-  pid: string;
-  sort_order: number;
-};
-export type UpdateContestProblemListRequest = {
-  problem_list: ContestProblemEditItem[];
-};
-export type UpdateContestProblemListResponse = {
-  code: number;
-  message: string;
+export type {
+  ContestProblemEditItem,
+  UpdateContestProblemListRequest,
+  UpdateContestProblemListResponse,
 };
 
 export const updateContestProblemList = async (
@@ -17,7 +17,7 @@ export const updateContestProblemList = async (
   payload: UpdateContestProblemListRequest
 ): Promise<UpdateContestProblemListResponse> => {
   const res = await api.post<UpdateContestProblemListResponse>(
-    `/api/contest/${contestId}/problem`,
+    contestEndpoints.updateProblemList(contestId),
     payload
   );
   return res.data;

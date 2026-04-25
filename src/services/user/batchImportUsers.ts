@@ -1,61 +1,31 @@
 import { api } from "@/services/api/axios";
+import { userEndpoints } from "@/services/endpoints";
+import type {
+  BatchImportRequest,
+  BatchImportResponse,
+  BatchImportResult,
+  BatchImportUserRow,
+  FailDetail,
+  SkipDetail,
+  SuccessDetail,
+} from "@/models/user";
 
-export interface BatchImportUserRow {
-    username: string;
-    nickname?: string;
-    email: string;
-    password?: string;
-}
-
-export interface BatchImportRequest {
-    passwordMode: "assigned" | "random";
-    sendEmail: boolean;
-    users: BatchImportUserRow[];
-}
-
-export interface SuccessDetail {
-    row: number;
-    username: string;
-    email: string;
-    password: string;
-}
-
-export interface SkipDetail {
-    row: number;
-    username: string;
-    email: string;
-    reason: string;
-}
-
-export interface FailDetail {
-    row: number;
-    username: string;
-    email: string;
-    reason: string;
-}
-
-export interface BatchImportResult {
-    totalCount: number;
-    successCount: number;
-    skippedCount: number;
-    failCount: number;
-    successes: SuccessDetail[];
-    skipped: SkipDetail[];
-    failures: FailDetail[];
-}
-
-export interface BatchImportResponse {
-    code: number;
-    message: string;
-    data: BatchImportResult;
-}
+export type {
+  BatchImportRequest,
+  BatchImportResponse,
+  BatchImportResult,
+  BatchImportUserRow,
+  FailDetail,
+  SkipDetail,
+  SuccessDetail,
+};
 
 export const batchImportUsers = async (
-    req: BatchImportRequest
+  req: BatchImportRequest
 ): Promise<BatchImportResponse> => {
-    const response = await api.post<BatchImportResponse>(
-        "/api/common/user/batch-import",
-        req
-    );
-    return response.data;
+  const response = await api.post<BatchImportResponse>(
+    userEndpoints.batchImport,
+    req
+  );
+  return response.data;
 };

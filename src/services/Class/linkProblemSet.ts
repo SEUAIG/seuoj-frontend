@@ -1,16 +1,15 @@
 import { api } from "../api/axios";
+import { classEndpoints } from "@/services/endpoints";
+import type { LinkProblemSetResponse } from "@/models/class";
 
-export interface LinkProblemSetResponse {
-  code: number;
-  message: string;
-}
+export type { LinkProblemSetResponse };
 
 export const linkProblemSet = async (
   classId: number,
   problemSetId: number
 ): Promise<LinkProblemSetResponse> => {
   const response = await api.put(
-    `/api/class/${classId}/problem_set/${problemSetId}`
+    classEndpoints.linkedProblemSetById(classId, problemSetId)
   );
   return response.data;
 };

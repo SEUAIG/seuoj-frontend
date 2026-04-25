@@ -1,6 +1,6 @@
 import React from 'react'
 import TestPointOverview from './TestPointOverview';
-import { ResultDetailItem } from "../pages/SubmissionPage";
+import type { ResultDetailItem } from "@/models/submission";
 import { Card } from '../ui/card';
 
 export default function ContestTestPoints({

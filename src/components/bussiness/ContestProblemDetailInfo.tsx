@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProblemSection } from "./ProblemSection";
 import { ExampleSection } from "./ExampleSection";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
-import { ProblemData, Info } from "@/components/pages/ProblemDetailPage";
+import type { ProblemData, ProblemInfo as Info } from "@/models/problem";
 import { Clock, Database } from "lucide-react";
 interface ContestProblemDetailInfoProps {
   problem: ProblemData;

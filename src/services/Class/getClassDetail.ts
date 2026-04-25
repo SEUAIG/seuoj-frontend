@@ -1,32 +1,16 @@
 import { api } from "../api/axios";
+import { classEndpoints } from "@/services/endpoints";
+import type {
+  ClassDetailData,
+  ClassDetailResponse,
+  ClassIntroAttachment,
+} from "@/models/class";
 
-export interface ClassIntroAttachment {
-  id: number;
-  file_path: string;
-  file_name: string;
-  file_size: number;
-}
-
-export interface ClassDetailData {
-  class_id: number;
-  name: string;
-  description: string;
-  introduction: string | null;
-  intro_attachments: ClassIntroAttachment[];
-  creator_id: number;
-  is_public: boolean;
-  can_write?: boolean;
-}
-
-export interface ClassDetailResponse {
-  code: number;
-  message: string;
-  data: ClassDetailData;
-}
+export type { ClassDetailData, ClassDetailResponse, ClassIntroAttachment };
 
 export const getClassDetail = async (
   classId: number
 ): Promise<ClassDetailResponse> => {
-  const response = await api.get(`/api/class/${classId}`);
+  const response = await api.get(classEndpoints.byId(classId));
   return response.data;
 };

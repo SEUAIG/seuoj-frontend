@@ -31,6 +31,7 @@ export default function LoginForm() {
   const { setFocus, setValue, reset } = form;
   // 避免直接操作dom 尽量使用提供的函数
   const dispatch = useDispatch<AppDispatch>();
+  const nav = useNavigate();
   const error = useSelector((state: RootState) => state.auth.error);
   useEffect(() => {
     if (error && error !== "") {
@@ -52,7 +53,6 @@ export default function LoginForm() {
     }
   }, [isAuthenticated, nav]);
   const [showPassword, setShowPassword] = useState(false);
-  const nav = useNavigate();
   const { handleSubmit, register, control } = form;
   async function onSubmit(values: login_Values) {
     try {

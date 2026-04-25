@@ -1,54 +1,17 @@
+import { submissionEndpoints } from "@/services/endpoints";
 import { api } from "../api/axios";
+import type {
+  SubmissionListItem,
+  SubmissionPageRequest,
+  SubmissionPageResponse,
+} from "@/models/submission";
 
-export interface SubmissionPageRequest {
-  current?: number;
-  size?: number;
-  pid?: string;
-  verdict?: string;
-  language?: string;
-  username?: string;
-  assignment_id?: number;
-}
-
-export interface SubmissionListItem {
-  pid: string;
-  language: string;
-  status: "Pending" | "Running" | "Failed" | "Finished";
-  verdict:
-    | "CompileError"
-    | "JudgeError"
-    | "Accepted"
-    | "WrongAnswer"
-    | "TimeLimitExceeded"
-    | "MemoryLimitExceeded"
-    | "RuntimeError"
-    | "SystemError"
-    | "PartiallyAccepted"
-    | "Skipped"
-    | null;
-  username: string;
-  nickname?: string;
-  user_id?: number;
-  submission_no: string;
-  submit_time: string;
-  finish_time: string | null;
-}
-
-export interface SubmissionPageResponse {
-  code: number;
-  message: string;
-  data: {
-    total: number;
-    size: number;
-    current: number;
-    records: SubmissionListItem[];
-  };
-}
+export type { SubmissionListItem, SubmissionPageRequest, SubmissionPageResponse };
 
 export const getSubmissionPage = async (
   params: SubmissionPageRequest
 ): Promise<SubmissionPageResponse> => {
-  const response = await api.get("/api/submission/page", {
+  const response = await api.get(submissionEndpoints.page, {
     params,
   });
   return response.data;

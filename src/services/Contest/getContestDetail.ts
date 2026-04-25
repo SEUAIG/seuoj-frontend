@@ -1,37 +1,24 @@
 import { api } from "../api/axios";
+import { contestEndpoints } from "@/services/endpoints";
+import type {
+  ContestDetailData,
+  ContestDetailResponse,
+  ContestProblemOverview,
+  ContestRuleType,
+  ContestStatus,
+} from "@/models/contest";
 
-export type ContestRuleType = "NOI" | "IOI" | "ACM";
-export type ContestStatus = "NOT_STARTED" | "IN_PROGRESS" | "FINISHED";
-export type ContestProblemOverview = {
-  sort_order: number;
-  pid: string;
-  title: string;
-};
-export type ContestDetailData = {
-  title?: string;
-  subtitle?: string;
-  description?: string;
-  start_time?: string;
-  end_time?: string;
-  status?: ContestStatus;
-  is_registered?: boolean;
-  rule_type?: ContestRuleType;
-  is_public?: boolean;
-  hide_statistics?: boolean;
-  problem_list: ContestProblemOverview[];
-  can_write?: boolean;
-};
-export type ContestDetailResponse = {
-  code: number;
-  message: string;
-  data?: ContestDetailData;
+export type {
+  ContestDetailData,
+  ContestDetailResponse,
+  ContestProblemOverview,
+  ContestRuleType,
+  ContestStatus,
 };
 
 export const getContestDetail = async (
   contestId: number
 ): Promise<ContestDetailData | undefined> => {
-  const res = await api.get<ContestDetailResponse>(
-    `/api/contest/${contestId}`
-  );
+  const res = await api.get<ContestDetailResponse>(contestEndpoints.byId(contestId));
   return res.data.data;
 };

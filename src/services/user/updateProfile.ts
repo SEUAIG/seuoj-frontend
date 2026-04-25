@@ -1,21 +1,16 @@
 import { api } from "@/services/api/axios";
+import { userEndpoints } from "@/services/endpoints";
+import type {
+  UpdateProfileRequest,
+  UpdateProfileResponse,
+  UserMeResponse,
+} from "@/models/user";
 
-export interface UpdateProfileRequest {
-    nickname?: string;
-}
+export type { UpdateProfileRequest, UpdateProfileResponse, UserMeResponse };
 
-export interface UserMeResponse {
-    id: number;
-    username: string;
-    nickname: string | null;
-    email: string;
-}
-
-export const updateProfile = async (req: UpdateProfileRequest) => {
-    const response = await api.put<{
-        code: number;
-        message: string;
-        data: UserMeResponse;
-    }>("/api/user/me/profile", req);
-    return response.data;
+export const updateProfile = async (
+  req: UpdateProfileRequest
+): Promise<UpdateProfileResponse> => {
+  const response = await api.put<UpdateProfileResponse>(userEndpoints.meProfile, req);
+  return response.data;
 };

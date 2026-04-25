@@ -1,40 +1,25 @@
 import { api } from "@/services/api/axios";
+import { userEndpoints } from "@/services/endpoints";
+import type {
+  CommonUserRole,
+  GetUserPageRequest,
+  GetUserPageResponse,
+  UserPageData,
+  UserPageRecord,
+} from "@/models/user";
 
-export type CommonUserRole = "STUDENT" | "TEACHER" | "ADMIN" | "SUPER_ADMIN";
-
-export interface GetUserPageRequest {
-  current?: number;
-  size?: number;
-  username?: string;
-  email?: string;
-  roles?: CommonUserRole[];
-}
-
-export interface UserPageRecord {
-  user_id: number;
-  username: string;
-  nickname: string | null;
-  email: string;
-  roles: CommonUserRole[];
-}
-
-export interface UserPageData {
-  current: number;
-  size: number;
-  total: number;
-  records: UserPageRecord[];
-}
-
-export interface GetUserPageResponse {
-  code: number;
-  message: string;
-  data: UserPageData;
-}
+export type {
+  CommonUserRole,
+  GetUserPageRequest,
+  GetUserPageResponse,
+  UserPageData,
+  UserPageRecord,
+};
 
 export const getUserPage = async (
   params: GetUserPageRequest
 ): Promise<GetUserPageResponse> => {
-  const response = await api.get<GetUserPageResponse>("/api/common/user/page", {
+  const response = await api.get<GetUserPageResponse>(userEndpoints.page, {
     params,
   });
   return response.data;

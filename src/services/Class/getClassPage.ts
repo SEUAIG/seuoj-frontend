@@ -1,33 +1,17 @@
 import { api } from "../api/axios";
+import { classEndpoints } from "@/services/endpoints";
+import type {
+  ClassItem,
+  ClassPageResponse,
+  GetClassPageRequest,
+} from "@/models/class";
 
-export interface ClassItem {
-  class_id: number;
-  name: string;
-  description: string;
-  is_public: boolean;
-  can_write?: boolean;
-}
-
-export interface ClassPageResponse {
-  code: number;
-  message: string;
-  data: {
-    current: number;
-    size: number;
-    total: number;
-    records: ClassItem[];
-  };
-}
-
-export interface GetClassPageRequest {
-  current?: number;
-  size?: number;
-}
+export type { ClassItem, ClassPageResponse, GetClassPageRequest };
 
 export const getClassPage = async (
   params: GetClassPageRequest
 ): Promise<ClassPageResponse> => {
-  const response = await api.get("/api/class/page", {
+  const response = await api.get(classEndpoints.page, {
     params,
   });
   return response.data;

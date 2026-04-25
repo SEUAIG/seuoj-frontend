@@ -4,50 +4,15 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../app/store";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/services/api/axios";
 import ProblemDetailInfo from "@/components/bussiness/ProblemDetailInfo";
 import ProblemCoding from "@/components/bussiness/ProblemCoding";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-export interface ProblemExample {
-  in: string;
-  ans: string;
-  description: string;
-}
-export interface Info {
-  max_cpu_time_ms: string | number;
-  max_real_time_ms: string | number;
-  max_memory_byte?: string | number;
-  max_memory_kb?: string | number;
-  max_stack_byte?: string | number;
-  max_process_number?: string | number;
-  max_output_size?: string | number;
-  min_cpu_time_ms?: string | number;
-  min_memory_kb?: string | number;
-  min_memory_byte?: string | number;
-  test_case_number?: string | number;
-  problem_type?: string;
-  checker_type?: string;
-}
-export interface ProblemContent {
-  pid: string;
-  description: string;
-  info: Info;
-  input: string;
-  output: string;
-  example: ProblemExample[];
-  hint?: string;
-}
-export interface ProblemData {
-  pid: string;
-  title: string;
-  content: ProblemContent;
-  tags: string[];
-  totalSubmit: number;
-  totalAccept: number;
-  submittable?: boolean;
-}
+import type { ProblemData } from "@/models/problem";
+import { getProblemDetail } from "@/services/Problem/getProblemDetail";
+import { submitSolution } from "@/services/Submission/submitSolution";
+import type { CreateSubmissionRequest } from "@/models/submission";
 export default function ProblemDetailPage() {
   const { isAuthenticated, user } = useSelector((store: RootState) => store.auth);
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
@@ -73,14 +38,11 @@ export default function ProblemDetailPage() {
         const contest_id = searchParams.get("contest_id");
         const problem_set_id = searchParams.get("problem_set_id");
         const assignment_id = searchParams.get("assignment_id");
-        const res = await api.get(`/api/problem/${id}`, {
-          params: {
-            contest_id: contest_id || undefined,
-            problem_set_id: problem_set_id || undefined,
-            assignment_id: assignment_id || undefined,
-          },
+        const result = await getProblemDetail(id, {
+          contest_id: contest_id || undefined,
+          problem_set_id: problem_set_id || undefined,
+          assignment_id: assignment_id || undefined,
         });
-        const result = res.data;
         if (result.code === 0 && result.data) {
           setProblem(result.data);
         }
@@ -149,7 +111,7 @@ export default function ProblemDetailPage() {
     );
     if (index === -1) return;
     const code = codeFileObjectArray[index].codeFile;
-    const data: Record<string, unknown> = { pid, language, code };
+    const data: CreateSubmissionRequest = { pid, language, code };
     if (assignmentId) {
       data.assignment_id = Number(assignmentId);
     }
@@ -157,9 +119,8 @@ export default function ProblemDetailPage() {
     if (problemSetId) {
       data.problem_set_id = Number(problemSetId);
     }
-    const res = await api.post("/api/submission", data);
-    const result = res.data;
-    const { submissionNo } = result.data;
+    const result = await submitSolution(data);
+    const submissionNo = result.data?.submissionNo || result.data?.submission_no;
     if (submissionNo) {
       nav(`/submission/${submissionNo}?title=${title}`);
     }

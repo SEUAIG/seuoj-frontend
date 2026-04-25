@@ -1,17 +1,15 @@
 import { api } from "../api/axios";
+import { contestEndpoints } from "@/services/endpoints";
+import type {
+  ContestSubmissionData,
+  ContestSubmissionRequest,
+  ContestSubmissionResponse,
+} from "@/models/contest";
 
-export type ContestSubmissionRequest = {
-  pid: string;
-  code: string;
-  language: string;
-};
-export type ContestSubmissionData = {
-  submission_no: string;
-};
-export type ContestSubmissionResponse = {
-  code: string;
-  message: string;
-  data?: ContestSubmissionData;
+export type {
+  ContestSubmissionData,
+  ContestSubmissionRequest,
+  ContestSubmissionResponse,
 };
 
 export const submitContestSolution = async (
@@ -19,7 +17,7 @@ export const submitContestSolution = async (
   payload: ContestSubmissionRequest
 ): Promise<ContestSubmissionResponse> => {
   const res = await api.post<ContestSubmissionResponse>(
-    `/api/contest/${contestId}/submission`,
+    contestEndpoints.submit(contestId),
     payload
   );
   return res.data;

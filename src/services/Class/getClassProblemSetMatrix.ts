@@ -1,37 +1,22 @@
 import { api } from "../api/axios";
+import { classEndpoints } from "@/services/endpoints";
+import type {
+  ClassMatrixStudentRow,
+  ClassProblemColumn,
+  ClassProblemSetMatrixData,
+  ClassProblemSetMatrixResponse,
+} from "@/models/class";
 
-export interface ProblemColumn {
-    pid: string;
-    title: string;
-    sort_order: number;
-}
-
-export interface StudentRow {
-    username: string;
-    nickname?: string;
-    user_id: number;
-    cells: string[];
-    ac_count: number;
-}
-
-export interface ClassProblemSetMatrixData {
-    problem_set_title: string;
-    problems: ProblemColumn[];
-    students: StudentRow[];
-}
-
-export interface ClassProblemSetMatrixResponse {
-    code: number;
-    message: string;
-    data: ClassProblemSetMatrixData;
-}
+export type ProblemColumn = ClassProblemColumn;
+export type StudentRow = ClassMatrixStudentRow;
+export type { ClassProblemSetMatrixData, ClassProblemSetMatrixResponse };
 
 export const getClassProblemSetMatrix = async (
-    classId: number,
-    problemSetId: number
+  classId: number,
+  problemSetId: number
 ): Promise<ClassProblemSetMatrixResponse> => {
-    const response = await api.get(
-        `/api/class/${classId}/problem_set/${problemSetId}/matrix`
-    );
-    return response.data;
+  const response = await api.get(
+    classEndpoints.problemSetMatrix(classId, problemSetId)
+  );
+  return response.data;
 };

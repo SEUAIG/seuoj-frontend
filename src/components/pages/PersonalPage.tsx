@@ -23,12 +23,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Loader2, KeyRound, Pencil } from "lucide-react";
-import { api } from "@/services/api/axios";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/app/store";
 import { toast } from "sonner";
 import { setNickname as setNicknameAction } from "@/features/auth/authSlice";
 import { updateProfile } from "@/services/user/updateProfile";
+import { changePassword } from "@/services/auth";
 import nahida from "@/assets/nahida.png";
 import seu from "@/assets/seu.png";
 import useQueryToGetUserPage from "@/hooks/useQueryToGetUserPage";
@@ -90,18 +90,18 @@ export default function PersonalPage() {
     }
     setChangePwdLoading(true);
     try {
-      const res = await api.post("/api/auth/change-password", {
+      const res = await changePassword({
         old_password: oldPassword,
         new_password: newPassword,
       });
-      if (res.data.code === 0) {
+      if (res.code === 0) {
         toast.success("密码修改成功");
         setChangePwdOpen(false);
         setOldPassword("");
         setNewPassword("");
         setConfirmPassword("");
       } else {
-        toast.error(res.data.message || "修改失败");
+        toast.error(res.message || "修改失败");
       }
     } catch (err: unknown) {
       toast.error(

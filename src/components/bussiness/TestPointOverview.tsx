@@ -1,6 +1,6 @@
 import AnswerState from "../common/AnswerState";
 import ScoreBadge from "../common/ScoreBadage";
-import { ResultDetailItem } from "../pages/SubmissionPage";
+import type { ResultDetailItem } from "@/models/submission";
 
 export default function TestPointOverview({
   active,

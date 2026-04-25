@@ -1,24 +1,16 @@
 import { api } from "../api/axios";
+import { permissionEndpoints } from "@/services/endpoints";
+import type {
+  ListPermissionsResponse,
+  PermissionItem,
+} from "@/models/permission";
 
-export interface PermissionItem {
-  id: number;
-  user_id: number;
-  username: string;
-  nickname: string | null;
-  permission: string;
-  created_at: string;
-}
-
-export interface ListPermissionsResponse {
-  code: number;
-  message: string;
-  data: PermissionItem[];
-}
+export type { ListPermissionsResponse, PermissionItem };
 
 export const listPermissions = async (
   resourceType: string,
   resourceId: number
 ): Promise<ListPermissionsResponse> => {
-  const response = await api.get(`/api/permission/${resourceType}/${resourceId}`);
+  const response = await api.get(permissionEndpoints.list(resourceType, resourceId));
   return response.data;
 };

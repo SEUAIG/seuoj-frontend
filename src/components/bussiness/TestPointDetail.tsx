@@ -1,6 +1,6 @@
 import React from 'react'
 import { ProblemSection } from './ProblemSection'
-import { ResultDetailItem } from "../pages/SubmissionPage";
+import type { ResultDetailItem } from "@/models/submission";
 
 export default function TestPointDetail({
   item,

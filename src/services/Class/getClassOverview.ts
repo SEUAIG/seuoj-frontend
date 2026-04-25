@@ -1,38 +1,22 @@
 import { api } from "../api/axios";
+import { classEndpoints } from "@/services/endpoints";
+import type {
+  AssignmentProgressItem,
+  ClassOverviewData,
+  ClassOverviewResponse,
+  StudentOverviewItem,
+} from "@/models/class";
 
-export interface AssignmentProgressItem {
-  assignment_id: number;
-  title: string;
-  status: string;
-  deadline: string | null;
-  problem_count: number;
-  avg_completion_rate: number;
-}
-
-export interface StudentOverviewItem {
-  user_id: number;
-  username: string;
-  nickname?: string;
-  ac_count: number;
-  submit_count: number;
-}
-
-export interface ClassOverviewData {
-  member_count: number;
-  total_problems: number;
-  assignments: AssignmentProgressItem[];
-  students: StudentOverviewItem[];
-}
-
-export interface ClassOverviewResponse {
-  code: number;
-  message: string;
-  data: ClassOverviewData;
-}
+export type {
+  AssignmentProgressItem,
+  ClassOverviewData,
+  ClassOverviewResponse,
+  StudentOverviewItem,
+};
 
 export const getClassOverview = async (
   classId: number
 ): Promise<ClassOverviewResponse> => {
-  const response = await api.get(`/api/class/${classId}/overview`);
+  const response = await api.get(classEndpoints.overview(classId));
   return response.data;
 };

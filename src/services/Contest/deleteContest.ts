@@ -1,14 +1,12 @@
 import { api } from "../api/axios";
+import { contestEndpoints } from "@/services/endpoints";
+import type { DeleteContestResponse } from "@/models/contest";
 
-export interface DeleteContestResponse {
-  code: number;
-  message: string;
-  data: null;
-}
+export type { DeleteContestResponse };
 
 export const deleteContest = async (
   contestId: number
 ): Promise<DeleteContestResponse> => {
-  const response = await api.delete(`/api/contest/${contestId}`);
+  const response = await api.delete(contestEndpoints.byId(contestId));
   return response.data;
 };

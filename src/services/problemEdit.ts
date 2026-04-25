@@ -1,8 +1,11 @@
 import { api } from "./api/axios";
+import { problemEndpoints } from "@/services/endpoints";
+
 export async function updateProblem(payload: unknown) {
-  const res = await api.patch("/api/problem/edit", payload);
+  const res = await api.patch(problemEndpoints.edit, payload);
   return res.data;
 }
+
 export async function uploadProblemTestcases(
   pid: string,
   file: File,
@@ -11,6 +14,6 @@ export async function uploadProblemTestcases(
   const formData = new FormData();
   formData.append("file", file);
   formData.append("format", format);
-  const res = await api.post(`/api/problem/data/${pid}`, formData);
+  const res = await api.post(problemEndpoints.data(pid), formData);
   return res.data;
 }

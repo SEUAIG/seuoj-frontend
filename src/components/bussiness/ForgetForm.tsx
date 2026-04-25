@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/form";
 import { Mail, Lock, KeyRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "@/services/api/axios";
 import { toast } from "sonner";
+import { resetPassword, sendResetPasswordCode } from "@/services/auth";
 
 export default function ForgetForm() {
   const navigate = useNavigate();
@@ -54,8 +54,7 @@ export default function ForgetForm() {
 
     setSending(true);
     try {
-      const res = await api.post("/api/auth/reset-password/send-code", { email });
-      const data = res.data;
+      const data = await sendResetPasswordCode({ email });
       if (data.code === 0) {
         setVerificationId(data.data.verification_id);
         setCountdown(data.data.next_send_in || 60);
@@ -79,17 +78,17 @@ export default function ForgetForm() {
 
     setSubmitting(true);
     try {
-      const res = await api.post("/api/auth/reset-password", {
+      const res = await resetPassword({
         email: values.email,
         verification_id: verificationId,
         code: values.code,
         new_password: values.newPassword,
       });
-      if (res.data.code === 0) {
+      if (res.code === 0) {
         toast.success("密码重置成功，请使用新密码登录");
         navigate("/login");
       } else {
-        toast.error(res.data.message || "重置失败");
+        toast.error(res.message || "重置失败");
       }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "重置失败";

@@ -1,27 +1,24 @@
 import { api } from "../api/axios";
+import { problemSetEndpoints } from "@/services/endpoints";
+import type {
+  ProblemSetProblemEditItem,
+  UpdateProblemSetProblemListRequest,
+  UpdateProblemSetProblemListResponse,
+} from "@/models/problemSet";
 
-export type ProblemSetProblemEditItem = {
-    pid: string;
-    title: string;
-    order_id: string;
-};
-
-export type UpdateProblemSetProblemListRequest = {
-    problem_list: ProblemSetProblemEditItem[];
-};
-
-export type UpdateProblemSetProblemListResponse = {
-    code: number;
-    message: string;
+export type {
+  ProblemSetProblemEditItem,
+  UpdateProblemSetProblemListRequest,
+  UpdateProblemSetProblemListResponse,
 };
 
 export const updateProblemSetProblemList = async (
-    problem_set_id: string,
-    payload: UpdateProblemSetProblemListRequest
+  problem_set_id: string,
+  payload: UpdateProblemSetProblemListRequest
 ): Promise<UpdateProblemSetProblemListResponse> => {
-    const res = await api.post<UpdateProblemSetProblemListResponse>(
-        `/api/problem_set/${problem_set_id}/problem`,
-        payload
-    );
-    return res.data;
+  const res = await api.post<UpdateProblemSetProblemListResponse>(
+    problemSetEndpoints.updateProblemList(problem_set_id),
+    payload
+  );
+  return res.data;
 };

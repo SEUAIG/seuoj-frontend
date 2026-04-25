@@ -12,7 +12,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import AnswerState from "../common/AnswerState";
 import ScoreBadge from "../common/ScoreBadage";
-import { SubmissionData } from "../pages/SubmissionPage";
+import type { SubmissionData } from "@/models/submission";
 import { format } from "date-fns";
 
 interface SubmissionRecordProps {

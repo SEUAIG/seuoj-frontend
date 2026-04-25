@@ -9,7 +9,7 @@ import {
 import React from "react";
 import AnswerState from "../common/AnswerState";
 import ScoreBadge from "../common/ScoreBadage";
-import { SubmissionData } from "../pages/SubmissionPage";
+import type { SubmissionData } from "@/models/submission";
 import { format } from "date-fns";
 
 interface ContestSubmissionRecordProps {

@@ -1,15 +1,12 @@
 import { api } from "@/services/api/axios";
+import { userEndpoints } from "@/services/endpoints";
+import type { UserProfile } from "@/models/user";
 
-export interface UserProfile {
-  id: number;
-  username: string;
-  nickname: string | null;
-  role: string;
-}
+export type { UserProfile };
 
 export const getUserProfile = async (userId: number): Promise<UserProfile> => {
   const response = await api.get<{ code: number; data: UserProfile }>(
-    `/api/user/profile/${userId}`
+    userEndpoints.profileById(userId)
   );
   return response.data.data;
 };

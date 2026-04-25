@@ -1,27 +1,16 @@
 import { api } from "../api/axios";
+import { contestEndpoints } from "@/services/endpoints";
+import type {
+  ContestRuleType,
+  CreateContestRequest,
+  CreateContestResponse,
+} from "@/models/contest";
 
-export type ContestRuleType = "NOI" | "IOI" | "ACM";
-export type CreateContestRequest = {
-  title: string;
-  subtitle?: string;
-  description?: string;
-  start_time: string;
-  end_time: string;
-  rule_type: ContestRuleType;
-  is_public?: boolean;
-  hide_statistics?: boolean;
-};
-export type CreateContestResponse = {
-  code: number;
-  message: string;
-  data?: {
-    contest_id: number;
-  };
-};
+export type { ContestRuleType, CreateContestRequest, CreateContestResponse };
 
 export const createContest = async (
   payload: CreateContestRequest
 ): Promise<CreateContestResponse> => {
-  const res = await api.post<CreateContestResponse>("/api/contest", payload);
+  const res = await api.post<CreateContestResponse>(contestEndpoints.create, payload);
   return res.data;
 };

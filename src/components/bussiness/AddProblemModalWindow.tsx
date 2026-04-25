@@ -1,9 +1,9 @@
-import { api } from '@/services/api/axios'
 import React, { useState } from 'react'
 import { toast } from 'sonner'
 import ModalWindow from '../common/ModalWindow'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
+import { getProblemDetail } from "@/services/Problem/getProblemDetail";
 
 interface Problem {
   sort_order: number;
@@ -36,8 +36,8 @@ export default function AddProblemModalWindow({
         toast.error("题目已存在")
         return
     }
-    const res= await api.get(`/api/problem/${pid}`)
-    const {title} = res.data.data
+    const res = await getProblemDetail(pid)
+    const {title} = res.data
     const newProblem = {
         sort_order:problems.length+1,
         pid,

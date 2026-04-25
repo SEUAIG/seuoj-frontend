@@ -1,48 +1,26 @@
 import { api } from "@/services/api/axios";
+import { classEndpoints } from "@/services/endpoints";
+import type {
+  ClassBatchImportRequest as ClassBatchImportRequestModel,
+  ClassBatchImportResponse as ClassBatchImportResponseModel,
+  ClassBatchImportResult as ClassBatchImportResultModel,
+  ClassBatchRowResult,
+  ClassBatchStudentRow,
+} from "@/models/class";
 
-export interface StudentRow {
-    student_id: string;
-    name: string;
-    password?: string;
-}
-
-export interface ClassBatchImportRequest {
-    password_mode: "assigned" | "random";
-    send_email: boolean;
-    students: StudentRow[];
-}
-
-export interface RowResult {
-    row: number;
-    student_id: string;
-    name: string;
-    email?: string;
-    password?: string;
-    status: string;
-    detail?: string;
-}
-
-export interface ClassBatchImportResult {
-    total_count: number;
-    success_count: number;
-    skipped_count: number;
-    fail_count: number;
-    rows: RowResult[];
-}
-
-export interface ClassBatchImportResponse {
-    code: number;
-    message: string;
-    data: ClassBatchImportResult;
-}
+export type StudentRow = ClassBatchStudentRow;
+export type ClassBatchImportRequest = ClassBatchImportRequestModel;
+export type RowResult = ClassBatchRowResult;
+export type ClassBatchImportResult = ClassBatchImportResultModel;
+export type ClassBatchImportResponse = ClassBatchImportResponseModel;
 
 export const batchImportClassMembers = async (
-    classId: number,
-    req: ClassBatchImportRequest
+  classId: number,
+  req: ClassBatchImportRequest
 ): Promise<ClassBatchImportResponse> => {
-    const response = await api.post<ClassBatchImportResponse>(
-        `/api/class/${classId}/batch-import`,
-        req
-    );
-    return response.data;
+  const response = await api.post<ClassBatchImportResponse>(
+    classEndpoints.batchImportMembers(classId),
+    req
+  );
+  return response.data;
 };

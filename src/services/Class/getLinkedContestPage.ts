@@ -1,35 +1,19 @@
 import { api } from "../api/axios";
+import { classEndpoints } from "@/services/endpoints";
+import type {
+  GetLinkPageRequest,
+  LinkPageItem,
+  LinkPageResponse,
+} from "@/models/class";
 
-export interface LinkPageItem {
-  id: string;
-  title: string;
-}
-
-export interface LinkPageResponse {
-  code: number;
-  message: string;
-  data: {
-    current: number;
-    size: number;
-    total: number;
-    records: LinkPageItem[];
-  };
-}
-
-export interface GetLinkPageRequest {
-  current?: number;
-  size?: number;
-}
+export type { GetLinkPageRequest, LinkPageItem, LinkPageResponse };
 
 export const getLinkedContestPage = async (
   classId: number,
   params: GetLinkPageRequest
 ): Promise<LinkPageResponse> => {
-  const response = await api.get(
-    `/api/class/${classId}/contest/page`,
-    {
-      params,
-    }
-  );
+  const response = await api.get(classEndpoints.linkedContestPage(classId), {
+    params,
+  });
   return response.data;
 };

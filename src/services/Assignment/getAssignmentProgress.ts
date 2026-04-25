@@ -1,15 +1,12 @@
 import { api } from "../api/axios";
-import type { AssignmentProgressItem } from "../Class/getClassOverview";
+import { assignmentEndpoints } from "@/services/endpoints";
+import type { AssignmentProgressResponse } from "@/models/assignment";
 
-export interface AssignmentProgressResponse {
-  code: number;
-  message: string;
-  data: AssignmentProgressItem[];
-}
+export type { AssignmentProgressResponse };
 
 export const getAssignmentProgress = async (
   classId: number
 ): Promise<AssignmentProgressResponse> => {
-  const response = await api.get(`/api/class/${classId}/assignment/progress`);
+  const response = await api.get(assignmentEndpoints.progress(classId));
   return response.data;
 };

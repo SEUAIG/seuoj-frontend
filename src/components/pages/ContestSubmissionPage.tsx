@@ -3,18 +3,16 @@ import ContestSubmissionRecord from "../bussiness/ContestSubmissionRecord";
 import CodeShow from "../common/CodeShow";
 import ContestTestPoints from "../bussiness/ContestTestPoints";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { api } from "@/services/api/axios";
 import { Loader2, AlertCircle, Clock } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import {
+import { getContestSubmissionDetail } from "@/services/Contest/getContestSubmissionDetail";
+import type {
+  SubmissionData,
   SubmissionStatus,
   SubmissionVerdict,
-  ResultDetailItem,
-  SubmissionData,
-} from "./SubmissionPage";
-import { ContestSubmissionDetailResponse } from "@/services/Contest/getContestSubmissionDetail";
+} from "@/models/submission";
 export default function ContestSubmissionPage() {
   const [searchParams] = useSearchParams();
   const title = searchParams.get("title");
@@ -29,11 +27,7 @@ export default function ContestSubmissionPage() {
     const fetchSubmission = async () => {
       if (!contestId || !submission_no) return;
       try {
-        const res = await api.get<ContestSubmissionDetailResponse>(
-          `/api/contest/${contestId}/submission/${submission_no}`
-        );
-        const result = res.data;
-        const { code, message, data } = result;
+        const data = await getContestSubmissionDetail(contestId, submission_no);
         if (data) {
           // 转换 API 返回的数据格式为 SubmissionData 格式，以便复用组件
           const submissionData: SubmissionData = {
@@ -61,8 +55,8 @@ export default function ContestSubmissionPage() {
           setSubmission(submissionData);
           setLoading(false);
           if (
-            submissionData.status === SubmissionStatus.Finished ||
-            submissionData.status === SubmissionStatus.Failed
+            submissionData.status === "Finished" ||
+            submissionData.status === "Failed"
           ) {
             setIsPolling(false);
           }
@@ -104,7 +98,7 @@ export default function ContestSubmissionPage() {
       </div>
     );
   }
-  if (submission.status === SubmissionStatus.Pending) {
+  if (submission.status === "Pending") {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6 w-full max-w-4xl mx-auto p-8 relative">
         <div className="absolute top-0 right-0 mt-4 mr-4 flex space-x-4">
@@ -134,7 +128,7 @@ export default function ContestSubmissionPage() {
       </div>
     );
   }
-  if (submission.status === SubmissionStatus.Running) {
+  if (submission.status === "Running") {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6 w-full max-w-4xl mx-auto p-8 relative">
         <div className="absolute top-0 right-0 mt-4 mr-4 flex space-x-4">
@@ -165,8 +159,8 @@ export default function ContestSubmissionPage() {
     );
   }
   if (
-    submission.status === SubmissionStatus.Failed &&
-    submission.verdict === SubmissionVerdict.SystemError
+    submission.status === "Failed" &&
+    submission.verdict === "SystemError"
   ) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6 w-full max-w-4xl mx-auto p-8 relative">

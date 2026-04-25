@@ -20,7 +20,7 @@ import { RootState } from "@/app/store";
 import { ProblemSection } from "./ProblemSection";
 import { ExampleSection } from "./ExampleSection";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
-import { ProblemData, Info } from "@/components/pages/ProblemDetailPage";
+import type { ProblemData, ProblemInfo as Info } from "@/models/problem";
 interface ProblemDetailInfoProps {
   problem: ProblemData;
   isAuthenticated: boolean;

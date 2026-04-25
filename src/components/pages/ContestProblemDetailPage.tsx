@@ -4,15 +4,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../app/store";
 import { useNavigate, useParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/services/api/axios";
 import ContestProblemCoding from "@/components/bussiness/ContestProblemCoding";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import useQueryToGetContestProblemDetail from "@/hooks/useQueryToGetContestProblemDetail";
-import { ProblemData } from "./ProblemDetailPage";
-import { ContestProblemDetailData } from "@/services/Contest/getContestProblemDetail";
+import type { ProblemData } from "@/models/problem";
 import { toast } from "sonner";
 import ContestProblemDetailInfo from "@/components/bussiness/ContestProblemDetailInfo";
+import { submitContestSolution } from "@/services/Contest/submitContestSolution";
 export default function ContestProblemDetailPage() {
   const { isAuthenticated } = useSelector((store: RootState) => store.auth);
   const { id, pid: pidParam } = useParams();
@@ -96,14 +95,14 @@ export default function ContestProblemDetailPage() {
     }
     const data = { pid, language, code };
     try {
-      const res = await api.post(
-        `/api/contest/${contestId}/submission`,
-        data
-      );
-      const result = res.data;
+      const result = await submitContestSolution(contestId, data);
       if (result.code === 0 || result.code === "0") {
         toast.success("提交成功");
-        const submission_no = result.data.submission_no;
+        const submission_no = result.data?.submission_no;
+        if (!submission_no) {
+          toast.error("提交成功，但未返回提交编号");
+          return;
+        }
         nav(
             `/contest/${contestId}/submission/${submission_no}?title=${title}`
           );

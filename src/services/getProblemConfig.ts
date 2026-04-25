@@ -1,4 +1,5 @@
 import { api } from "./api/axios";
+import { problemEndpoints } from "@/services/endpoints";
 
 /** 测试点 */
 export interface Testcase {
@@ -44,12 +45,8 @@ export interface ProblemConfigResponse {
   data: ProblemConfigData;
 }
 
-/**
- * 获取题目数据配置
- * 替代已废弃的 GET /api/problem/data/{pid}
- */
 export async function getProblemConfig(pid: string): Promise<ProblemConfigData> {
-  const res = await api.get<ProblemConfigResponse>(`/api/problem/config/${pid}`);
+  const res = await api.get<ProblemConfigResponse>(problemEndpoints.config(pid));
   const result = res.data;
   if (result.code !== 200 && result.code !== 0) {
     throw new Error(result.message || "获取题目配置失败");
@@ -74,32 +71,23 @@ export interface TreeItem {
   children?: TreeItem[];
 }
 
-/**
- * 修改题目数据配置
- * 全量覆盖测试点、子任务、题目信息
- */
 export async function updateProblemConfig(
   pid: string,
   payload: ProblemConfigPayload
 ): Promise<void> {
-  const res = await api.put(`/api/problem/config/${pid}`, payload);
+  const res = await api.put(problemEndpoints.config(pid), payload);
   const result = res.data;
   if (result.code !== undefined && result.code !== 0 && result.code !== 200) {
     throw new Error(result.message || "更新题目配置失败");
   }
 }
 
-/**
- * 获取题目文件树
- * 仅返回 data 文件夹下的文件用于测试点路径配置
- */
 export async function getProblemFileTree(pid: string): Promise<string[]> {
-  const res = await api.get(`/api/problem/tree/${pid}`);
+  const res = await api.get(problemEndpoints.tree(pid));
   const result = res.data;
   const tree: TreeItem[] = result?.data?.tree ?? result?.data ?? [];
   if (!Array.isArray(tree)) return [];
 
-  // 提取 data 文件夹下的所有文件路径
   const dataFolder = tree.find((item) => item.name === "data");
   if (!dataFolder?.children) return [];
 

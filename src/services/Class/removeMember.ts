@@ -1,16 +1,13 @@
 import { api } from "../api/axios";
+import { classEndpoints } from "@/services/endpoints";
+import type { RemoveMemberResponse } from "@/models/class";
 
-export interface RemoveMemberResponse {
-  code: number;
-  message: string;
-}
+export type { RemoveMemberResponse };
 
 export const removeMember = async (
   classId: number,
   userId: number
 ): Promise<RemoveMemberResponse> => {
-  const response = await api.delete(
-    `/api/class/${classId}/member/${userId}`
-  );
+  const response = await api.delete(classEndpoints.member(classId, userId));
   return response.data;
 };

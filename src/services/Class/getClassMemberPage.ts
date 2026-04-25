@@ -1,33 +1,18 @@
 import { api } from "../api/axios";
+import { classEndpoints } from "@/services/endpoints";
+import type {
+  ClassMemberItem,
+  ClassMemberPageResponse,
+  GetClassMemberPageRequest,
+} from "@/models/class";
 
-export interface ClassMemberItem {
-  user_id: number;
-  username: string;
-  nickname?: string;
-  joined_at: string;
-}
-
-export interface ClassMemberPageResponse {
-  code: number;
-  message: string;
-  data: {
-    current: number;
-    size: number;
-    total: number;
-    records: ClassMemberItem[];
-  };
-}
-
-export interface GetClassMemberPageRequest {
-  current?: number;
-  size?: number;
-}
+export type { ClassMemberItem, ClassMemberPageResponse, GetClassMemberPageRequest };
 
 export const getClassMemberPage = async (
   classId: number,
   params: GetClassMemberPageRequest
 ): Promise<ClassMemberPageResponse> => {
-  const response = await api.get(`/api/class/${classId}/member/page`, {
+  const response = await api.get(classEndpoints.memberPage(classId), {
     params,
   });
   return response.data;

@@ -1,0 +1,10 @@
+export { authEndpoints } from "./auth";
+export { classEndpoints } from "./class";
+export { assignmentEndpoints } from "./assignment";
+export { contestEndpoints } from "./contest";
+export { problemSetEndpoints } from "./problemSet";
+export { permissionEndpoints } from "./permission";
+export { userEndpoints } from "./user";
+export { submissionEndpoints } from "./submission";
+export { problemEndpoints } from "./problem";
+export { fileEndpoints } from "./file";

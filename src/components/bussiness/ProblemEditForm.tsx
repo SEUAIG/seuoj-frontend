@@ -18,7 +18,6 @@ import TagSelector from "./TagSelector";
 import { useDispatch, useSelector } from "react-redux";
 import { addTag, clearTags } from "@/features/Tags/tagsSlice";
 import type { AppDispatch, RootState } from "@/app/store";
-import { api } from "@/services/api/axios";
 import { toast } from "sonner";
 import { getTags } from "@/services/getTags";
 import { updateProblem, uploadProblemTestcases } from "@/services/problemEdit";
@@ -26,6 +25,7 @@ import { createProblem } from "@/services/Problem/createProblem";
 import { useNavigate } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
 import { useSaveShortcut } from "@/hooks/useSaveShortcut";
+import { getNextProblemId, getProblemDetail } from "@/services/Problem/getProblemDetail";
 
 const exampleSchema = z.object({
   in: z.string().min(1, "示例输入不能为空"),
@@ -79,8 +79,8 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
   // 自动填充下一个可用的 PID
   useEffect(() => {
     if (!isCreateMode) return;
-    api.get("/api/problem/next_id").then((res: any) => {
-      const nextPid = res.data?.data?.next_pid;
+    getNextProblemId().then((res) => {
+      const nextPid = res.data?.next_pid;
       if (nextPid) form.setValue("pid", nextPid);
     }).catch(() => {/* 忽略，用户可手动填写 */});
   }, [isCreateMode, form]);
@@ -89,8 +89,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
     if (!pid) return;
     const fetchProblem = async () => {
       try {
-        const res = await api.get(`/api/problem/${pid}`);
-        const result = res.data;
+        const result = await getProblemDetail(pid);
         if (result.code !== 0 && result.code !== 200) {
           throw new Error(result.message || "加载题目失败");
         }
@@ -119,7 +118,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
         isSettingInitialTags.current = true;
         dispatch(clearTags());
         let tagIds: number[] = [];
-        const tagsRaw = data.tags || content.tags || [];
+        const tagsRaw = data.tags || [];
         const nameTags = Array.isArray(tagsRaw)
           ? (tagsRaw.filter((item) => typeof item === "string") as string[])
           : [];
@@ -304,11 +303,11 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                           variant="secondary"
                           onClick={async () => {
                             try {
-                              const res = await api.get("/api/problem/next_id");
-                              if (res.data.code === 0) {
-                                field.onChange(res.data.data.next_pid);
+                              const res = await getNextProblemId();
+                              if (res.code === 0) {
+                                field.onChange(res.data.next_pid);
                               } else {
-                                toast.error(res.data.message || "获取失败");
+                                toast.error(res.message || "获取失败");
                               }
                             } catch (e: any) {
                               toast.error(e.message || "获取请求发生错误");

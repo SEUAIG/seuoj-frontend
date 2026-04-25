@@ -1,18 +1,19 @@
 import { api } from "../api/axios";
-import type { ProblemItem } from "./getAssignmentDetail";
+import { assignmentEndpoints } from "@/services/endpoints";
+import type {
+  AssignmentProblemsResponse,
+  AssignmentProblemItem,
+} from "@/models/assignment";
 
-export interface AssignmentProblemsResponse {
-  code: number;
-  message: string;
-  data: ProblemItem[];
-}
+export type ProblemItem = AssignmentProblemItem;
+export type { AssignmentProblemsResponse };
 
 export const getAssignmentProblems = async (
   classId: number,
   assignmentId: number
 ): Promise<AssignmentProblemsResponse> => {
   const response = await api.get(
-    `/api/class/${classId}/assignment/${assignmentId}/problems`
+    assignmentEndpoints.problems(classId, assignmentId)
   );
   return response.data;
 };

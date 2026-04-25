@@ -7,6 +7,7 @@ import type {
   AgentProblemDetailResponse,
   AgentProblemListResponse,
 } from "@/types/agentCoding";
+import { submissionEndpoints } from "@/services/endpoints";
 
 const agentClient = axios.create({
   timeout: 180000,
@@ -76,7 +77,7 @@ export const agentCodingApi = {
     if (testCases && testCases.length > 0) {
       request.test_cases = testCases;
     }
-    const response = await agentClient.post("/api/submission", request);
+    const response = await agentClient.post(submissionEndpoints.create, request);
     return response.data;
   },
 };

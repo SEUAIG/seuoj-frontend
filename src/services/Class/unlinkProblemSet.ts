@@ -1,16 +1,15 @@
 import { api } from "../api/axios";
+import { classEndpoints } from "@/services/endpoints";
+import type { UnlinkProblemSetResponse } from "@/models/class";
 
-export interface UnlinkProblemSetResponse {
-  code: number;
-  message: string;
-}
+export type { UnlinkProblemSetResponse };
 
 export const unlinkProblemSet = async (
   classId: number,
   problemSetId: number
 ): Promise<UnlinkProblemSetResponse> => {
   const response = await api.delete(
-    `/api/class/${classId}/problem_set/${problemSetId}`
+    classEndpoints.linkedProblemSetById(classId, problemSetId)
   );
   return response.data;
 };

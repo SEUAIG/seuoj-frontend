@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { User, AuthState } from "./types";
-import { ENV } from "@/config/env";
+import { loginRequest, signupRequest } from "@/services/auth";
 
 let onLoginSuccess: (() => void) | null = null;
 export const setOnLoginSuccess = (cb: () => void) => { onLoginSuccess = cb; };
@@ -26,28 +26,25 @@ const isSuccessCode = (code: number) => code === 0;
 export const login = createAsyncThunk(
   "auth/login",
   async ({ identifier, password }: LoginPayload, thunkAPI) => {
-    const res = await fetch(`${ENV.API_BASE_URL}/api/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ identifier, password }),
-      // 要把参数序列化json发送出去
-    });
-    const result = await res.json();
-    // 返回response 对象 记得解析为json 异步解析
-    if (!res.ok) {
-      return thunkAPI.rejectWithValue(result.message || "http 请求失败");
-      // http请求的失败
-    }
-    if (!isSuccessCode(result.code)) {
-      if (result.code === 401) {
-        return thunkAPI.rejectWithValue("用户不存在或账号密码不匹配");
+    try {
+      const result = await loginRequest({ identifier, password });
+      if (!isSuccessCode(result.code)) {
+        if (result.code === 401) {
+          return thunkAPI.rejectWithValue("用户不存在或账号密码不匹配");
+        }
+        return thunkAPI.rejectWithValue("登录失败");
       }
-      return thunkAPI.rejectWithValue("登录失败");
+      return result;
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof (error as { message?: unknown }).message === "string"
+          ? (error as { message: string }).message
+          : "http 请求失败";
+      return thunkAPI.rejectWithValue(message);
     }
-    result.data = { ...result.data, identifier };
-    return result;
     // 异步函数的返回值fulfilled会作为action payload  rejected的error。message 会是reject with value
   }
 );
@@ -57,32 +54,24 @@ export const signup = createAsyncThunk(
     { username, email, password, verification_id, code }: SignupPayload,
     thunkAPI
   ) => {
-    const res = await fetch(`${ENV.API_BASE_URL}/api/auth/register`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    try {
+      const result = await signupRequest({
         username,
         email,
         password,
         verification_id,
         code,
-      }),
-    });
-    const result = await res.json();
-    // 返回response 对象 记得解析为json
-    if (!res.ok) {
-      return thunkAPI.rejectWithValue("http 请求失败");
-      // http请求的失败
-    }
-    if (!isSuccessCode(result.code)) {
-      if (result.code === 409) {
-        return thunkAPI.rejectWithValue("注册时用户名重复");
+      });
+      if (!isSuccessCode(result.code)) {
+        if (result.code === 409) {
+          return thunkAPI.rejectWithValue("注册时用户名重复");
+        }
+        return thunkAPI.rejectWithValue("注册失败");
       }
-      return thunkAPI.rejectWithValue("注册失败");
+      return result;
+    } catch {
+      return thunkAPI.rejectWithValue("http 请求失败");
     }
-    return result;
   }
 );
 const authSlice = createSlice({
@@ -109,13 +98,17 @@ const authSlice = createSlice({
     builder
       .addCase(login.fulfilled, (state, action) => {
         const { jwt, username, nickname, role } = action.payload.data;
+        const normalizedRole: User["role"] =
+          role === "admin" || role === "superadmin" || role === "teacher" || role === "student" || role === "guest"
+            ? role
+            : "student";
         state.jwt = jwt;
         state.user = {
           id: "1",
           username: username || "user",
           nickname: nickname || undefined,
           avatarUrl: "",
-          role: role || "student",
+          role: normalizedRole,
         };
         state.isAuthenticated = true;
         onLoginSuccess?.();

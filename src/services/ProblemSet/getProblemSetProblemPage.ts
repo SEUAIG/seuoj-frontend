@@ -1,36 +1,26 @@
 import { api } from "../api/axios";
+import { problemSetEndpoints } from "@/services/endpoints";
+import type {
+  ProblemSetProblemPageData,
+  ProblemSetProblemPageQuery,
+  ProblemSetProblemPageResponse,
+  ProblemSetProblemRecord,
+} from "@/models/problemSet";
 
-export type ProblemSetProblemPageQuery = {
-    current?: number;
-    size?: number;
-};
-
-export type ProblemSetProblemRecord = {
-    pid: string;
-    title: string;
-    sort_order: string;
-};
-
-export type ProblemSetProblemPageData = {
-    current?: number;
-    size?: number;
-    total?: number;
-    records?: ProblemSetProblemRecord[];
-};
-
-export type ProblemSetProblemPageResponse = {
-    code: number;
-    message: string;
-    data?: ProblemSetProblemPageData;
+export type {
+  ProblemSetProblemPageData,
+  ProblemSetProblemPageQuery,
+  ProblemSetProblemPageResponse,
+  ProblemSetProblemRecord,
 };
 
 export const getProblemSetProblemPage = async (
-    problem_set_id: string,
-    params?: ProblemSetProblemPageQuery
+  problem_set_id: string,
+  params?: ProblemSetProblemPageQuery
 ): Promise<ProblemSetProblemPageData | undefined> => {
-    const res = await api.get<ProblemSetProblemPageResponse>(
-        `/api/problem_set/${problem_set_id}/problem/page`,
-        { params }
-    );
-    return res.data.data;
+  const res = await api.get<ProblemSetProblemPageResponse>(
+    problemSetEndpoints.problemPage(problem_set_id),
+    { params }
+  );
+  return res.data.data;
 };

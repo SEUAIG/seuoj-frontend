@@ -1,35 +1,23 @@
 import { api } from "../api/axios";
+import { classEndpoints } from "@/services/endpoints";
+import type {
+  GetLinkProblemSetPageRequest,
+  LinkProblemSetPageItem,
+  LinkProblemSetPageResponse,
+} from "@/models/class";
 
-export interface LinkProblemSetPageItem {
-  id: string;
-  title: string;
-}
-
-export interface LinkProblemSetPageResponse {
-  code: number;
-  message: string;
-  data: {
-    current: number;
-    size: number;
-    total: number;
-    records: LinkProblemSetPageItem[];
-  };
-}
-
-export interface GetLinkProblemSetPageRequest {
-  current?: number;
-  size?: number;
-}
+export type {
+  GetLinkProblemSetPageRequest,
+  LinkProblemSetPageItem,
+  LinkProblemSetPageResponse,
+};
 
 export const getLinkedProblemSetPage = async (
   classId: number,
   params: GetLinkProblemSetPageRequest
 ): Promise<LinkProblemSetPageResponse> => {
-  const response = await api.get(
-    `/api/class/${classId}/problem_set/page`,
-    {
-      params,
-    }
-  );
+  const response = await api.get(classEndpoints.linkedProblemSetPage(classId), {
+    params,
+  });
   return response.data;
 };

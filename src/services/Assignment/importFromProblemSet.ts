@@ -1,14 +1,11 @@
 import { api } from "../api/axios";
+import { assignmentEndpoints } from "@/services/endpoints";
+import type {
+  ImportFromProblemSetRequest,
+  ImportFromProblemSetResponse,
+} from "@/models/assignment";
 
-export interface ImportFromProblemSetRequest {
-  problem_set_id: number;
-}
-
-export interface ImportFromProblemSetResponse {
-  code: number;
-  message: string;
-  data: null;
-}
+export type { ImportFromProblemSetRequest, ImportFromProblemSetResponse };
 
 export const importFromProblemSet = async (
   classId: number,
@@ -16,7 +13,7 @@ export const importFromProblemSet = async (
   data: ImportFromProblemSetRequest
 ): Promise<ImportFromProblemSetResponse> => {
   const response = await api.post(
-    `/api/class/${classId}/assignment/${assignmentId}/import`,
+    assignmentEndpoints.importFromProblemSet(classId, assignmentId),
     data
   );
   return response.data;

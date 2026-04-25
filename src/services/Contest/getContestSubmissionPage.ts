@@ -1,50 +1,23 @@
 import { api } from "../api/axios";
+import { contestEndpoints } from "@/services/endpoints";
+import type {
+  ContestProblemOverview,
+  ContestSubmissionPageData,
+  ContestSubmissionPageQuery,
+  ContestSubmissionPageResponse,
+  ContestSubmissionRecord,
+  ContestSubmissionStatus,
+  ContestSubmissionVerdict,
+} from "@/models/contest";
 
-export type ContestProblemOverview = {
-  sort_order: number;
-  pid: string;
-  title: string;
-};
-export type ContestSubmissionStatus =
-  | "Pending"
-  | "Running"
-  | "Failed"
-  | "Finished";
-export type ContestSubmissionVerdict =
-  | "CompileError"
-  | "JudgeError"
-  | "Accepted"
-  | "WrongAnswer"
-  | "TimeLimitExceeded"
-  | "MemoryLimitExceeded"
-  | "RuntimeError"
-  | "SystemError";
-export type ContestSubmissionPageQuery = {
-  current?: number;
-  size?: number;
-};
-export type ContestSubmissionRecord = {
-  submission_no: string;
-  language: string | null;
-  status: ContestSubmissionStatus;
-  verdict: ContestSubmissionVerdict | null;
-  score: number | null;
-  submit_time: string;
-  username: string;
-  nickname?: string;
-  user_id?: number;
-  problem: ContestProblemOverview;
-};
-export type ContestSubmissionPageData = {
-  current: number;
-  size: number;
-  total: number;
-  records: ContestSubmissionRecord[];
-};
-export type ContestSubmissionPageResponse = {
-  code: number;
-  message: string;
-  data?: ContestSubmissionPageData;
+export type {
+  ContestProblemOverview,
+  ContestSubmissionPageData,
+  ContestSubmissionPageQuery,
+  ContestSubmissionPageResponse,
+  ContestSubmissionRecord,
+  ContestSubmissionStatus,
+  ContestSubmissionVerdict,
 };
 
 export const getContestSubmissionPage = async (
@@ -52,7 +25,7 @@ export const getContestSubmissionPage = async (
   params: ContestSubmissionPageQuery
 ): Promise<ContestSubmissionPageData | undefined> => {
   const res = await api.get<ContestSubmissionPageResponse>(
-    `/api/contest/${contestId}/submission/page`,
+    contestEndpoints.submissionPage(contestId),
     { params }
   );
   return res.data.data;

@@ -1,26 +1,22 @@
 import { api } from "../api/axios";
+import { contestEndpoints } from "@/services/endpoints";
+import type {
+  ContestProblemListInEditPageData,
+  ContestProblemListInEditPageResponse,
+  ContestProblemOverviewInEditPage,
+} from "@/models/contest";
 
-export type ContestProblemOverviewInEditPage = {
-  sort_order: number;
-  pid: string;
-  title: string;
-};
-
-export type ContestProblemListInEditPageData = {
-  problem_list: ContestProblemOverviewInEditPage[];
-};
-
-export type ContestProblemListInEditPageResponse = {
-  code: number;
-  message: string;
-  data?: ContestProblemListInEditPageData;
+export type {
+  ContestProblemListInEditPageData,
+  ContestProblemListInEditPageResponse,
+  ContestProblemOverviewInEditPage,
 };
 
 export const getContestProblemListInEditPage = async (
   contestId: number
 ): Promise<ContestProblemListInEditPageData | undefined> => {
   const res = await api.get<ContestProblemListInEditPageResponse>(
-    `/api/contest/${contestId}/problem/list`
+    contestEndpoints.problemListInEdit(contestId)
   );
   return res.data.data;
 };

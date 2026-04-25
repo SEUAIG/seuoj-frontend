@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/accordion";
 import TestPointOverview from './TestPointOverview';
 import TestPointDetail from './TestPointDetail';
-import { ResultDetailItem, SubtaskItem } from "../pages/SubmissionPage";
+import type { ResultDetailItem, SubtaskItem } from "@/models/submission";
 import { Badge } from "@/components/ui/badge";
 
 export default function TestPoints({

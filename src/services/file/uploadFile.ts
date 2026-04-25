@@ -1,4 +1,5 @@
 import { api } from "../api/axios";
+import { fileEndpoints } from "@/services/endpoints";
 
 export interface FileUploadResult {
   path: string;
@@ -15,12 +16,12 @@ export interface FileUploadResponse {
 export const uploadFile = async (file: File): Promise<FileUploadResponse> => {
   const formData = new FormData();
   formData.append("file", file);
-  const response = await api.post("/api/file/upload", formData, {
+  const response = await api.post(fileEndpoints.upload, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return response.data;
 };
 
 export const getDownloadUrl = (filePath: string): string => {
-  return `/api/file/download/${filePath}`;
+  return fileEndpoints.download(filePath);
 };

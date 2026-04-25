@@ -1,4 +1,4 @@
-import { api } from "@/services/api/axios";
+import { sendRegisterCode } from "@/services/auth";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 interface Verification {
@@ -36,10 +36,8 @@ export const getVerificationCodeBythunk = createAsyncThunk<
   { rejectValue: string }
 >("verification", async ({ email }, { rejectWithValue }) => {
   try {
-    const res = await api.post("/api/auth/register/send-code", {
-      email: email,
-    });
-    return res.data.data;
+    const res = await sendRegisterCode({ email });
+    return res.data;
   } catch (err: unknown) {
     const maybeError =
       typeof err === "object" && err !== null && "response" in err

@@ -1,21 +1,11 @@
 import { api } from "../api/axios";
-import type { SubmissionListItem } from "../Submission/getSubmissionPage";
+import { assignmentEndpoints } from "@/services/endpoints";
+import type {
+  AssignmentSubmissionPageRequest,
+  AssignmentSubmissionPageResponse,
+} from "@/models/assignment";
 
-export interface AssignmentSubmissionPageRequest {
-  current?: number;
-  size?: number;
-}
-
-export interface AssignmentSubmissionPageResponse {
-  code: number;
-  message: string;
-  data: {
-    total: number;
-    size: number;
-    current: number;
-    records: SubmissionListItem[];
-  };
-}
+export type { AssignmentSubmissionPageRequest, AssignmentSubmissionPageResponse };
 
 export const getAssignmentSubmissionPage = async (
   classId: number,
@@ -23,7 +13,7 @@ export const getAssignmentSubmissionPage = async (
   params: AssignmentSubmissionPageRequest
 ): Promise<AssignmentSubmissionPageResponse> => {
   const response = await api.get(
-    `/api/class/${classId}/assignment/${assignmentId}/submission/page`,
+    assignmentEndpoints.submissionPage(classId, assignmentId),
     { params }
   );
   return response.data;

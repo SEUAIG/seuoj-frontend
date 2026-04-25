@@ -1,20 +1,16 @@
 import { api } from "../api/axios";
+import { permissionEndpoints } from "@/services/endpoints";
+import type {
+  PermissionActionRequest,
+  PermissionActionResponse,
+} from "@/models/permission";
 
-export interface RevokePermissionRequest {
-  resourceType: string;
-  resourceId: string;
-  targetUserId: string;
-  permission: string;
-}
-
-export interface RevokePermissionResponse {
-  code: number;
-  message: string;
-}
+export interface RevokePermissionRequest extends PermissionActionRequest {}
+export interface RevokePermissionResponse extends PermissionActionResponse {}
 
 export const revokePermission = async (
   data: RevokePermissionRequest
 ): Promise<RevokePermissionResponse> => {
-  const response = await api.delete("/api/permission/revoke", { data });
+  const response = await api.delete(permissionEndpoints.revoke, { data });
   return response.data;
 };
