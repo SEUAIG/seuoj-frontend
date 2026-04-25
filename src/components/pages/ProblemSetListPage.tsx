@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/app/store";
 import useQueryToGetProblemSetList from "@/hooks/useQueryToGetProblemSetList";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +28,7 @@ import { Plus, ExternalLink } from "lucide-react";
 
 export default function ProblemSetListPage() {
     const nav = useNavigate();
+    const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
     const [current, setCurrent] = useState(1);
     const [size] = useState(10);
 
@@ -127,6 +130,7 @@ export default function ProblemSetListPage() {
                         <span className="font-semibold text-foreground">{total}</span>{" "}
                         个题单
                     </div>
+                    {isAuthenticated && (
                     <Button
                         onClick={() => nav("/problemset/create")}
                         className="flex items-center gap-2"
@@ -134,6 +138,7 @@ export default function ProblemSetListPage() {
                         <Plus className="h-4 w-4" />
                         创建题单
                     </Button>
+                    )}
                 </div>
                 <div
                     className={`rounded-xl border bg-card shadow-sm ${

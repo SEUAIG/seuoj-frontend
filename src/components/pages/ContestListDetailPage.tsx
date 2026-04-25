@@ -1,6 +1,8 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/app/store";
 import { format, isValid, parseISO } from "date-fns";
 import {
   Table,
@@ -15,11 +17,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   ArrowLeft,
   ExternalLink,
   Settings,
   UserPlus,
   UserMinus,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
@@ -28,6 +40,7 @@ import {
   registerContest,
   unregisterContest,
 } from "@/services/Contest/registerContest";
+import { deleteContest } from "@/services/Contest/deleteContest";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -35,10 +48,13 @@ export default function ContestListDetailPage() {
   const { id } = useParams();
   const contestId = Number(id);
   const nav = useNavigate();
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { data, isLoading, isError, error, refetch } =
     useQueryToGetContestDetail(contestId || 0);
-  const canEdit = true;
+  const canEdit = data?.can_write ?? false;
 
   const handleRegister = async () => {
     if (!contestId) return;
@@ -157,14 +173,25 @@ export default function ContestListDetailPage() {
           )}
         </div>
         {canEdit && (
-          <Button
-            variant="outline"
-            onClick={() => nav(`/contest/${contestId}/edit`)}
-          >
-            <Settings className="mr-2 h-4 w-4" />
-            编辑比赛
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => nav(`/contest/${contestId}/edit`)}
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              编辑比赛
+            </Button>
+            <Button
+              variant="outline"
+              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+              onClick={() => setIsDeleteDialogOpen(true)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              删除比赛
+            </Button>
+          </div>
         )}
+        {isAuthenticated && (
         <div className="flex gap-2">
           {isRegistered ? (
             <Button
@@ -187,14 +214,14 @@ export default function ContestListDetailPage() {
               报名比赛
             </Button>
           )}
-          <Button
-            variant="outline"
-            className="ml-2"
-            onClick={() => nav(`/contest/${contestId}/submissions`)}
-          >
-            提交记录
-          </Button>
         </div>
+        )}
+        <Button
+          variant="outline"
+          onClick={() => nav(`/contest/${contestId}/submissions`)}
+        >
+          提交记录
+        </Button>
       </div>
       <Card>
         <CardContent className="p-6">
@@ -315,6 +342,50 @@ export default function ContestListDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>确认删除比赛？</DialogTitle>
+            <DialogDescription>
+              此操作将删除比赛 "{data.title}"，包括其所有关联的题目数据。此操作不可撤销。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isDeleting}
+              onClick={async () => {
+                setIsDeleting(true);
+                try {
+                  const res = await deleteContest(contestId);
+                  if (res.code === 0) {
+                    toast.success("比赛已删除");
+                    nav("/competition");
+                  } else {
+                    toast.error(res.message || "删除失败");
+                  }
+                } catch (error: any) {
+                  toast.error(error.message || "删除请求发生错误");
+                } finally {
+                  setIsDeleting(false);
+                  setIsDeleteDialogOpen(false);
+                }
+              }}
+            >
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              确认删除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

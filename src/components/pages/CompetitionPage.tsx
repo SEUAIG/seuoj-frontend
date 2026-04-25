@@ -24,6 +24,8 @@ import { Plus } from "lucide-react";
 export default function CompetitionPage() {
   const dispatch = useDispatch();
   const nav = useNavigate();
+  const role = useSelector((state: RootState) => state.auth.user?.role ?? "guest");
+  const isTeacherOrAbove = role === "teacher" || role === "admin" || role === "superadmin";
   const {
     current,
     size,
@@ -258,6 +260,7 @@ export default function CompetitionPage() {
               <span className="font-semibold text-foreground">{total}</span>{" "}
               条结果
             </div>
+            {isTeacherOrAbove && (
             <Button
               onClick={() => nav("/contest/create")}
               className="flex items-center gap-2"
@@ -265,6 +268,7 @@ export default function CompetitionPage() {
               <Plus className="h-4 w-4" />
               创建比赛
             </Button>
+            )}
           </div>
           <ContestListTable
             records={records}

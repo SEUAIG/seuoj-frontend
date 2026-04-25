@@ -80,7 +80,7 @@ export default function CreateAssignmentDialog({
         }
         toast.success("作业创建成功");
         queryClient.invalidateQueries({
-          queryKey: ["classOverview", classId],
+          queryKey: ["assignmentProgress", classId],
         });
         onSuccess?.();
         handleClose();

@@ -89,7 +89,7 @@ export default function AssignmentList({
         toast.success("作业已删除");
         setToDelete(null);
         queryClient.invalidateQueries({ queryKey: ["assignmentPage", classId] });
-        queryClient.invalidateQueries({ queryKey: ["classOverview", classId] });
+        queryClient.invalidateQueries({ queryKey: ["assignmentProgress", classId] });
       } else {
         toast.error(res.message || "删除失败");
       }

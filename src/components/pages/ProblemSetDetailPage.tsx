@@ -1,11 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate } from "react-router-dom";
 import useQueryToGetProblemSetDetail from "@/hooks/useQueryToGetProblemSetDetail";
+import { deleteProblemSet } from "@/services/ProblemSet/deleteProblemSet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -14,8 +23,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Settings, ExternalLink } from "lucide-react";
+import { ArrowLeft, Settings, ExternalLink, Trash2, Loader2 } from "lucide-react";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
+import { toast } from "sonner";
 
 export default function ProblemSetDetailPage() {
   const { id } = useParams();
@@ -27,6 +37,10 @@ export default function ProblemSetDetailPage() {
     isError,
     error,
   } = useQueryToGetProblemSetDetail(Number(id));
+
+  const canEdit = detail?.can_write ?? false;
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (detailLoading) {
     return (
@@ -74,10 +88,22 @@ export default function ProblemSetDetailPage() {
             </p>
           )}
         </div>
-        <Button variant="outline" onClick={() => nav(`/problemset/${id}/edit`)}>
-          <Settings className="mr-2 h-4 w-4" />
-          编辑题单
-        </Button>
+        {canEdit && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => nav(`/problemset/${id}/edit`)}>
+              <Settings className="mr-2 h-4 w-4" />
+              编辑题单
+            </Button>
+            <Button
+              variant="outline"
+              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+              onClick={() => setIsDeleteDialogOpen(true)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              删除题单
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* 基础信息卡片 */}
@@ -186,6 +212,50 @@ export default function ProblemSetDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>确认删除题单？</DialogTitle>
+            <DialogDescription>
+              此操作将删除题单 "{detail.title}"，包括其所有关联的题目数据。此操作不可撤销。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isDeleting}
+              onClick={async () => {
+                setIsDeleting(true);
+                try {
+                  const res = await deleteProblemSet(Number(id));
+                  if (res.code === 0) {
+                    toast.success("题单已删除");
+                    nav("/problemset");
+                  } else {
+                    toast.error(res.message || "删除失败");
+                  }
+                } catch (error: any) {
+                  toast.error(error.message || "删除请求发生错误");
+                } finally {
+                  setIsDeleting(false);
+                  setIsDeleteDialogOpen(false);
+                }
+              }}
+            >
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              确认删除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

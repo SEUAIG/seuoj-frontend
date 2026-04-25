@@ -11,6 +11,7 @@ export type ProblemSetRecord = {
     is_public?: boolean;
     problem_count?: number;
     problem_set_id?: number;
+    can_write?: boolean;
 };
 
 export type ProblemSetPageData = {

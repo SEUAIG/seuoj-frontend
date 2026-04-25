@@ -19,6 +19,7 @@ export type ContestDetailData = {
   is_public?: boolean;
   hide_statistics?: boolean;
   problem_list: ContestProblemOverview[];
+  can_write?: boolean;
 };
 export type ContestDetailResponse = {
   code: number;

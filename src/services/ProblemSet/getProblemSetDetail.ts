@@ -12,6 +12,7 @@ export type ProblemSetDetailData = {
     description?: string;
     is_public?: boolean;
     problem_list?: ProblemSetProblemItem[];
+    can_write?: boolean;
 };
 
 export type ProblemSetDetailResponse = {

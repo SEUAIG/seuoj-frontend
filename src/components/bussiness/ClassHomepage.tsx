@@ -23,7 +23,7 @@ import { Progress } from "@/components/ui/progress";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { getDownloadUrl } from "@/services/file/uploadFile";
 import { getAnnouncementPage } from "@/services/Class/getAnnouncementPage";
-import { getClassOverview } from "@/services/Class/getClassOverview";
+import { getAssignmentProgress } from "@/services/Assignment/getAssignmentProgress";
 import type { ClassDetailData } from "@/services/Class/getClassDetail";
 import ClassIntroEditorDialog from "./ClassIntroEditorDialog";
 import CreateAnnouncementDialog from "./CreateAnnouncementDialog";
@@ -84,14 +84,14 @@ export default function ClassHomepage({
       enabled: !!classId,
     });
 
-  const { data: overviewData, isLoading: isOverviewLoading } = useQuery({
-    queryKey: ["classOverview", classId],
-    queryFn: () => getClassOverview(classId),
+  const { data: progressData, isLoading: isProgressLoading } = useQuery({
+    queryKey: ["assignmentProgress", classId],
+    queryFn: () => getAssignmentProgress(classId),
     enabled: !!classId,
   });
 
   const announcements = announcementData?.data?.records || [];
-  const assignments = overviewData?.data?.assignments || [];
+  const assignments = progressData?.data || [];
 
   return (
     <div className="flex gap-6">
@@ -187,7 +187,7 @@ export default function ClassHomepage({
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            {isOverviewLoading ? (
+            {isProgressLoading ? (
               <div className="flex items-center justify-center py-6">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
@@ -348,7 +348,7 @@ export default function ClassHomepage({
           onClose={() => setIsCreateAssignmentOpen(false)}
           classId={classId}
           onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ["classOverview", classId] });
+            queryClient.invalidateQueries({ queryKey: ["assignmentProgress", classId] });
           }}
         />
       )}
