@@ -108,7 +108,7 @@ export default function LoginForm() {
                     type={showPassword ? "text" : "password"}
                     placeholder="请输入密码"
                     {...field}
-                    className="h-12 rounded-lg pl-10 pr-10 border-input focus:border-primary focus:ring-primary transition-all bg-background/50 hover:bg-background focus:bg-background text-lg tracking-wider"
+                    className="h-12 rounded-lg pl-10 pr-10 border-input focus:border-primary focus:ring-primary transition-all bg-background/50 hover:bg-background focus:bg-background"
                   />
                   {showPassword ? (
                     <Button

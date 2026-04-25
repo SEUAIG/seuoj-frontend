@@ -33,6 +33,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
 import {
   updateContest,
@@ -58,6 +59,7 @@ export default function ContestEditPage() {
   const { id } = useParams();
   const contestId = Number(id);
   const nav = useNavigate();
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSavingPublic, setIsSavingPublic] = React.useState(false);
   const [isSavingHideStats, setIsSavingHideStats] = React.useState(false);
@@ -134,6 +136,8 @@ export default function ContestEditPage() {
       ]);
       if (resInfo.code === 0 && resProblems.code === 0) {
         toast.success("比赛信息及题目列表更新成功");
+        await queryClient.invalidateQueries({ queryKey: ["contestDetail", contestId] });
+        await queryClient.invalidateQueries({ queryKey: ["contestPage"] });
         nav(`/contest/${contestId}`);
       } else {
         const errorMsg = [];

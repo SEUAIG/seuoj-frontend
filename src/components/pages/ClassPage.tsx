@@ -129,7 +129,7 @@ export default function ClassPage() {
         <div>
           <div className="text-2xl font-semibold">班级</div>
           <div className="text-sm text-muted-foreground mt-1">
-            浏览和管理班级列表
+            {isTeacherOrAbove ? "浏览和管理班级列表" : "浏览班级列表"}
           </div>
         </div>
         {isTeacherOrAbove && (
@@ -151,7 +151,7 @@ export default function ClassPage() {
       ) : records.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[40vh] text-center bg-muted/20 rounded-lg border border-dashed">
           <p className="text-muted-foreground text-lg mb-4">
-            暂无班级数据，你可以尝试创建一个新班级。
+            {isTeacherOrAbove ? "暂无班级数据，你可以尝试创建一个新班级。" : "暂无班级数据"}
           </p>
         </div>
       ) : (

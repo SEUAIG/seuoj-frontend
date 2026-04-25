@@ -214,7 +214,7 @@ export default function SignupForm() {
                   <Input
                     placeholder="请输入验证码"
                     {...field}
-                    className="h-12 rounded-lg pl-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all bg-gray-50/50 hover:bg-white focus:bg-white tracking-widest"
+                    className="h-12 rounded-lg pl-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all bg-gray-50/50 hover:bg-white focus:bg-white"
                   />
                 </div>
               </FormControl>
@@ -238,7 +238,7 @@ export default function SignupForm() {
                   <Input
                     type={showPassword1 ? "text" : "password"}
                     placeholder="请输入密码"
-                    className="h-12 rounded-lg pl-10 pr-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all bg-gray-50/50 hover:bg-white focus:bg-white text-lg tracking-wider"
+                    className="h-12 rounded-lg pl-10 pr-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all bg-gray-50/50 hover:bg-white focus:bg-white"
                     {...field}
                   />
                   {showPassword1 ? (
@@ -285,7 +285,7 @@ export default function SignupForm() {
                   <Input
                     type={showPassword2 ? "text" : "password"}
                     placeholder="请再次输入密码"
-                    className="h-12 rounded-lg pl-10 pr-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all bg-gray-50/50 hover:bg-white focus:bg-white text-lg tracking-wider"
+                    className="h-12 rounded-lg pl-10 pr-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all bg-gray-50/50 hover:bg-white focus:bg-white"
                     {...field}
                   />
                   {showPassword2 ? (
