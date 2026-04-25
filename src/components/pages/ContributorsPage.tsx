@@ -58,18 +58,26 @@ const contributors: Contributor[] = [
   },
 ];
 
-function ContributorCard({ contributor }: { contributor: Contributor }) {
+function ContributorCard({ contributor, gold }: { contributor: Contributor; gold?: boolean }) {
   return (
     <a
       href={contributor.github}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex flex-col items-center gap-3 rounded-xl border bg-background/70 p-5 transition-all hover:shadow-md hover:border-primary/30"
+      className={`group flex flex-col items-center gap-3 rounded-xl border bg-background/70 p-5 transition-all hover:shadow-md ${
+        gold
+          ? "border-amber-400/60 hover:border-amber-400 shadow-[0_0_8px_-2px_rgba(251,191,36,0.2)]"
+          : "hover:border-primary/30"
+      }`}
     >
       <img
         src={contributor.avatar}
         alt={contributor.name}
-        className="h-20 w-20 rounded-full ring-2 ring-border transition-all group-hover:ring-primary/40"
+        className={`h-20 w-20 rounded-full ring-2 transition-all ${
+          gold
+            ? "ring-amber-400/50 group-hover:ring-amber-400"
+            : "ring-border group-hover:ring-primary/40"
+        }`}
       />
       <div className="text-center">
         <div className="font-medium">{contributor.name}</div>
@@ -93,13 +101,10 @@ export default function ContributorsPage() {
 
       <Card className="border bg-card/60">
         <CardContent className="p-6 space-y-8">
-          <div className="flex justify-center gap-6">
-            {leadContributors.map((c) => (
-              <ContributorCard key={c.login} contributor={c} />
-            ))}
-          </div>
-
           <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {leadContributors.map((c) => (
+              <ContributorCard key={c.login} contributor={c} gold />
+            ))}
             {contributors.map((c) => (
               <ContributorCard key={c.login} contributor={c} />
             ))}
