@@ -4,7 +4,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { RefreshCcw, FileText, Fullscreen, AlignJustify } from "lucide-react";
+import { RefreshCcw, Fullscreen, AlignJustify } from "lucide-react";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 interface CodeToolsGroupProps {
   onClear: () => void;

@@ -41,7 +41,7 @@ export default function LoginForm() {
       dispatch(setError(""));
       // 在if里可以设置依赖值
     }
-  }, [error]);
+  }, [error, dispatch, setValue]);
   useEffect(() => {
     setFocus("identifier");
   }, [setFocus]);
@@ -50,7 +50,7 @@ export default function LoginForm() {
     if (isAuthenticated) {
       nav("/home");
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, nav]);
   const [showPassword, setShowPassword] = useState(false);
   const nav = useNavigate();
   const { handleSubmit, register, control } = form;

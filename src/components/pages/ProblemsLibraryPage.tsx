@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import {
   Dialog,
@@ -48,23 +48,22 @@ export default function ProblemsLibraryPage() {
     dispatch(setTitle(""));
     dispatch(setCurrent(1));
     setKeyword("");
-  }, []);
+  }, [dispatch]);
 
   const { data, isLoading, isFetching, refetch } =
     useSearchQueryByKeyword<ProblemRecord>(current, size, title, tag_ids);
   const records = data?.records || [];
   const total = data?.total || 0;
-  // 调用函数传参数时位置要11对应
-  const getTagIds = () => {
-    const tag_idsArray = tags.map((item: Tag) => item.tag_id);
-    return tag_idsArray;
-  };
+  const selectedTagIds = useMemo(
+    () => tags.map((item: Tag) => item.tag_id),
+    [tags]
+  );
   useEffect(() => {
     dispatch(setTitle(keyword));
-  }, [keyword]);
+  }, [keyword, dispatch]);
   useEffect(() => {
-    dispatch(setTagIds(getTagIds()));
-  }, [tags]);
+    dispatch(setTagIds(selectedTagIds));
+  }, [selectedTagIds, dispatch]);
   const pages = Math.ceil(total / Number(size));
   return (
     <div className="w-4/5 mx-auto py-6 space-y-6 min-h-screen overflow-x-hidden">

@@ -94,6 +94,17 @@ interface ValidationIssue {
   target?: string;
 }
 
+const SUBTASK_COLOR_CLASSES = [
+  "bg-blue-400",
+  "bg-emerald-400",
+  "bg-amber-400",
+  "bg-rose-400",
+  "bg-violet-400",
+  "bg-cyan-400",
+  "bg-lime-400",
+  "bg-fuchsia-400",
+] as const;
+
 /** 构建测试点列表 — 上传后由服务器解析返回 */
 function buildTestcaseRows(raw: Testcase[]): TestcaseRow[] {
   const stripDataPrefix = (p: string) => p.replace(/^data\//, "");
@@ -387,17 +398,6 @@ function FilePathInput({
 
 /** 分数分配进度条 */
 function ScoreBar({ testcases, subtasks }: { testcases: TestcaseRow[]; subtasks: SubtaskRow[] }) {
-  const subtaskColorClasses = [
-    "bg-blue-400",
-    "bg-emerald-400",
-    "bg-amber-400",
-    "bg-rose-400",
-    "bg-violet-400",
-    "bg-cyan-400",
-    "bg-lime-400",
-    "bg-fuchsia-400",
-  ] as const;
-
   const segments = useMemo(() => {
     if (subtasks.length === 0) {
       // 无子任务：均摊
@@ -412,7 +412,7 @@ function ScoreBar({ testcases, subtasks }: { testcases: TestcaseRow[]; subtasks:
     return subtasks.map((st, i) => ({
       label: `ST#${st.id}`,
       pct: st.score ?? 0,
-      color: subtaskColorClasses[i % subtaskColorClasses.length],
+      color: SUBTASK_COLOR_CLASSES[i % SUBTASK_COLOR_CLASSES.length],
     }));
   }, [testcases, subtasks]);
 

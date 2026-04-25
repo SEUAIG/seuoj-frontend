@@ -58,7 +58,7 @@ export default function SignupForm() {
       reset();
       dispatch(setError(""));
     }
-  }, [error]);
+  }, [error, reset, dispatch]);
   useEffect(() => {
     setFocus("account");
   }, [setFocus]);
