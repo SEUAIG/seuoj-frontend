@@ -164,13 +164,13 @@ export default function Fortune() {
           <div className="flex-1 flex flex-col gap-2 text-xs">
             <div className="flex items-start gap-2">
               <span className="font-semibold text-green-600 shrink-0">宜</span>
-              <span className="text-muted-foreground truncate">
+              <span className="text-muted-foreground break-words min-w-0">
                 {fortuneData.goods[0]}
               </span>
             </div>
             <div className="flex items-start gap-2">
               <span className="font-semibold text-red-600 shrink-0">忌</span>
-              <span className="text-muted-foreground truncate">
+              <span className="text-muted-foreground break-words min-w-0">
                 {fortuneData.bads[0]}
               </span>
             </div>
@@ -190,7 +190,7 @@ export default function Fortune() {
 
         {/* 底部：寄语 */}
         <div className="pt-2 border-t mt-3">
-          <div className="text-xs text-muted-foreground italic text-center truncate">
+          <div className="text-xs text-muted-foreground italic text-center break-words">
             "{fortuneData.message}"
           </div>
         </div>
