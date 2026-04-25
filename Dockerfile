@@ -1,5 +1,5 @@
 # --- 第一阶段：编译阶段 ---
-FROM node:18.20.2-alpine AS build-stage
+FROM node:24-alpine AS build-stage
 
 # 设置容器内的工作目录
 WORKDIR /app

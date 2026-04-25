@@ -11,8 +11,8 @@
     "preview": "vite preview"
   },
   "engines": {
-    "node": ">=18.18.0 <19",
-    "npm": ">=9"
+    "node": ">=24 <25",
+    "npm": ">=10"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -19,7 +19,7 @@
 ## 快速开始
 
 ```bash
-# 要求 Node.js 18.x（推荐 18.20.2）
+# 要求 Node.js 24 LTS
 nvm use          # 读取 .nvmrc
 npm install
 npm run dev      # 开发服务器 → http://localhost:5173
