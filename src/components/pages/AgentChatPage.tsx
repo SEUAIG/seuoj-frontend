@@ -86,10 +86,7 @@ export default function AgentChatPage() {
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [sending, setSending] = useState(false);
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(300);
-  const [rightSidebarWidth, setRightSidebarWidth] = useState(420);
-  const [showCitationPanel, setShowCitationPanel] = useState(false);
-  const [selectedCitation, setSelectedCitation] = useState<CitationItem | null>(null);
-  const [resizingSide, setResizingSide] = useState<"left" | "right" | null>(null);
+  const [resizingSide, setResizingSide] = useState<"left" | null>(null);
   const resizeStartXRef = useRef(0);
   const resizeStartWidthRef = useRef(0);
   const loadedSessionIdsRef = useRef<Set<string>>(new Set());
@@ -114,13 +111,8 @@ export default function AgentChatPage() {
     const handleMouseMove = (event: MouseEvent) => {
       if (!resizingSide) return;
       const delta = event.clientX - resizeStartXRef.current;
-      if (resizingSide === "left") {
-        const nextWidth = Math.max(220, Math.min(520, resizeStartWidthRef.current + delta));
-        setLeftSidebarWidth(nextWidth);
-        return;
-      }
-      const nextWidth = Math.max(320, Math.min(700, resizeStartWidthRef.current - delta));
-      setRightSidebarWidth(nextWidth);
+      const nextWidth = Math.max(220, Math.min(520, resizeStartWidthRef.current + delta));
+      setLeftSidebarWidth(nextWidth);
     };
 
     const handleMouseUp = () => {
@@ -181,10 +173,10 @@ export default function AgentChatPage() {
     };
   }, [isAuthenticated, userId, jwt]);
 
-  function startResize(side: "left" | "right", event: React.MouseEvent<HTMLDivElement>) {
+  function startResize(side: "left", event: React.MouseEvent<HTMLDivElement>) {
     setResizingSide(side);
     resizeStartXRef.current = event.clientX;
-    resizeStartWidthRef.current = side === "left" ? leftSidebarWidth : rightSidebarWidth;
+    resizeStartWidthRef.current = leftSidebarWidth;
   }
 
   function autoResizeTextarea() {
@@ -204,13 +196,10 @@ export default function AgentChatPage() {
     };
     setSessions((previous) => [newSession, ...previous.filter((item) => !item.id.startsWith("temp-session"))]);
     setCurrentSessionId(newSession.id);
-    setShowCitationPanel(false);
-    setSelectedCitation(null);
   }
 
   async function handleSelectSession(sessionId: string) {
     setCurrentSessionId(sessionId);
-    setShowCitationPanel(false);
 
     if (sessionId.startsWith("temp-session")) return;
     if (loadedSessionIdsRef.current.has(sessionId)) return;
@@ -402,11 +391,6 @@ export default function AgentChatPage() {
     }
   }
 
-  function showCitation(citation: CitationItem) {
-    setSelectedCitation(citation);
-    setShowCitationPanel(true);
-  }
-
   return (
     <div className="flex min-h-0 flex-1 w-full bg-background">
       <Helmet>
@@ -566,14 +550,12 @@ export default function AgentChatPage() {
                           <p className="text-xs font-medium text-muted-foreground">参考资料</p>
                           <div className="mt-2 flex flex-wrap gap-2">
                             {citations.map((citation) => (
-                              <button
+                              <span
                                 key={`${message.id}-${citation.number}`}
-                                type="button"
-                                onClick={() => showCitation(citation)}
                                 className="rounded-full border px-2.5 py-1 text-xs transition hover:border-primary hover:text-primary"
                               >
                                 [{citation.number}] {citation.title}
-                              </button>
+                              </span>
                             ))}
                           </div>
                         </div>
@@ -616,39 +598,6 @@ export default function AgentChatPage() {
           </div>
         </main>
 
-        {showCitationPanel ? (
-          <>
-            <div
-              onMouseDown={(event) => startResize("right", event)}
-              className="w-1 shrink-0 cursor-col-resize bg-border transition hover:bg-primary/50"
-            />
-            <aside
-              style={{ width: rightSidebarWidth }}
-              className="flex shrink-0 flex-col border-l bg-card"
-            >
-              <div className="flex items-center justify-between border-b p-4">
-                <h3 className="text-sm font-semibold">参考预览</h3>
-                <button
-                  type="button"
-                  onClick={() => setShowCitationPanel(false)}
-                  className="rounded-md border px-2 py-1 text-xs hover:bg-muted"
-                >
-                  关闭
-                </button>
-              </div>
-              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
-                <p className="text-sm font-medium">{selectedCitation?.title ?? "未选择参考项"}</p>
-                <p className="text-xs text-muted-foreground">参考项 #{selectedCitation?.number ?? "-"}</p>
-                {selectedCitation?.location ? (
-                  <p className="text-xs text-muted-foreground">位置: {selectedCitation.location}</p>
-                ) : null}
-                <div className="rounded-md border bg-muted/30 p-3 text-sm leading-6">
-                  {selectedCitation?.snippet ?? "请从助手消息中选择一个参考项。"}
-                </div>
-              </div>
-            </aside>
-          </>
-        ) : null}
       </div>
     </div>
   );
