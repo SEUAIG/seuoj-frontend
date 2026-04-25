@@ -27,6 +27,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { createClass, CreateClassRequest } from "@/services/Class/createClass";
+import { useSaveShortcut } from "@/hooks/useSaveShortcut";
 
 const formSchema = z.object({
   name: z.string().min(1, "班级名称不能为空"),
@@ -90,6 +91,8 @@ export default function CreateClassModal({
       onClose();
     }
   };
+
+  useSaveShortcut(() => form.handleSubmit(onSubmit)(), isOpen && !isSubmitting);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>

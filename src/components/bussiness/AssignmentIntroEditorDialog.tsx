@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { updateAssignment } from "@/services/Assignment/updateAssignment";
 import { uploadFile } from "@/services/file/uploadFile";
+import { useSaveShortcut } from "@/hooks/useSaveShortcut";
 import type { AssignmentIntroAttachment } from "@/services/Assignment/getAssignmentDetail";
 
 function formatFileSize(bytes: number): string {
@@ -161,6 +162,8 @@ export default function AssignmentIntroEditorDialog({
       setIsSubmitting(false);
     }
   };
+
+  useSaveShortcut(handleSubmit, isOpen && !isSubmitting && !isUploading);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

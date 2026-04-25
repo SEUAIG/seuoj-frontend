@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/form";
 import { updateClass } from "@/services/Class/updateClass";
 import { ClassItem } from "@/services/Class/getClassPage";
+import { useSaveShortcut } from "@/hooks/useSaveShortcut";
 import {
   listPermissions,
   PermissionItem,
@@ -59,6 +60,7 @@ export default function UpdateClassModal({
   classItem,
 }: UpdateClassModalProps) {
   const queryClient = useQueryClient();
+  const [isSavingPublic, setIsSavingPublic] = useState(false);
   const currentUsername = useSelector(
     (state: RootState) => state.auth.user?.username
   );
@@ -98,6 +100,8 @@ export default function UpdateClassModal({
   const onSubmit: any = (values: ClassFormValues) => {
     updateMutation.mutate(values);
   };
+
+  useSaveShortcut(() => form.handleSubmit(onSubmit)(), isOpen && !updateMutation.isPending);
 
   // --- Permission management ---
   const classId = classItem?.class_id;
@@ -264,7 +268,25 @@ export default function UpdateClassModal({
                     <FormControl>
                       <Switch
                         checked={field.value}
-                        onCheckedChange={field.onChange}
+                        disabled={isSavingPublic}
+                        onCheckedChange={async (checked) => {
+                          field.onChange(checked);
+                          if (!classItem) return;
+                          setIsSavingPublic(true);
+                          try {
+                            const res = await updateClass(classItem.class_id, { is_public: checked });
+                            if (res.code !== 0) {
+                              throw new Error(res.message || "更新失败");
+                            }
+                            toast.success("公开状态已更新");
+                            queryClient.invalidateQueries({ queryKey: ["classPage"] });
+                          } catch (error: any) {
+                            field.onChange(!checked);
+                            toast.error(error.message || "更新失败");
+                          } finally {
+                            setIsSavingPublic(false);
+                          }
+                        }}
                       />
                     </FormControl>
                   </FormItem>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { updateProblemSetProblemList } from "@/services/ProblemSet/updateProblem
 import ProblemListEditor, {
   ProblemListItem,
 } from "@/components/bussiness/ProblemListEditor";
+import { useSaveShortcut } from "@/hooks/useSaveShortcut";
 
 export default function ProblemSetUpdatePage() {
   const { id } = useParams();
@@ -29,11 +30,15 @@ export default function ProblemSetUpdatePage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
+  const [isSavingPublic, setIsSavingPublic] = useState(false);
   const [isUpdatingInfo, setIsUpdatingInfo] = useState(false);
 
   // 题目列表
   const [problemList, setProblemList] = useState<ProblemListItem[]>([]);
   const [isUpdatingProblems, setIsUpdatingProblems] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useSaveShortcut(() => formRef.current?.requestSubmit(), !isUpdatingInfo);
 
   // 用详情API的数据初始化表单
   useEffect(() => {
@@ -160,7 +165,7 @@ export default function ProblemSetUpdatePage() {
           <CardTitle>基础信息</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleUpdateInfo} className="space-y-6">
+          <form onSubmit={handleUpdateInfo} ref={formRef} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="title">题单标题</Label>
               <Input
@@ -184,7 +189,24 @@ export default function ProblemSetUpdatePage() {
               <Switch
                 id="is_public"
                 checked={isPublic}
-                onCheckedChange={setIsPublic}
+                disabled={isSavingPublic}
+                onCheckedChange={async (checked) => {
+                  setIsPublic(checked);
+                  setIsSavingPublic(true);
+                  try {
+                    const res = await updateProblemSet(problemSetId, { is_public: checked });
+                    if (res.code === 0) {
+                      toast.success("公开状态已更新");
+                    } else {
+                      throw new Error(res.message || "更新失败");
+                    }
+                  } catch (error: any) {
+                    setIsPublic(!checked);
+                    toast.error(error.message || "更新失败");
+                  } finally {
+                    setIsSavingPublic(false);
+                  }
+                }}
               />
               <div className="space-y-0.5">
                 <Label htmlFor="is_public">公开题单</Label>

@@ -25,6 +25,7 @@ import { updateProblem, uploadProblemTestcases } from "@/services/problemEdit";
 import { createProblem } from "@/services/Problem/createProblem";
 import { useNavigate } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
+import { useSaveShortcut } from "@/hooks/useSaveShortcut";
 
 const exampleSchema = z.object({
   in: z.string().min(1, "示例输入不能为空"),
@@ -47,6 +48,7 @@ interface ProblemEditFormProps {
 }
 export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
   const isCreateMode = !pid;
+  const [isSavingPublic, setIsSavingPublic] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const { tags } = useSelector((state: RootState) => state.tags);
   const nav = useNavigate();
@@ -269,6 +271,8 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
     toast.error(first?.message || "表单校验失败", { position: "top-center" });
   };
 
+  useSaveShortcut(() => handleSubmit(onSubmit as any, onInvalid)(), !formState.isSubmitting);
+
   return (
     <Form {...form}>
       <form
@@ -352,7 +356,24 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                   <FormControl>
                     <Switch
                       checked={field.value}
-                      onCheckedChange={field.onChange}
+                      disabled={isSavingPublic}
+                      onCheckedChange={async (checked) => {
+                        field.onChange(checked);
+                        if (isCreateMode) return;
+                        setIsSavingPublic(true);
+                        try {
+                          const res = await updateProblem({ pid, is_public: checked });
+                          if (res?.code !== 0 && res?.code !== 200) {
+                            throw new Error(res.message || "更新失败");
+                          }
+                          toast.success("公开状态已更新");
+                        } catch (error: any) {
+                          field.onChange(!checked);
+                          toast.error(error.message || "更新失败");
+                        } finally {
+                          setIsSavingPublic(false);
+                        }
+                      }}
                     />
                   </FormControl>
                 </FormItem>

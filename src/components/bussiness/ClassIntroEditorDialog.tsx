@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { updateClass } from "@/services/Class/updateClass";
 import { uploadFile } from "@/services/file/uploadFile";
+import { useSaveShortcut } from "@/hooks/useSaveShortcut";
 import type { ClassIntroAttachment } from "@/services/Class/getClassDetail";
 
 function formatFileSize(bytes: number): string {
@@ -159,6 +160,8 @@ export default function ClassIntroEditorDialog({
       setIsSubmitting(false);
     }
   };
+
+  useSaveShortcut(handleSubmit, isOpen && !isSubmitting && !isUploading);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

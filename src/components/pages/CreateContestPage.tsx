@@ -37,6 +37,7 @@ import {
   createContest,
   CreateContestRequest,
 } from "@/services/Contest/createContest";
+import { useSaveShortcut } from "@/hooks/useSaveShortcut";
 const contestFormSchema = z
   .object({
     title: z.string().min(1, "标题不能为空"),
@@ -98,6 +99,7 @@ export default function CreateContestPage() {
       setIsSubmitting(false);
     }
   };
+  useSaveShortcut(() => form.handleSubmit(onSubmit)(), !isSubmitting);
   return (
     <div className="container mx-auto py-10 max-w-3xl">
       <div className="mb-8">

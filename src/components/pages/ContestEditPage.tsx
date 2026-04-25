@@ -42,6 +42,7 @@ import { updateContestProblemList } from "@/services/Contest/updateContestProble
 import { useQueryContestProblemListInEditPage } from "@/hooks/useQueryContestProblemListInEditPage";
 import { ContestProblemOverviewInEditPage } from "@/services/Contest/getContestProblemListInEditPage";
 import SortListTable from "../common/SortListTable";
+import { useSaveShortcut } from "@/hooks/useSaveShortcut";
 const contestFormSchema = z.object({
   title: z.string().min(1, "标题不能为空"),
   subtitle: z.string().optional(),
@@ -58,6 +59,8 @@ export default function ContestEditPage() {
   const contestId = Number(id);
   const nav = useNavigate();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isSavingPublic, setIsSavingPublic] = React.useState(false);
+  const [isSavingHideStats, setIsSavingHideStats] = React.useState(false);
   const { data: contestDetail, isLoading: isFetchingDetail } =
     useQueryToGetContestDetail(contestId || 0);
   const { data: problemList, isLoading: isFetchingProblems } =
@@ -147,6 +150,8 @@ export default function ContestEditPage() {
       setIsSubmitting(false);
     }
   };
+
+  useSaveShortcut(() => form.handleSubmit(onSubmit)(), !isSubmitting);
 
   if (isFetchingDetail) {
     return (
@@ -365,7 +370,24 @@ export default function ContestEditPage() {
                   <FormControl>
                     <Checkbox
                       checked={field.value}
-                      onCheckedChange={field.onChange}
+                      disabled={isSavingPublic}
+                      onCheckedChange={async (checked) => {
+                        const newValue = !!checked;
+                        field.onChange(newValue);
+                        setIsSavingPublic(true);
+                        try {
+                          const res = await updateContest(contestId, { is_public: newValue });
+                          if (res.code !== 0 && res.code !== 200) {
+                            throw new Error(res.message || "更新失败");
+                          }
+                          toast.success("公开状态已更新");
+                        } catch (error: any) {
+                          field.onChange(!newValue);
+                          toast.error(error.message || "更新失败");
+                        } finally {
+                          setIsSavingPublic(false);
+                        }
+                      }}
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
@@ -385,7 +407,24 @@ export default function ContestEditPage() {
                   <FormControl>
                     <Checkbox
                       checked={field.value}
-                      onCheckedChange={field.onChange}
+                      disabled={isSavingHideStats}
+                      onCheckedChange={async (checked) => {
+                        const newValue = !!checked;
+                        field.onChange(newValue);
+                        setIsSavingHideStats(true);
+                        try {
+                          const res = await updateContest(contestId, { hide_statistics: newValue });
+                          if (res.code !== 0 && res.code !== 200) {
+                            throw new Error(res.message || "更新失败");
+                          }
+                          toast.success("统计显示设置已更新");
+                        } catch (error: any) {
+                          field.onChange(!newValue);
+                          toast.error(error.message || "更新失败");
+                        } finally {
+                          setIsSavingHideStats(false);
+                        }
+                      }}
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">

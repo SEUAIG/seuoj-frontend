@@ -21,6 +21,7 @@ import {
 import { createAnnouncement } from "@/services/Class/createAnnouncement";
 import { updateAnnouncement } from "@/services/Class/updateAnnouncement";
 import { uploadFile } from "@/services/file/uploadFile";
+import { useSaveShortcut } from "@/hooks/useSaveShortcut";
 import type { AnnouncementItem } from "@/services/Class/getAnnouncementPage";
 
 function formatFileSize(bytes: number): string {
@@ -178,6 +179,8 @@ export default function CreateAnnouncementDialog({
       setIsSubmitting(false);
     }
   };
+
+  useSaveShortcut(handleSubmit, isOpen && !isSubmitting && !isUploading);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

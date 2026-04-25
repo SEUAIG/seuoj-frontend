@@ -24,6 +24,7 @@ import {
   updateAssignment,
   type UpdateAssignmentRequest,
 } from "@/services/Assignment/updateAssignment";
+import { useSaveShortcut } from "@/hooks/useSaveShortcut";
 
 function toLocalDatetimeStr(iso: string | null | undefined): string {
   if (!iso) return "";
@@ -67,6 +68,7 @@ export default function AssignmentEditDialog({
   const [deadline, setDeadline] = useState("");
   const [visibleFrom, setVisibleFrom] = useState("");
   const [visibleTo, setVisibleTo] = useState("");
+  const [isSavingStatus, setIsSavingStatus] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -106,6 +108,8 @@ export default function AssignmentEditDialog({
     },
   });
 
+  useSaveShortcut(() => mutation.mutate(), isOpen && !!title.trim() && !mutation.isPending);
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[520px]">
@@ -136,8 +140,27 @@ export default function AssignmentEditDialog({
 
           <div className="space-y-2">
             <Label>状态</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-              <SelectTrigger>
+            <Select value={status} onValueChange={async (v) => {
+              const newStatus = v as "DRAFT" | "PUBLISHED";
+              const prevStatus = status;
+              setStatus(newStatus);
+              setIsSavingStatus(true);
+              try {
+                const res = await updateAssignment(classId, assignmentId, { status: newStatus });
+                if (res.code !== 0) {
+                  throw new Error(res.message || "更新失败");
+                }
+                toast.success(newStatus === "PUBLISHED" ? "已发布" : "已设为草稿");
+                onSuccess?.();
+              } catch (error: unknown) {
+                setStatus(prevStatus);
+                const message = error instanceof Error ? error.message : "更新失败";
+                toast.error(message);
+              } finally {
+                setIsSavingStatus(false);
+              }
+            }}>
+              <SelectTrigger disabled={isSavingStatus}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
