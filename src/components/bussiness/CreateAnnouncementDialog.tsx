@@ -23,6 +23,7 @@ import { updateAnnouncement } from "@/services/Class/updateAnnouncement";
 import { uploadFile } from "@/services/file/uploadFile";
 import { useSaveShortcut } from "@/hooks/useSaveShortcut";
 import type { AnnouncementItem } from "@/services/Class/getAnnouncementPage";
+import { MarkdownImageTextarea } from "@/components/common/MarkdownImageTextarea";
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return bytes + " B";
@@ -184,12 +185,12 @@ export default function CreateAnnouncementDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>{isEdit ? "编辑公告" : "发布公告"}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 py-2 overflow-y-auto max-h-[65vh] pr-1">
           <div>
             <label className="text-sm font-medium mb-1 block">标题</label>
             <Input
@@ -203,11 +204,12 @@ export default function CreateAnnouncementDialog({
             <label className="text-sm font-medium mb-1 block">
               内容 (Markdown)
             </label>
-            <textarea
+            <MarkdownImageTextarea
               className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               placeholder="输入公告内容（支持 Markdown）"
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onValueChange={setContent}
+              disabled={isSubmitting || isUploading}
             />
           </div>
 

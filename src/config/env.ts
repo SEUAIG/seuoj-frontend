@@ -3,4 +3,5 @@
 export const ENV = {
   API_BASE_URL: import.meta.env.VITE_API_BASE_URL || "",
   AI_PLATFORM_URL: import.meta.env.VITE_AI_PLATFORM_URL || "",
+  IMAGE_URL_PREFIX: import.meta.env.VITE_IMAGE_URL_PREFIX || "",
 };

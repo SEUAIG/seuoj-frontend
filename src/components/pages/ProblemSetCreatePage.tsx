@@ -3,7 +3,6 @@ import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +10,7 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { createProblemSet } from "@/services/ProblemSet/createProblemSet";
 import { useQueryClient } from "@tanstack/react-query";
+import { MarkdownImageTextarea } from "@/components/common/MarkdownImageTextarea";
 
 export default function ProblemSetCreatePage() {
     const nav = useNavigate();
@@ -81,12 +81,13 @@ export default function ProblemSetCreatePage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="discription">题单描述</Label>
-                            <Textarea
+                            <MarkdownImageTextarea
                                 id="discription"
                                 placeholder="请输入题单描述（可选）"
                                 className="min-h-[150px]"
                                 value={discription}
-                                onChange={(e) => setDiscription(e.target.value)}
+                                onValueChange={setDiscription}
+                                disabled={isSubmitting}
                             />
                         </div>
                         <div className="flex items-center space-x-3 rounded-md border p-4 shadow-sm">

@@ -22,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import {
   Popover,
@@ -44,6 +43,7 @@ import { useQueryContestProblemListInEditPage } from "@/hooks/useQueryContestPro
 import { ContestProblemOverviewInEditPage } from "@/services/Contest/getContestProblemListInEditPage";
 import SortListTable from "../common/SortListTable";
 import { useSaveShortcut } from "@/hooks/useSaveShortcut";
+import { MarkdownImageTextarea } from "@/components/common/MarkdownImageTextarea";
 const contestFormSchema = z.object({
   title: z.string().min(1, "标题不能为空"),
   subtitle: z.string().optional(),
@@ -448,10 +448,14 @@ export default function ContestEditPage() {
               <FormItem>
                 <FormLabel>详细描述</FormLabel>
                 <FormControl>
-                  <Textarea
+                  <MarkdownImageTextarea
                     placeholder="请输入比赛详细描述（支持 Markdown）"
                     className="min-h-[200px]"
-                    {...field}
+                    value={field.value ?? ""}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    disabled={isSubmitting}
                   />
                 </FormControl>
                 <FormMessage />

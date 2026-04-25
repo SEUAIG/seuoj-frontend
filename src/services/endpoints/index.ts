@@ -8,3 +8,4 @@ export { userEndpoints } from "./user";
 export { submissionEndpoints } from "./submission";
 export { problemEndpoints } from "./problem";
 export { fileEndpoints } from "./file";
+export { imageEndpoints } from "./image";

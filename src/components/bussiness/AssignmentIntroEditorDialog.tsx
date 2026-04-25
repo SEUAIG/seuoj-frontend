@@ -21,6 +21,7 @@ import { updateAssignment } from "@/services/Assignment/updateAssignment";
 import { uploadFile } from "@/services/file/uploadFile";
 import { useSaveShortcut } from "@/hooks/useSaveShortcut";
 import type { AssignmentIntroAttachment } from "@/services/Assignment/getAssignmentDetail";
+import { MarkdownImageTextarea } from "@/components/common/MarkdownImageTextarea";
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return bytes + " B";
@@ -167,21 +168,22 @@ export default function AssignmentIntroEditorDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>编辑作业介绍</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 py-2 overflow-y-auto max-h-[65vh] pr-1">
           <div>
             <label className="text-sm font-medium mb-1 block">
               介绍内容 (Markdown)
             </label>
-            <textarea
+            <MarkdownImageTextarea
               className="w-full min-h-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring font-mono"
               placeholder="输入作业介绍（支持 Markdown）"
               value={introduction}
-              onChange={(e) => setIntroduction(e.target.value)}
+              onValueChange={setIntroduction}
+              disabled={isSubmitting || isUploading}
             />
           </div>
 

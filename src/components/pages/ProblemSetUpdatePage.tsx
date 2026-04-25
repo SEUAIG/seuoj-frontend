@@ -3,7 +3,6 @@ import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +17,7 @@ import ProblemListEditor, {
   ProblemListItem,
 } from "@/components/bussiness/ProblemListEditor";
 import { useSaveShortcut } from "@/hooks/useSaveShortcut";
+import { MarkdownImageTextarea } from "@/components/common/MarkdownImageTextarea";
 
 export default function ProblemSetUpdatePage() {
   const { id } = useParams();
@@ -177,12 +177,13 @@ export default function ProblemSetUpdatePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">题单描述</Label>
-              <Textarea
+              <MarkdownImageTextarea
                 id="description"
                 placeholder="请输入题单描述"
                 className="min-h-[150px]"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onValueChange={setDescription}
+                disabled={isUpdatingInfo}
               />
             </div>
             <div className="flex items-center space-x-3 rounded-md border p-4 shadow-sm">

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { MarkdownImageTextarea } from "@/components/common/MarkdownImageTextarea";
 import {
   Form,
   FormControl,
@@ -390,10 +391,14 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                 <FormItem>
                   <FormLabel>题目描述</FormLabel>
                   <FormControl>
-                    <Textarea
+                    <MarkdownImageTextarea
                       placeholder="请输入题目描述（支持 Markdown）"
                       className="min-h-[200px] bg-background/50"
-                      {...field}
+                      value={field.value ?? ""}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      disabled={formState.isSubmitting}
                     />
                   </FormControl>
                   <FormMessage />
@@ -408,10 +413,14 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                 <FormItem>
                   <FormLabel>输入格式</FormLabel>
                   <FormControl>
-                    <Textarea
+                    <MarkdownImageTextarea
                       placeholder="请输入输入格式说明（支持 Markdown）"
                       className="min-h-[100px] bg-background/50"
-                      {...field}
+                      value={field.value ?? ""}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      disabled={formState.isSubmitting}
                     />
                   </FormControl>
                   <FormMessage />
@@ -426,10 +435,14 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                 <FormItem>
                   <FormLabel>输出格式</FormLabel>
                   <FormControl>
-                    <Textarea
+                    <MarkdownImageTextarea
                       placeholder="请输入输出格式说明（支持 Markdown）"
                       className="min-h-[100px] bg-background/50"
-                      {...field}
+                      value={field.value ?? ""}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      disabled={formState.isSubmitting}
                     />
                   </FormControl>
                   <FormMessage />
@@ -444,10 +457,14 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
                 <FormItem>
                   <FormLabel>提示</FormLabel>
                   <FormControl>
-                    <Textarea
+                    <MarkdownImageTextarea
                       placeholder="请输入提示（支持 Markdown）"
                       className="min-h-[80px] bg-background/50"
-                      {...field}
+                      value={field.value ?? ""}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      disabled={formState.isSubmitting}
                     />
                   </FormControl>
                   <FormMessage />
