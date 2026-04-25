@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # 安装依赖（生产环境构建使用 npm ci，保证基于 lockfile 的干净安装）
-RUN npm ci
+RUN npm ci --verbose --registry=https://registry.npmmirror.com
 
 # 复制项目所有源代码
 COPY . .
