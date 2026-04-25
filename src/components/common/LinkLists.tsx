@@ -13,6 +13,7 @@ import {
   ChevronDown,
   BookOpen,
   Ellipsis,
+  Users,
 } from "lucide-react";
 import React from "react";
 import NavItem from "./NavItem";
@@ -43,6 +44,7 @@ export default function LinkLists() {
   );
   const moreActive =
     location.pathname.startsWith("/help") ||
+    location.pathname.startsWith("/contributors") ||
     location.pathname.startsWith("/admin");
 
   return (
@@ -178,6 +180,13 @@ export default function LinkLists() {
             >
               <CircleQuestionMark className="h-4 w-4" />
               <span>帮助</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={() => navigate("/contributors")}
+            >
+              <Users className="h-4 w-4" />
+              <span>贡献者</span>
             </DropdownMenuItem>
             {isAdmin && (
               <DropdownMenuItem

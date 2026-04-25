@@ -47,6 +47,9 @@ const LearningChainPage = React.lazy(
   () => import("./components/pages/LearningChainPage")
 );
 const HelpPage = React.lazy(() => import("./components/pages/HelpPage"));
+const ContributorsPage = React.lazy(
+  () => import("./components/pages/ContributorsPage")
+);
 const ProblemDetailPage = React.lazy(
   () => import("./components/pages/ProblemDetailPage")
 );
@@ -213,6 +216,7 @@ function App() {
           <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />
           <Route path="/learning-chain" element={<LearningChainPage />} />
           <Route path="/help" element={<HelpPage />} />
+          <Route path="/contributors" element={<ContributorsPage />} />
           <Route element={<ProtectedRoute allowRole="admin" />}>
             <Route path="/admin/users" element={<AdminUserManagementPage />} />
           </Route>
