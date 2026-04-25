@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { RootState } from "@/app/store";
 import { Helmet } from "react-helmet-async";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { getUserProfile, UserProfile } from "@/services/user/getUserProfile";
+import { updateUserRole } from "@/services/user/updateUserRole";
+import { getAssignableRoles, canEditUserRole, roleToUpper, roleToLower } from "@/lib/rolePermissions";
+import RoleSelect from "@/components/bussiness/RoleSelect";
+import type { CommonUserRole } from "@/models/user";
 
 const roleLabelMap: Record<string, string> = {
   student: "学生",
@@ -23,9 +30,11 @@ const roleVariantMap: Record<string, "default" | "secondary" | "destructive"> = 
 
 export default function UserProfilePage() {
   const { userId } = useParams<{ userId: string }>();
+  const currentUser = useSelector((state: RootState) => state.auth.user);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [roleUpdating, setRoleUpdating] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -72,9 +81,50 @@ export default function UserProfilePage() {
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-3">
                 <span className="text-2xl font-bold">{displayName}</span>
-                <Badge variant={roleVariantMap[profile.role] || "secondary"}>
-                  {roleLabelMap[profile.role] || profile.role}
-                </Badge>
+                {(() => {
+                  const upperRole = roleToUpper(profile.role);
+                  const editable = canEditUserRole(
+                    currentUser?.role,
+                    currentUser?.username ?? "",
+                    profile.username,
+                    upperRole
+                  );
+                  if (editable) {
+                    return (
+                      <RoleSelect
+                        currentRole={upperRole as CommonUserRole}
+                        assignableRoles={getAssignableRoles(currentUser?.role)}
+                        loading={roleUpdating}
+                        onRoleChange={async (newRole) => {
+                          setRoleUpdating(true);
+                          try {
+                            const res = await updateUserRole(profile.id, newRole);
+                            if (res.code === 0) {
+                              toast.success(`角色已更改为 ${newRole}`);
+                              setProfile((prev) =>
+                                prev ? { ...prev, role: roleToLower(newRole) } : prev
+                              );
+                            } else {
+                              toast.error(res.message || "角色修改失败");
+                            }
+                          } catch (err: unknown) {
+                            toast.error(
+                              "角色修改失败: " +
+                                (err instanceof Error ? err.message : String(err))
+                            );
+                          } finally {
+                            setRoleUpdating(false);
+                          }
+                        }}
+                      />
+                    );
+                  }
+                  return (
+                    <Badge variant={roleVariantMap[profile.role] || "secondary"}>
+                      {roleLabelMap[profile.role] || profile.role}
+                    </Badge>
+                  );
+                })()}
               </div>
               {profile.nickname && (
                 <span className="text-muted-foreground">@{profile.username}</span>

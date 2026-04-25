@@ -4,4 +4,5 @@ export const userEndpoints = {
   profileById: (userId: number) => `/api/user/profile/${userId}`,
   meProfile: "/api/user/me/profile",
   myHeatmap: "/api/me/heatmap",
+  adminUpdateRole: (userId: number) => `/api/admin/user/${userId}/role`,
 };

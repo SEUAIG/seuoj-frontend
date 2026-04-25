@@ -1,4 +1,7 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { RootState } from "@/app/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -55,6 +58,9 @@ import {
     resolveBatchImportPassword,
     type BatchImportPasswordSource,
 } from "@/lib/batchImportPassword";
+import { getAssignableRoles, canEditUserRole } from "@/lib/rolePermissions";
+import { updateUserRole } from "@/services/user/updateUserRole";
+import RoleSelect from "@/components/bussiness/RoleSelect";
 
 type FileType = "csv" | "xlsx" | null;
 type ImportStep = "config" | "mapping" | "preview" | "result";
@@ -63,6 +69,9 @@ type PreviewImportUserRow = BatchImportUserRow & {
 };
 
 export default function AdminUserManagementPage() {
+    const navigate = useNavigate();
+    const currentUser = useSelector((state: RootState) => state.auth.user);
+
     // User list state
     const [users, setUsers] = useState<UserPageRecord[]>([]);
     const [total, setTotal] = useState(0);
@@ -71,7 +80,9 @@ export default function AdminUserManagementPage() {
     const [searchUsername, setSearchUsername] = useState("");
     const [searchEmail, setSearchEmail] = useState("");
     const [loading, setLoading] = useState(false);
-    const [loaded, setLoaded] = useState(false);
+
+    // Role editing state
+    const [editingUserId, setEditingUserId] = useState<number | null>(null);
 
     // Batch import state
     const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -101,7 +112,6 @@ export default function AdminUserManagementPage() {
                 if (res.code === 0) {
                     setUsers(res.data.records);
                     setTotal(res.data.total);
-                    setLoaded(true);
                 }
             } catch (err: unknown) {
                 toast.error(
@@ -114,6 +124,11 @@ export default function AdminUserManagementPage() {
         },
         [currentPage, pageSize, searchUsername, searchEmail]
     );
+
+    useEffect(() => {
+        fetchUsers(1);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleSearch = () => {
         setCurrentPage(1);
@@ -321,7 +336,7 @@ export default function AdminUserManagementPage() {
                 toast.success(
                     `导入完成：成功 ${res.data.successCount} 个，跳过 ${res.data.skippedCount} 个，失败 ${res.data.failCount} 个`
                 );
-                if (loaded) fetchUsers();
+                fetchUsers();
             } else {
                 toast.error("导入失败: " + res.message);
             }
@@ -433,12 +448,7 @@ export default function AdminUserManagementPage() {
             </div>
 
             {/* User table */}
-            {!loaded ? (
-                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                    <Search className="h-12 w-12 mb-4 opacity-50" />
-                    <p className="text-lg">点击搜索按钮加载用户列表</p>
-                </div>
-            ) : loading ? (
+            {loading && users.length === 0 ? (
                 <div className="flex items-center justify-center py-20">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
@@ -465,28 +475,66 @@ export default function AdminUserManagementPage() {
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    users.map((user) => (
-                                        <TableRow key={user.user_id}>
-                                            <TableCell className="font-medium">
-                                                {user.username}
-                                            </TableCell>
-                                            <TableCell className="text-muted-foreground">{user.nickname || "-"}</TableCell>
-                                            <TableCell>{user.email}</TableCell>
-                                            <TableCell>
-                                                <div className="flex gap-1 flex-wrap">
-                                                    {user.roles.map((role) => (
-                                                        <Badge
-                                                            key={role}
-                                                            variant="secondary"
-                                                            className={roleColors[role] || ""}
-                                                        >
-                                                            {role}
-                                                        </Badge>
-                                                    ))}
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
+                                    users.map((user) => {
+                                        const primaryRole = user.roles[0] ?? "STUDENT";
+                                        const editable = canEditUserRole(
+                                            currentUser?.role,
+                                            currentUser?.username ?? "",
+                                            user.username,
+                                            primaryRole
+                                        );
+                                        return (
+                                            <TableRow
+                                                key={user.user_id}
+                                                className="cursor-pointer hover:bg-muted/50"
+                                                onClick={() => navigate(`/user/${user.user_id}`)}
+                                            >
+                                                <TableCell className="font-medium">
+                                                    {user.username}
+                                                </TableCell>
+                                                <TableCell className="text-muted-foreground">{user.nickname || "-"}</TableCell>
+                                                <TableCell>{user.email}</TableCell>
+                                                <TableCell onClick={(e) => e.stopPropagation()}>
+                                                    {editable ? (
+                                                        <RoleSelect
+                                                            currentRole={primaryRole}
+                                                            assignableRoles={getAssignableRoles(currentUser?.role)}
+                                                            loading={editingUserId === user.user_id}
+                                                            disabled={editingUserId !== null}
+                                                            onRoleChange={async (newRole) => {
+                                                                setEditingUserId(user.user_id);
+                                                                try {
+                                                                    const res = await updateUserRole(user.user_id, newRole);
+                                                                    if (res.code === 0) {
+                                                                        toast.success(`已将 ${user.username} 的角色更改为 ${newRole}`);
+                                                                        fetchUsers();
+                                                                    } else {
+                                                                        toast.error(res.message || "角色修改失败");
+                                                                    }
+                                                                } catch (err: unknown) {
+                                                                    toast.error("角色修改失败: " + (err instanceof Error ? err.message : String(err)));
+                                                                } finally {
+                                                                    setEditingUserId(null);
+                                                                }
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <div className="flex gap-1 flex-wrap">
+                                                            {user.roles.map((role) => (
+                                                                <Badge
+                                                                    key={role}
+                                                                    variant="secondary"
+                                                                    className={roleColors[role] || ""}
+                                                                >
+                                                                    {role}
+                                                                </Badge>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
                                 )}
                             </TableBody>
                         </Table>
