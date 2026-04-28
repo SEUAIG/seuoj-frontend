@@ -1,4 +1,4 @@
-import type { ApiResponse } from "@/models/common";
+import type { ApiResponse, ApiResponseBase } from "@/models/common";
 
 export interface ProblemExample {
   in: string;
@@ -41,6 +41,7 @@ export interface ProblemData {
   totalAccept: number;
   submittable?: boolean;
   is_public?: boolean;
+  can_write?: boolean;
 }
 
 export interface ProblemDetailQuery {
@@ -82,3 +83,5 @@ export interface ProblemStatisticsData {
 }
 
 export type ProblemStatisticsResponse = ApiResponse<ProblemStatisticsData>;
+
+export type DeleteProblemResponse = ApiResponseBase;

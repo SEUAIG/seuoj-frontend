@@ -14,8 +14,7 @@ import { getProblemDetail } from "@/services/Problem/getProblemDetail";
 import { submitSolution } from "@/services/Submission/submitSolution";
 import type { CreateSubmissionRequest } from "@/models/submission";
 export default function ProblemDetailPage() {
-  const { isAuthenticated, user } = useSelector((store: RootState) => store.auth);
-  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+  const { isAuthenticated } = useSelector((store: RootState) => store.auth);
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const [problem, setProblem] = useState<ProblemData | null>(null);
@@ -53,11 +52,11 @@ export default function ProblemDetailPage() {
   useEffect(() => {
     if (!problem) return;
     if (hasTestCases) return;
-    if (!isAdmin) return;
+    if (!problem.can_write) return;
     if (promptedNoTestcasePidRef.current === problem.pid) return;
     promptedNoTestcasePidRef.current = problem.pid;
     toast.warning("当前题目没有测试点，请点击“评测配置”上传压缩包并配置测试点");
-  }, [problem, hasTestCases, isAdmin]);
+  }, [problem, hasTestCases]);
   if (!problem) {
     return (
       <div className="min-h-screen bg-gray-50 py-4 pb-10">
