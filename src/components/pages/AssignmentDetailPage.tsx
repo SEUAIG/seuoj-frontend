@@ -130,6 +130,7 @@ export default function AssignmentDetailPage() {
   const [isEditingProblems, setIsEditingProblems] = useState(false);
   const [editProblems, setEditProblems] = useState<ContestProblemOverviewInEditPage[]>([]);
   const [isSavingProblems, setIsSavingProblems] = useState(false);
+  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
 
   const {
     data: detailResp,
@@ -416,7 +417,11 @@ export default function AssignmentDetailPage() {
                       <div
                         key={p.pid}
                         className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer"
-                        onClick={() => nav(`/problemsLibrary/${p.pid}?assignment_id=${assignmentId}`)}
+                        onClick={() =>
+                          nav(
+                            `/problemsLibrary/${p.pid}?assignment_id=${assignmentId}&from=${from}`
+                          )
+                        }
                       >
                         <span className="text-xs text-muted-foreground w-6">
                           {i + 1}
@@ -578,7 +583,11 @@ export default function AssignmentDetailPage() {
                         <tr
                           key={p.pid}
                           className="bg-card hover:bg-muted/50 transition-colors cursor-pointer"
-                          onClick={() => nav(`/problemsLibrary/${p.pid}?assignment_id=${assignmentId}`)}
+                          onClick={() =>
+                            nav(
+                              `/problemsLibrary/${p.pid}?assignment_id=${assignmentId}&from=${from}`
+                            )
+                          }
                         >
                           <td className="px-6 py-3 text-muted-foreground">
                             {i + 1}

@@ -54,6 +54,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
   const dispatch = useDispatch<AppDispatch>();
   const { tags } = useSelector((state: RootState) => state.tags);
   const nav = useNavigate();
+  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
   const queryClient = useQueryClient();
   const isSettingInitialTags = useRef(false);
   const form = useForm<ProblemEditValues>({
@@ -190,7 +191,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
         if (res.code === 0) {
           toast.success("创建成功");
           await queryClient.invalidateQueries({ queryKey: ["search"] });
-          nav(`/problemsLibrary/${res.data.pid}`);
+          nav(`/problemsLibrary/${res.data.pid}?from=${from}`);
         } else {
           toast.error(res.message || "创建失败");
         }
@@ -230,7 +231,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
       await updateProblemRequest();
       toast.success("更新成功", { position: "top-center" });
       await queryClient.invalidateQueries({ queryKey: ["search"] });
-      nav(`/problemsLibrary/${pid}`);
+      nav(`/problemsLibrary/${pid}?from=${from}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "更新失败";
       toast.error(message, { position: "top-center" });

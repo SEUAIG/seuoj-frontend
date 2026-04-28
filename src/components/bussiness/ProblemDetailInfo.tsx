@@ -3,6 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Code,
   Clock,
   BookCopy,
@@ -14,13 +22,18 @@ import {
   Edit,
   MessageCircle,
   Rocket,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/app/store";
+import { useQueryClient } from "@tanstack/react-query";
 import { ProblemSection } from "./ProblemSection";
 import { ExampleSection } from "./ExampleSection";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import type { ProblemData, ProblemInfo as Info } from "@/models/problem";
+import { deleteProblem } from "@/services/Problem/deleteProblem";
+import { toast } from "sonner";
 interface ProblemDetailInfoProps {
   problem: ProblemData;
   isAuthenticated: boolean;
@@ -34,8 +47,10 @@ export default function ProblemDetailInfo({
   onPracticeClick,
 }: ProblemDetailInfoProps) {
   const nav = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useSelector((store: RootState) => store.auth);
-  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
   const isTeacherOrAbove =
     user?.role === "teacher" || user?.role === "admin" || user?.role === "superadmin";
   const { title, content, tags, pid, totalSubmit, totalAccept } = problem;
@@ -192,7 +207,7 @@ export default function ProblemDetailInfo({
             {practiceButtonLabel || "AI练习"}
           </Button>
         )}
-        {isAdmin && (
+        {problem.can_write ? (
           <>
             <Button
               className="bg-purple-600 hover:bg-purple-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
@@ -223,8 +238,20 @@ export default function ProblemDetailInfo({
               <Download className="mr-2 h-4 w-4" />
               下载文件
             </Button>
+            <Button
+              variant="outline"
+              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+              onClick={() => setIsDeleteDialogOpen(true)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              删除题目
+            </Button>
           </>
-        )}
+        ) : isTeacherOrAbove ? (
+          <p className="text-sm text-muted-foreground border rounded-md px-4 py-2 bg-gray-50">
+            你暂无此题的编辑权限。如需修改，请联系管理员授予权限。
+          </p>
+        ) : null}
       </div>
       {/* === 3. 题目内容区 === */}
       <div className="space-y-6">
@@ -253,6 +280,50 @@ export default function ProblemDetailInfo({
           </ProblemSection>
         )}
       </div>
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>确认删除题目？</DialogTitle>
+            <DialogDescription>
+              此操作将删除题目 "{title}"（{pid}）及其关联数据。若题目存在提交记录或被比赛/题单关联，后端会拒绝删除。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isDeleting}
+              onClick={async () => {
+                setIsDeleting(true);
+                try {
+                  const res = await deleteProblem(pid);
+                  if (res.code === 0) {
+                    toast.success("题目已删除");
+                    queryClient.invalidateQueries({ queryKey: ["search"] });
+                    nav("/problemsLibrary");
+                  } else {
+                    toast.error(res.message || "删除失败");
+                  }
+                } catch (error: any) {
+                  toast.error(error.message || "删除请求发生错误");
+                } finally {
+                  setIsDeleting(false);
+                  setIsDeleteDialogOpen(false);
+                }
+              }}
+            >
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              确认删除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

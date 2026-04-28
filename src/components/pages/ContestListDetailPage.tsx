@@ -52,6 +52,7 @@ export default function ContestListDetailPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
   const { data, isLoading, isError, error, refetch } =
     useQueryToGetContestDetail(contestId || 0);
   const canEdit = data?.can_write ?? false;
@@ -306,7 +307,7 @@ export default function ContestListDetailPage() {
                             className="font-medium cursor-pointer hover:text-blue-600 hover:underline transition-colors"
                             onClick={() =>
                               nav(
-                                `/contest/${contestId}/${problem.pid}`
+                                `/contest/${contestId}/${problem.pid}?from=${from}`
                               )
                             }
                           >
@@ -319,7 +320,7 @@ export default function ContestListDetailPage() {
                             size="sm"
                             onClick={() =>
                               nav(
-                                `/contest/${contestId}/${problem.pid}`
+                                `/contest/${contestId}/${problem.pid}?from=${from}`
                               )
                             }
                           >

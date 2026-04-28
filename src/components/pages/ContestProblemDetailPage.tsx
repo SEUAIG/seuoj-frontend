@@ -12,12 +12,14 @@ import type { ProblemData } from "@/models/problem";
 import { toast } from "sonner";
 import ContestProblemDetailInfo from "@/components/bussiness/ContestProblemDetailInfo";
 import { submitContestSolution } from "@/services/Contest/submitContestSolution";
+import ProblemAccessState from "@/components/common/ProblemAccessState";
 export default function ContestProblemDetailPage() {
   const { isAuthenticated } = useSelector((store: RootState) => store.auth);
   const { id, pid: pidParam } = useParams();
   const contestId = Number(id);
   const [hide, setHide] = useState(false);
   const [codeFile, setCodeFile] = useState("");
+  const [problemErrorCode, setProblemErrorCode] = useState<number | null>(null);
   const { language, codeFileObjectArray } = useSelector(
     (store: RootState) => store.contestCode
   );
@@ -26,6 +28,17 @@ export default function ContestProblemDetailPage() {
     contestId || 0,
     pidParam || ""
   );
+
+  useEffect(() => {
+    if (!isError || !error) {
+      setProblemErrorCode(null);
+      return;
+    }
+    const maybeCode = Number((error as Error & { code?: number }).code);
+    if (!Number.isNaN(maybeCode)) {
+      setProblemErrorCode(maybeCode);
+    }
+  }, [isError, error]);
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 py-4 pb-10">
@@ -63,6 +76,14 @@ export default function ContestProblemDetailPage() {
     );
   }
   if (isError || !data) {
+    const isKnown404 = problemErrorCode === 40401 || problemErrorCode === 40402;
+    if (isKnown404) {
+      return (
+        <div className="h-[calc(100vh-5.5rem)] w-full border-t border-gray-200 bg-gray-50">
+          <ProblemAccessState code={problemErrorCode} />
+        </div>
+      );
+    }
     return (
       <div className="w-4/5 mx-auto py-6 text-center text-muted-foreground">
         <div className="text-xl font-semibold mb-2">加载题目失败</div>

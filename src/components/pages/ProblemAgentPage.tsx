@@ -22,6 +22,7 @@ import type {
 import type { ProblemData } from "@/models/problem";
 import { getProblemDetail } from "@/services/Problem/getProblemDetail";
 import { submitSolution } from "@/services/Submission/submitSolution";
+import ProblemAccessState from "@/components/common/ProblemAccessState";
 
 type TestStatus = "pending" | "running" | "passed" | "failed" | "error";
 
@@ -49,6 +50,7 @@ const submitLanguageMap: Record<AgentCodingLanguage, string> = {
 
 export default function ProblemAgentPage() {
   const nav = useNavigate();
+  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
   const dispatch = useDispatch();
   const { id } = useParams();
   const { isAuthenticated } = useSelector((store: RootState) => store.auth);
@@ -57,6 +59,7 @@ export default function ProblemAgentPage() {
   );
   const [problemData, setProblemData] = useState<ProblemData | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [problemErrorCode, setProblemErrorCode] = useState<number | null>(null);
   const [pseudocode, setPseudocode] = useState("");
   const [language, setLanguage] = useState<AgentCodingLanguage>("cpp");
   const [suggestions, setSuggestions] = useState("");
@@ -121,9 +124,13 @@ export default function ProblemAgentPage() {
       setSuggestions("");
       setStdinCode("");
       setTestCases([]);
+      setProblemData(null);
+      setProblemErrorCode(null);
       try {
         const result = await getProblemDetail(selectedProblemId);
-        if (result.code !== 0 || !result.data) {
+        const code = Number(result.code);
+        if (code !== 0 || !result.data) {
+          setProblemErrorCode(code);
           toast.error(result.message || "获取题目详情失败");
           return;
         }
@@ -332,10 +339,10 @@ export default function ProblemAgentPage() {
               problem={problemData}
               isAuthenticated={isAuthenticated}
               practiceButtonLabel="传统练习"
-              onPracticeClick={(pid) => nav(`/problemsLibrary/${pid}`)}
+              onPracticeClick={(pid) => nav(`/problemsLibrary/${pid}?from=${from}`)}
             />
           ) : (
-            <div className="p-6 text-sm text-muted-foreground">题目不存在或加载失败</div>
+            <ProblemAccessState code={problemErrorCode} />
           )}
         </div>
 

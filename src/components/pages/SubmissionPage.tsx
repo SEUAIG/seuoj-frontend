@@ -35,6 +35,7 @@ export default function SubmissionPage() {
   const [searchParams] = useSearchParams();
   const title = searchParams.get("title");
   const nav = useNavigate();
+  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
   // 获取查询参数 使用数组进行解构 因为他返回了一个长度为2的数组 但本身是一个对象
   // 这不是一个普通对象 不能直接获取值 而是一个实例 使用get
   const { submissionNo } = useParams();
@@ -157,7 +158,7 @@ export default function SubmissionPage() {
       <div className="flex justify-end mb-4 space-x-4">
         <Button
           variant="outline"
-          onClick={() => nav(`/problemsLibrary/${submission.pid}`)}
+          onClick={() => nav(`/problemsLibrary/${submission.pid}?from=${from}`)}
         >
           返回题目
         </Button>

@@ -144,6 +144,7 @@ export default function SubmissionListPanel({
   pid: initialPid = "",
 }: SubmissionListPanelProps) {
   const navigate = useNavigate();
+  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
   const { user } = useSelector((state: RootState) => state.auth);
   const isPrivileged =
     user?.role === "teacher" ||
@@ -382,7 +383,7 @@ export default function SubmissionListPanel({
                               className="text-primary font-medium hover:underline hover:text-primary/80 transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/problemsLibrary/${item.pid}`);
+                                navigate(`/problemsLibrary/${item.pid}?from=${from}`);
                               }}
                             >
                               {item.pid}

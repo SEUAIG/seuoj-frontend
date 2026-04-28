@@ -499,6 +499,7 @@ export default function ProblemJudgeConfigPage() {
   const { id } = useParams();
   const nav = useNavigate();
   const pid = id || "";
+  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
 
   const [testcaseFile, setTestcaseFile] = useState<File | null>(null);
   const [testcaseFormat, setTestcaseFormat] = useState("");
@@ -787,7 +788,7 @@ export default function ProblemJudgeConfigPage() {
       }
 
       setDirty(false);
-      nav(`/problemsLibrary/${pid}`);
+      nav(`/problemsLibrary/${pid}?from=${from}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "保存失败";
       toast.error(message, { position: "top-center" });

@@ -24,6 +24,7 @@ export default function SubmissionRecord({
   title,
 }: SubmissionRecordProps) {
   const nav = useNavigate();
+  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
   const {
     submissionNo,
     pid,
@@ -89,7 +90,7 @@ export default function SubmissionRecord({
           <TableCell className="text-center">
             <span
               className="cursor-pointer text-primary hover:underline"
-              onClick={() => nav(`/problemsLibrary/${pid}`)}
+              onClick={() => nav(`/problemsLibrary/${pid}?from=${from}`)}
             >
               {title || pid}
             </span>

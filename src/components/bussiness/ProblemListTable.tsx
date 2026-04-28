@@ -27,6 +27,7 @@ export default function ProblemListTable({
   isLoading = false,
 }: ProblemListTableProps) {
   const nav = useNavigate();
+  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
   if (records.length === 0 && isLoading) {
     return (
       <div className="flex justify-center items-center py-10 text-muted-foreground">
@@ -90,12 +91,12 @@ export default function ProblemListTable({
                 key={problem.pid}
                 className="cursor-pointer hover:bg-muted/50"
                 onClick={() => {
-                  nav(`/problemsLibrary/${problem.pid}`);
+                  nav(`/problemsLibrary/${problem.pid}?from=${from}`);
                 }}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    nav(`/problemsLibrary/${problem.pid}`);
+                    nav(`/problemsLibrary/${problem.pid}?from=${from}`);
                   }
                 }}
                 role="button"
