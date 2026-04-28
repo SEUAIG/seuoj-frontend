@@ -285,7 +285,7 @@ export default function ProblemDetailInfo({
           <DialogHeader>
             <DialogTitle>确认删除题目？</DialogTitle>
             <DialogDescription>
-              此操作将删除题目 "{title}"（{pid}）及其关联数据。若题目存在提交记录或被比赛/题单关联，后端会拒绝删除。
+              将删除题目 "{title}"（{pid}）的元数据。
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
