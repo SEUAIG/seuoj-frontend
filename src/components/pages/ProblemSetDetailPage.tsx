@@ -43,6 +43,7 @@ export default function ProblemSetDetailPage() {
   const canEdit = detail?.can_write ?? false;
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
 
   if (detailLoading) {
     return (
@@ -172,7 +173,9 @@ export default function ProblemSetDetailPage() {
                         <TableCell className="font-mono">
                           <span
                             onClick={() =>
-                              nav(`/problemsLibrary/${problem.pid}?problem_set_id=${id}`)
+                              nav(
+                                `/problemsLibrary/${problem.pid}?problem_set_id=${id}&from=${from}`
+                              )
                             }
                             className="hover:text-blue-700 hover:underline cursor-pointer transition-colors"
                           >
@@ -182,7 +185,9 @@ export default function ProblemSetDetailPage() {
                         <TableCell>
                           <span
                             onClick={() =>
-                              nav(`/problemsLibrary/${problem.pid}?problem_set_id=${id}`)
+                              nav(
+                                `/problemsLibrary/${problem.pid}?problem_set_id=${id}&from=${from}`
+                              )
                             }
                             className="font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer transition-colors"
                           >
@@ -194,7 +199,9 @@ export default function ProblemSetDetailPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() =>
-                              nav(`/problemsLibrary/${problem.pid}?problem_set_id=${id}`)
+                              nav(
+                                `/problemsLibrary/${problem.pid}?problem_set_id=${id}&from=${from}`
+                              )
                             }
                           >
                             <ExternalLink className="h-4 w-4 mr-1" />

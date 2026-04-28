@@ -13,11 +13,14 @@ import type { ProblemData } from "@/models/problem";
 import { getProblemDetail } from "@/services/Problem/getProblemDetail";
 import { submitSolution } from "@/services/Submission/submitSolution";
 import type { CreateSubmissionRequest } from "@/models/submission";
+import ProblemAccessState from "@/components/common/ProblemAccessState";
 export default function ProblemDetailPage() {
   const { isAuthenticated } = useSelector((store: RootState) => store.auth);
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const [problem, setProblem] = useState<ProblemData | null>(null);
+  const [loadingProblem, setLoadingProblem] = useState(true);
+  const [problemErrorCode, setProblemErrorCode] = useState<number | null>(null);
   const [, setCodeFile] = useState("");
   const [hide, setHide] = useState(false);
   const promptedNoTestcasePidRef = useRef<string | null>(null);
@@ -33,6 +36,9 @@ export default function ProblemDetailPage() {
   useEffect(() => {
     const fetchProblem = async () => {
       if (!id) return;
+      setLoadingProblem(true);
+      setProblem(null);
+      setProblemErrorCode(null);
       try {
         const contest_id = searchParams.get("contest_id");
         const problem_set_id = searchParams.get("problem_set_id");
@@ -42,10 +48,16 @@ export default function ProblemDetailPage() {
           problem_set_id: problem_set_id || undefined,
           assignment_id: assignment_id || undefined,
         });
-        if (result.code === 0 && result.data) {
+        const code = Number(result.code);
+        if (code === 0 && result.data) {
           setProblem(result.data);
+          return;
         }
+        setProblemErrorCode(code);
       } catch (error) {}
+      finally {
+        setLoadingProblem(false);
+      }
     };
     fetchProblem();
   }, [id, searchParams]);
@@ -57,7 +69,7 @@ export default function ProblemDetailPage() {
     promptedNoTestcasePidRef.current = problem.pid;
     toast.warning("当前题目没有测试点，请点击“评测配置”上传压缩包并配置测试点");
   }, [problem, hasTestCases]);
-  if (!problem) {
+  if (loadingProblem) {
     return (
       <div className="min-h-screen bg-gray-50 py-4 pb-10">
         <div className="max-w-4xl mx-auto px-6 space-y-8">
@@ -90,6 +102,13 @@ export default function ProblemDetailPage() {
             <span className="animate-ping ml-1 h-2 w-2 bg-indigo-500 rounded-full inline-block"></span>
           </div>
         </div>
+      </div>
+    );
+  }
+  if (!problem) {
+    return (
+      <div className="h-[calc(100vh-5.5rem)] w-full border-t border-gray-200 bg-gray-50">
+        <ProblemAccessState code={problemErrorCode} />
       </div>
     );
   }

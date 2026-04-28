@@ -40,6 +40,7 @@ const SCORE_COLORS = [
 export default function ProblemStatisticsPage() {
   const { id } = useParams();
   const nav = useNavigate();
+  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["problemStatistics", id],
@@ -71,7 +72,7 @@ export default function ProblemStatisticsPage() {
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-5xl mx-auto px-6 text-center space-y-4">
           <p className="text-red-500 text-lg">加载统计数据失败</p>
-          <Button variant="outline" onClick={() => nav(`/problemsLibrary/${id}`)}>
+          <Button variant="outline" onClick={() => nav(`/problemsLibrary/${id}?from=${from}`)}>
             返回题目
           </Button>
         </div>
@@ -92,7 +93,7 @@ export default function ProblemStatisticsPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => nav(`/problemsLibrary/${id}`)}
+              onClick={() => nav(`/problemsLibrary/${id}?from=${from}`)}
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
               返回题目
