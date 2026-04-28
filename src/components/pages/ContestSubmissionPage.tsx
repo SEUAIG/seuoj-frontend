@@ -19,6 +19,7 @@ export default function ContestSubmissionPage() {
   const { id, submission_no } = useParams();
   const contestId = Number(id);
   const nav = useNavigate();
+  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
   const [submission, setSubmission] = useState<SubmissionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPolling, setIsPolling] = useState(true);
@@ -105,7 +106,7 @@ export default function ContestSubmissionPage() {
           <Button
             variant="outline"
             onClick={() =>
-              nav(`/contest/${contestId}/${submission.pid}`)
+              nav(`/contest/${contestId}/${submission.pid}?from=${from}`)
             }
           >
             返回题目
@@ -135,7 +136,7 @@ export default function ContestSubmissionPage() {
           <Button
             variant="outline"
             onClick={() =>
-              nav(`/contest/${contestId}/${submission.pid}`)
+              nav(`/contest/${contestId}/${submission.pid}?from=${from}`)
             }
           >
             返回题目
@@ -168,7 +169,7 @@ export default function ContestSubmissionPage() {
           <Button
             variant="outline"
             onClick={() =>
-              nav(`/contest/${contestId}/${submission.pid}`)
+              nav(`/contest/${contestId}/${submission.pid}?from=${from}`)
             }
           >
             返回题目
@@ -200,7 +201,7 @@ export default function ContestSubmissionPage() {
       <div className="flex justify-end mb-4 space-x-4">
         <Button
           variant="outline"
-          onClick={() => nav(`/contest/${contestId}/${submission.pid}`)}
+          onClick={() => nav(`/contest/${contestId}/${submission.pid}?from=${from}`)}
         >
           返回题目
         </Button>

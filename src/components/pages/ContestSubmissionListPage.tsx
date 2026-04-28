@@ -22,6 +22,7 @@ export default function ContestSubmissionListPage() {
   const { id } = useParams();
   const contestId = Number(id);
   const nav = useNavigate();
+  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
   const [page, setPage] = useState(1);
   const size = 20;
 
@@ -109,7 +110,7 @@ export default function ContestSubmissionListPage() {
                           className="hover:underline cursor-pointer text-blue-600"
                           onClick={() =>
                             nav(
-                              `/contest/${contestId}/${record.problem.pid}`
+                              `/contest/${contestId}/${record.problem.pid}?from=${from}`
                             )
                           }
                         >
