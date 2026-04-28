@@ -1,4 +1,5 @@
 import { store } from "@/app/store";
+import { handleUnauthorizedByStatus } from "@/services/api/authGuard";
 
 export interface DeepSeekMessage {
   role: "system" | "user" | "assistant";
@@ -63,6 +64,7 @@ export async function deepseekStream(messages: DeepSeekMessage[]) {
   }
 
   if (!response.ok) {
+    handleUnauthorizedByStatus(response.status);
     return response;
   }
 

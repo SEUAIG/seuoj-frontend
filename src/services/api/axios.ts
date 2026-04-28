@@ -1,24 +1,21 @@
 import axios from "axios";
 import { ENV } from "@/config/env";
-import { resetAuth } from "@/features/auth/authSlice";
+import { getAuthToken, handleUnauthorizedByStatus, injectAuthStore } from "./authGuard";
 //  用于配置axios 实例
 export const api = axios.create({
   baseURL: ENV.API_BASE_URL,
   timeout: 10000,
 });
-let store: any;
-let purge: (() => Promise<void>) | null = null;
 export const injectStore = (_store: any, _purge?: () => Promise<void>) => {
-  store = _store;
-  if (_purge) purge = _purge;
+  injectAuthStore(_store, _purge);
 };
 api.interceptors.request.use(
   (config) => {
-    if (store) {
-      const state = store.getState();
-      const token = state.auth.jwt;
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    const token = config.headers.Authorization;
+    if (!token) {
+      const jwt = getAuthToken();
+      if (jwt) {
+        config.headers.Authorization = `Bearer ${jwt}`;
       }
     }
     return config;
@@ -33,10 +30,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && store) {
-      store.dispatch(resetAuth());
-      if (purge) purge();
-    }
+    handleUnauthorizedByStatus(error.response?.status);
     if (error.response && error.response.data && error.response.data.message) {
       error.message = error.response.data.message;
     }

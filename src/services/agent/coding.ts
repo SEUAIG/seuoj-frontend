@@ -8,6 +8,7 @@ import type {
   AgentProblemListResponse,
 } from "@/types/agentCoding";
 import { submissionEndpoints } from "@/services/endpoints";
+import { getAuthToken, handleUnauthorizedByStatus } from "@/services/api/authGuard";
 
 const agentClient = axios.create({
   timeout: 180000,
@@ -15,6 +16,25 @@ const agentClient = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+agentClient.interceptors.request.use((config) => {
+  const hasAuthorization = Boolean(config.headers?.Authorization);
+  if (!hasAuthorization) {
+    const token = getAuthToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+agentClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    handleUnauthorizedByStatus(error?.response?.status);
+    return Promise.reject(error);
+  }
+);
 
 function mapLanguage(lang: AgentCodingLanguage): string {
   const mapping: Record<AgentCodingLanguage, string> = {

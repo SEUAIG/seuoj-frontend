@@ -1,3 +1,4 @@
+import { handleUnauthorizedByStatus } from "@/services/api/authGuard";
 export type AgentChatRole = "user" | "assistant";
 
 export interface AgentChatMessage {
@@ -80,6 +81,7 @@ export async function fetchAgentSessions(params: {
   const response = await fetch(`/agent/api/rag/sessions/?${query.toString()}`, {
     headers: buildHeaders(jwt),
   });
+  handleUnauthorizedByStatus(response.status);
   if (!response.ok) throw new Error(`获取会话失败（${response.status}）`);
   const data = await response.json();
   const rows = Array.isArray(data?.results) ? data.results : [];
@@ -94,6 +96,7 @@ export async function fetchAgentSessionDetail(params: {
   const response = await fetch(`/agent/api/rag/sessions/${sessionId}/`, {
     headers: buildHeaders(jwt),
   });
+  handleUnauthorizedByStatus(response.status);
   if (!response.ok) throw new Error(`获取会话详情失败（${response.status}）`);
   const data = await response.json();
   return mapSession(data);
@@ -107,6 +110,7 @@ export async function fetchAgentSessionMessages(params: {
   const response = await fetch(`/agent/api/rag/sessions/${sessionId}/messages/`, {
     headers: buildHeaders(jwt),
   });
+  handleUnauthorizedByStatus(response.status);
   if (!response.ok) throw new Error(`获取会话消息失败（${response.status}）`);
   const data = await response.json();
   const rows = Array.isArray(data?.messages) ? data.messages : [];
@@ -124,6 +128,7 @@ export async function updateAgentSessionTitle(params: {
     headers: buildJsonHeaders(jwt),
     body: JSON.stringify({ title }),
   });
+  handleUnauthorizedByStatus(response.status);
   if (!response.ok) throw new Error(`更新会话标题失败（${response.status}）`);
   const data = await response.json();
   return mapSession(data);
@@ -135,6 +140,7 @@ export async function deleteAgentSession(params: { sessionId: string; jwt?: stri
     method: "DELETE",
     headers: buildHeaders(jwt),
   });
+  handleUnauthorizedByStatus(response.status);
   if (!response.ok) throw new Error(`删除会话失败（${response.status}）`);
 }
 
@@ -169,6 +175,7 @@ export async function askAgent(params: {
   } finally {
     clearTimeout(timeoutId);
   }
+  handleUnauthorizedByStatus(response.status);
   if (!response.ok) throw new Error(`发送消息失败（${response.status}）`);
   if (!response.body) throw new Error("流式响应为空");
 
