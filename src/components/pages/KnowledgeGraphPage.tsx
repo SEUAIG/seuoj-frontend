@@ -21,26 +21,34 @@ import { useSelector } from "react-redux";
 import { toast } from "sonner";
 
 const CATEGORY_COLORS: Record<string, string> = {
-  core: "#0f766e",
-  "data-structure": "#16a34a",
-  algorithm: "#d97706",
-  application: "#0ea5e9",
-  complexity: "#dc2626",
+  ch2: "#0f766e",
+  ch3: "#16a34a",
+  ch4: "#65a30d",
+  ch6: "#d97706",
+  ch7: "#dc2626",
+  ch8: "#0ea5e9",
+  ch9: "#7c3aed",
+  ch10: "#db2777",
+  ch11: "#0d9488",
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  core: "核心概念",
-  "data-structure": "数据结构",
-  algorithm: "算法技术",
-  application: "应用场景",
-  complexity: "复杂度分析",
+  ch2: "分治法",
+  ch3: "比较排序",
+  ch4: "非比较排序",
+  ch6: "动态规划",
+  ch7: "贪心算法",
+  ch8: "图的周游",
+  ch9: "最小生成树",
+  ch10: "最短路径",
+  ch11: "网络流",
 };
 
-const GRAPH_WIDTH = 1100;
-const GRAPH_HEIGHT = 720;
+const GRAPH_WIDTH = 1800;
+const GRAPH_HEIGHT = 1400;
 const DRAG_THRESHOLD = 6;
-const MIN_ZOOM = 0.35;
-const MAX_ZOOM = 2.6;
+const MIN_ZOOM = 0.2;
+const MAX_ZOOM = 3;
 
 type PositionedNode = KnowledgeGraphNode & { x: number; y: number };
 type ForceNode = PositionedNode & SimulationNodeDatum;
@@ -67,8 +75,7 @@ function computeNodePositions(nodes: KnowledgeGraphNode[]): PositionedNode[] {
   const categories = [...groups.keys()];
   const centerX = GRAPH_WIDTH / 2;
   const centerY = GRAPH_HEIGHT / 2;
-  const orbitRadius = Math.min(GRAPH_WIDTH, GRAPH_HEIGHT) * 0.3;
-  const localRadius = 110;
+  const orbitRadius = Math.min(GRAPH_WIDTH, GRAPH_HEIGHT) * 0.35;
 
   const result: PositionedNode[] = [];
   categories.forEach((category, categoryIndex) => {
@@ -76,6 +83,7 @@ function computeNodePositions(nodes: KnowledgeGraphNode[]): PositionedNode[] {
     const categoryAngle = (Math.PI * 2 * categoryIndex) / Math.max(categories.length, 1);
     const baseX = centerX + Math.cos(categoryAngle) * orbitRadius;
     const baseY = centerY + Math.sin(categoryAngle) * orbitRadius;
+    const localRadius = Math.max(60, 30 * Math.sqrt(list.length));
 
     list.forEach((node, nodeIndex) => {
       const angle = (Math.PI * 2 * nodeIndex) / Math.max(list.length, 1);
@@ -92,8 +100,8 @@ function computeNodePositions(nodes: KnowledgeGraphNode[]): PositionedNode[] {
 }
 
 function clampNode(node: ForceNode) {
-  node.x = Math.max(28, Math.min(GRAPH_WIDTH - 28, node.x ?? GRAPH_WIDTH / 2));
-  node.y = Math.max(28, Math.min(GRAPH_HEIGHT - 28, node.y ?? GRAPH_HEIGHT / 2));
+  node.x = Math.max(40, Math.min(GRAPH_WIDTH - 40, node.x ?? GRAPH_WIDTH / 2));
+  node.y = Math.max(40, Math.min(GRAPH_HEIGHT - 40, node.y ?? GRAPH_HEIGHT / 2));
 }
 
 export default function KnowledgeGraphPage() {
@@ -103,7 +111,7 @@ export default function KnowledgeGraphPage() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [simNodes, setSimNodes] = useState<ForceNode[]>([]);
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
-  const [viewTransform, setViewTransform] = useState({ x: 0, y: 0, k: 1 });
+  const [viewTransform, setViewTransform] = useState({ x: 0, y: 0, k: 0.65 });
   const simulationRef = useRef<Simulation<ForceNode, ForceLink> | null>(null);
   const nodesRef = useRef<ForceNode[]>([]);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -170,15 +178,15 @@ export default function KnowledgeGraphPage() {
         "link",
         forceLink<ForceNode, ForceLink>(links)
           .id((d) => d.id)
-          .distance(125)
-          .strength((l) => 0.12 * (l.strength ?? 1))
+          .distance(180)
+          .strength((l) => 0.15 * (l.strength ?? 1))
       )
-      .force("charge", forceManyBody<ForceNode>().strength(-260))
-      .force("center", forceCenter(GRAPH_WIDTH / 2, GRAPH_HEIGHT / 2))
-      .force("collide", forceCollide<ForceNode>().radius((d) => 22 + (d.mastery ?? 0) / 9))
-      .alpha(0.8)
-      .alphaDecay(0.04)
-      .velocityDecay(0.28);
+      .force("charge", forceManyBody<ForceNode>().strength(-500))
+      .force("center", forceCenter(GRAPH_WIDTH / 2, GRAPH_HEIGHT / 2).strength(0.05))
+      .force("collide", forceCollide<ForceNode>().radius((d) => 32 + (d.mastery ?? 0) / 8).strength(0.8))
+      .alpha(1)
+      .alphaDecay(0.02)
+      .velocityDecay(0.3);
 
     simulation.on("tick", () => {
       nodesRef.current.forEach(clampNode);
@@ -276,7 +284,7 @@ export default function KnowledgeGraphPage() {
   }
 
   function resetZoom() {
-    setViewTransform({ x: 0, y: 0, k: 1 });
+    setViewTransform({ x: 0, y: 0, k: 0.65 });
   }
 
   function onStartDrag(nodeId: string, clientX: number, clientY: number) {
@@ -446,7 +454,7 @@ export default function KnowledgeGraphPage() {
                     {simNodes.map((node) => {
                       const active = connectedNodeIds.has(node.id);
                       const selected = selectedNodeId === node.id;
-                      const radius = 14 + Math.round((node.mastery ?? 0) / 10);
+                      const radius = 16 + Math.round((node.mastery ?? 0) / 12);
                       return (
                         <g key={node.id}>
                           <circle
@@ -463,7 +471,7 @@ export default function KnowledgeGraphPage() {
                             fill={getCategoryColor(node.category)}
                             stroke={selected ? "#0f172a" : "#ffffff"}
                             strokeWidth={selected ? 3 : 2}
-                            opacity={selectedNodeId && !active ? 0.45 : 0.95}
+                            opacity={selectedNodeId && !active ? 0.35 : 0.95}
                             className="cursor-grab transition-opacity active:cursor-grabbing"
                             onClick={(event) => {
                               event.stopPropagation();
@@ -480,14 +488,16 @@ export default function KnowledgeGraphPage() {
                           />
                           <text
                             x={node.x}
-                            y={node.y + radius + 18}
+                            y={node.y + radius + 16}
                             textAnchor="middle"
-                            fontSize="11"
-                            fill="#334155"
+                            fontSize="12"
+                            fontWeight="500"
+                            fill="#1e293b"
                             className="select-none"
                             pointerEvents="none"
+                            opacity={selectedNodeId && !active ? 0.3 : 1}
                           >
-                            {node.name.length > 8 ? `${node.name.slice(0, 8)}...` : node.name}
+                            {node.name.length > 8 ? `${node.name.slice(0, 8)}…` : node.name}
                           </text>
                         </g>
                       );
