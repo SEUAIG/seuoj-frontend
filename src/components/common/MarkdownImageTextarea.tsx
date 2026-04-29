@@ -7,7 +7,6 @@ import { uploadImage } from "@/services/image/uploadImage";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { ENV } from "@/config/env";
 
 interface MarkdownImageTextareaProps
   extends Omit<React.ComponentProps<"textarea">, "value" | "onChange"> {
@@ -17,19 +16,8 @@ interface MarkdownImageTextareaProps
 
 const IMAGE_TEMPLATE = (url: string) => `![](${url})`;
 
-function isAbsoluteUrl(url: string) {
-  return /^(?:[a-zA-Z][a-zA-Z\d+\-.]*:)?\/\//.test(url) || /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(url);
-}
-
 function normalizeImageUrl(rawUrl: string) {
-  if (!rawUrl) return rawUrl;
-  if (isAbsoluteUrl(rawUrl)) return rawUrl;
-
-  const path = rawUrl.startsWith("/") ? rawUrl : `/${rawUrl}`;
-  const devPrefix = ENV.IMAGE_URL_PREFIX || ENV.API_BASE_URL;
-  const base = import.meta.env.DEV ? devPrefix : window.location.origin;
-  if (!base) return path;
-  return `${base.replace(/\/+$/, "")}${path}`;
+  return rawUrl;
 }
 
 function appendAtEnd(content: string, insertText: string) {
