@@ -223,6 +223,12 @@ export default function ContestListDetailPage() {
         >
           提交记录
         </Button>
+        <Button
+          variant="outline"
+          onClick={() => nav(`/contest/${contestId}/standings`)}
+        >
+          排名
+        </Button>
       </div>
       <Card>
         <CardContent className="p-6">
