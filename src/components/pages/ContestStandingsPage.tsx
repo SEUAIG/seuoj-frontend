@@ -21,11 +21,6 @@ import type {
 } from "@/models/contest";
 import { cn } from "@/lib/utils";
 
-function fmtTime(minutes?: number | null): string {
-  if (minutes == null) return "-";
-  return `${minutes}`;
-}
-
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1)
     return (
@@ -62,24 +57,19 @@ function AcmProblemCell({
     <TableCell className="text-center">
       {detail.accepted ? (
         <div className="flex flex-col items-center gap-0.5">
-          <span className="text-emerald-600 font-bold text-sm">AC</span>
-          {detail.unacceptedCount != null && detail.unacceptedCount > 0 && (
+          <span className="text-emerald-600 font-bold text-sm">
+            {detail.unacceptedCount ? `+${detail.unacceptedCount}` : "+"}
+          </span>
+          {detail.penaltyTime != null && (
             <span className="text-xs text-muted-foreground">
-              (-{detail.unacceptedCount})
-            </span>
-          )}
-          {detail.acceptedTime != null && (
-            <span className="text-xs text-muted-foreground">
-              {fmtTime(detail.acceptedTime)}
+              {detail.penaltyTime}
             </span>
           )}
         </div>
       ) : (
         <div className="flex flex-col items-center gap-0.5">
           <span className="text-red-500 font-bold text-sm">
-            {detail.unacceptedCount != null && detail.unacceptedCount > 0
-              ? `-${detail.unacceptedCount}`
-              : "-"}
+            {detail.unacceptedCount ? `-${detail.unacceptedCount}` : "-"}
           </span>
         </div>
       )}

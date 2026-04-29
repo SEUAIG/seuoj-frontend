@@ -103,6 +103,7 @@ export interface ContestStandingsScoreDetail {
   accepted?: boolean;
   unacceptedCount?: number;
   acceptedTime?: number;
+  penaltyTime?: number;
   weighted_score?: number | null;
 }
 
