@@ -111,6 +111,7 @@ export interface ContestStandingsRecord {
   username: string;
   nickname?: string;
   score: number;
+  penalty?: number;
   score_details: Record<string, ContestStandingsScoreDetail>;
 }
 

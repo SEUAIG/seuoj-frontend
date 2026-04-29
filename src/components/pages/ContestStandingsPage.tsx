@@ -21,11 +21,9 @@ import type {
 } from "@/models/contest";
 import { cn } from "@/lib/utils";
 
-function fmtTime(seconds?: number | null): string {
-  if (seconds == null) return "-";
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
+function fmtTime(minutes?: number | null): string {
+  if (minutes == null) return "-";
+  return `${minutes}`;
 }
 
 function RankBadge({ rank }: { rank: number }) {
@@ -232,12 +230,7 @@ export default function ContestStandingsPage() {
                             {record.score}
                           </TableCell>
                           <TableCell className="text-center font-mono text-muted-foreground text-sm">
-                            {fmtTime(
-                              Object.values(record.score_details ?? {}).reduce(
-                                (sum, d) => sum + (d.acceptedTime ?? 0),
-                                0
-                              )
-                            )}
+                            {record.penalty ?? "-"}
                           </TableCell>
                         </>
                       ) : (
