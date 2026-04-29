@@ -95,3 +95,17 @@ export interface CreateSubmissionData {
 }
 
 export type CreateSubmissionResponse = ApiResponse<CreateSubmissionData>;
+
+export interface OnlineJudgeRequest {
+  pid: string;
+  code: string;
+  language: string;
+  testcases: Array<{ id: number; in: string }>;
+}
+
+export interface OnlineJudgeResultData {
+  resultDetail: ResultDetailItem[];
+  status: string;
+}
+
+export type OnlineJudgeResponse = ApiResponse<OnlineJudgeResultData>;

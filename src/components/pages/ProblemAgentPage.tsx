@@ -22,6 +22,7 @@ import type {
 import type { ProblemData } from "@/models/problem";
 import { getProblemDetail } from "@/services/Problem/getProblemDetail";
 import { submitSolution } from "@/services/Submission/submitSolution";
+import { submitOnlineJudge } from "@/services/Submission/submitOnlineJudge";
 import ProblemAccessState from "@/components/common/ProblemAccessState";
 
 type TestStatus = "pending" | "running" | "passed" | "failed" | "error";
@@ -29,6 +30,7 @@ type TestStatus = "pending" | "running" | "passed" | "failed" | "error";
 interface TestCaseItem {
   input: string;
   output: string;
+  expectedOutput?: string;
   status: TestStatus;
 }
 
@@ -191,11 +193,25 @@ export default function ProblemAgentPage() {
     }
   };
 
+  const handleLoadSamples = () => {
+    if (!problemData?.content?.example?.length) {
+      toast.error("当前题目没有样例");
+      return;
+    }
+    const samples = problemData.content.example.map((ex) => ({
+      input: ex.in,
+      output: "",
+      expectedOutput: ex.ans,
+      status: "pending" as TestStatus,
+    }));
+    setTestCases((prev) => [...prev, ...samples]);
+    toast.success(`已加载 ${samples.length} 个题目样例`);
+  };
+
   const handleRunAllTests = async () => {
     if ((!editorCode.trim() && !stdinCode) || testCases.length === 0) return;
     setRunningTests(true);
     const code = editorCode.trim() || extractCodeText(stdinCode);
-    const stdinInputs = testCases.map((tc) => tc.input);
     setTestCases((prev) =>
       prev.map((tc) => ({
         ...tc,
@@ -204,47 +220,35 @@ export default function ProblemAgentPage() {
       }))
     );
     try {
-      const result = await agentCodingApi.runCode(
-        selectedProblemId,
+      const response = await submitOnlineJudge({
+        pid: selectedProblemId,
         code,
-        language,
-        stdinInputs
-      );
-      const rows = Array.isArray(result?.results) ? result.results : [result];
+        language: submitLanguageMap[language],
+        testcases: testCases.map((tc, index) => ({
+          id: index + 1,
+          in: tc.input,
+        })),
+      });
+      const resultData = response.data;
+      const rows = resultData?.resultDetail ?? [];
       setTestCases((prev) =>
         prev.map((tc, index) => {
-          const row = rows[index] || {};
-          const stdout =
-            row?.stdout ??
-            row?.result?.stdout ??
-            row?.data?.stdout ??
-            row?.result?.data?.stdout ??
-            "";
-          const stderr =
-            row?.stderr ??
-            row?.result?.stderr ??
-            row?.data?.stderr ??
-            row?.result?.data?.stderr ??
-            "";
-          const status =
-            row?.status ??
-            row?.result?.status ??
-            row?.data?.status ??
-            row?.result?.data?.status ??
-            "";
-          if (status === "Success" || status === "Accepted") {
-            return { ...tc, output: String(stdout || "(无输出)"), status: "passed" };
+          const row = rows[index];
+          if (!row) {
+            return { ...tc, output: "(无结果)", status: "error" as TestStatus };
           }
-          if (status === "RuntimeError" || status === "CompileError") {
-            return {
-              ...tc,
-              output: String(stderr || stdout || status || "运行错误"),
-              status: "error",
-            };
+          const out = row.out ?? "";
+          const sys = row.sys ?? "";
+          const type = row.type ?? "";
+          if (type === "Accepted") {
+            return { ...tc, output: out || "(无输出)", status: "passed" };
+          }
+          if (type === "CompileError") {
+            return { ...tc, output: sys || "编译错误", status: "error" };
           }
           return {
             ...tc,
-            output: String(stderr || stdout || status || "运行失败"),
+            output: sys || out || type || "运行失败",
             status: "failed",
           };
         })
@@ -425,18 +429,28 @@ export default function ProblemAgentPage() {
                       <FlaskConical className="h-4 w-4 text-primary" />
                       测试用例 ({testCases.length})
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={handleRunAllTests}
-                      disabled={
-                        runningTests ||
-                        (!editorCode.trim() && !stdinCode) ||
-                        testCases.length === 0
-                      }
-                    >
-                      <Play className="h-4 w-4 mr-1" />
-                      {runningTests ? "运行中" : "运行全部"}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleLoadSamples}
+                        disabled={!problemData?.content?.example?.length}
+                      >
+                        加载题目样例
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleRunAllTests}
+                        disabled={
+                          runningTests ||
+                          (!editorCode.trim() && !stdinCode) ||
+                          testCases.length === 0
+                        }
+                      >
+                        <Play className="h-4 w-4 mr-1" />
+                        {runningTests ? "运行中" : "运行全部"}
+                      </Button>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Textarea
@@ -478,7 +492,14 @@ export default function ProblemAgentPage() {
                               </pre>
                             </div>
                             <div>
-                              <div className="text-muted-foreground mb-1">stdout</div>
+                              <div className="text-muted-foreground mb-1">
+                                {tc.expectedOutput != null ? "期望 / 实际" : "stdout"}
+                              </div>
+                              {tc.expectedOutput != null && (
+                                <pre className="rounded border bg-green-50 p-2 whitespace-pre-wrap break-all mb-1 text-green-800">
+                                  {tc.expectedOutput || "(空)"}
+                                </pre>
+                              )}
                               <pre className="rounded border bg-white p-2 whitespace-pre-wrap break-all">
                                 {tc.output || "—"}
                               </pre>
