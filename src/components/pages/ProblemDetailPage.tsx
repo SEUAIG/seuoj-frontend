@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { useSelector } from "react-redux";
 import { RootState } from "../../app/store";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import ProblemDetailInfo from "@/components/bussiness/ProblemDetailInfo";
 import ProblemCoding from "@/components/bussiness/ProblemCoding";
 import { Switch } from "@/components/ui/switch";
@@ -14,6 +15,7 @@ import { getProblemDetail } from "@/services/Problem/getProblemDetail";
 import { submitSolution } from "@/services/Submission/submitSolution";
 import type { CreateSubmissionRequest } from "@/models/submission";
 import ProblemAccessState from "@/components/common/ProblemAccessState";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 export default function ProblemDetailPage() {
   const { isAuthenticated } = useSelector((store: RootState) => store.auth);
   const { id } = useParams();
@@ -24,6 +26,8 @@ export default function ProblemDetailPage() {
   const [, setCodeFile] = useState("");
   const [hide, setHide] = useState(false);
   const promptedNoTestcasePidRef = useRef<string | null>(null);
+  const prevPid = problem?.prev_pid ?? null;
+  const nextPid = problem?.next_pid ?? null;
   const { language, codeFileObjectArray } = useSelector(
     (store: RootState) => store.code
   );
@@ -67,8 +71,21 @@ export default function ProblemDetailPage() {
     if (!problem.can_write) return;
     if (promptedNoTestcasePidRef.current === problem.pid) return;
     promptedNoTestcasePidRef.current = problem.pid;
-    toast.warning("当前题目没有测试点，请点击“评测配置”上传压缩包并配置测试点");
+    toast.warning('当前题目没有测试点，请点击"评测配置"上传压缩包并配置测试点');
   }, [problem, hasTestCases]);
+
+  const navigateToProblem = useCallback((targetPid: string | null) => {
+    if (!targetPid) return;
+    const params = new URLSearchParams();
+    const contestId = searchParams.get("contest_id");
+    const problemSetId = searchParams.get("problem_set_id");
+    const assignmentId = searchParams.get("assignment_id");
+    if (contestId) params.set("contest_id", contestId);
+    if (problemSetId) params.set("problem_set_id", problemSetId);
+    if (assignmentId) params.set("assignment_id", assignmentId);
+    const qs = params.toString();
+    nav(`/problemsLibrary/${targetPid}${qs ? `?${qs}` : ""}`);
+  }, [nav, searchParams]);
   if (loadingProblem) {
     return (
       <div className="min-h-screen bg-gray-50 py-4 pb-10">
@@ -121,7 +138,7 @@ export default function ProblemDetailPage() {
       return;
     }
     if (!hasTestCases) {
-      toast.error("当前题目没有测试点，请先在左侧点击“评测配置”完善测试数据");
+      toast.error('当前题目没有测试点，请先在左侧点击"评测配置"完善测试数据');
       return;
     }
     const index = codeFileObjectArray.findIndex(
@@ -162,6 +179,29 @@ export default function ProblemDetailPage() {
             hide ? "w-full" : "w-full lg:w-1/2"
           } h-full w-full max-w-full min-w-0 flex-shrink overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent border-r border-gray-200`}
         >
+          <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-white/95 backdrop-blur-sm border-b border-gray-200">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={!prevPid}
+              onClick={() => navigateToProblem(prevPid)}
+              className="text-gray-600 hover:text-gray-900 disabled:opacity-30"
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              上一题
+            </Button>
+            <span className="text-xs text-muted-foreground">{pid}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={!nextPid}
+              onClick={() => navigateToProblem(nextPid)}
+              className="text-gray-600 hover:text-gray-900 disabled:opacity-30"
+            >
+              下一题
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
           <ProblemDetailInfo
             problem={problem}
             isAuthenticated={isAuthenticated}

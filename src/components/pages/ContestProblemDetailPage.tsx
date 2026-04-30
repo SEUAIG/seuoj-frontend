@@ -1,18 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../app/store";
 import { useNavigate, useParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import ContestProblemCoding from "@/components/bussiness/ContestProblemCoding";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import useQueryToGetContestProblemDetail from "@/hooks/useQueryToGetContestProblemDetail";
+import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
 import type { ProblemData } from "@/models/problem";
 import { toast } from "sonner";
 import ContestProblemDetailInfo from "@/components/bussiness/ContestProblemDetailInfo";
 import { submitContestSolution } from "@/services/Contest/submitContestSolution";
 import ProblemAccessState from "@/components/common/ProblemAccessState";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 export default function ContestProblemDetailPage() {
   const { isAuthenticated } = useSelector((store: RootState) => store.auth);
   const { id, pid: pidParam } = useParams();
@@ -28,6 +31,20 @@ export default function ContestProblemDetailPage() {
     contestId || 0,
     pidParam || ""
   );
+
+  const { data: contestDetail } = useQueryToGetContestDetail(contestId || 0);
+
+  const { prevPid, nextPid } = useMemo(() => {
+    const problemList = contestDetail?.problem_list;
+    if (!problemList || !pidParam) return { prevPid: null, nextPid: null };
+    const sorted = [...problemList].sort((a, b) => a.sort_order - b.sort_order);
+    const idx = sorted.findIndex((p) => p.pid === pidParam);
+    if (idx === -1) return { prevPid: null, nextPid: null };
+    return {
+      prevPid: idx > 0 ? sorted[idx - 1].pid : null,
+      nextPid: idx < sorted.length - 1 ? sorted[idx + 1].pid : null,
+    };
+  }, [contestDetail, pidParam]);
 
   useEffect(() => {
     if (!isError || !error) {
@@ -157,6 +174,29 @@ export default function ContestProblemDetailPage() {
             hide ? "w-full" : "w-full lg:w-1/2"
           } h-full w-full max-w-full min-w-0 flex-shrink overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent border-r border-gray-200`}
         >
+          <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-white/95 backdrop-blur-sm border-b border-gray-200">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={!prevPid}
+              onClick={() => prevPid && nav(`/contest/${contestId}/${prevPid}`)}
+              className="text-gray-600 hover:text-gray-900 disabled:opacity-30"
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              上一题
+            </Button>
+            <span className="text-xs text-muted-foreground">{pid}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={!nextPid}
+              onClick={() => nextPid && nav(`/contest/${contestId}/${nextPid}`)}
+              className="text-gray-600 hover:text-gray-900 disabled:opacity-30"
+            >
+              下一题
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
           <ContestProblemDetailInfo
             problem={problemData}
             isAuthenticated={isAuthenticated}
