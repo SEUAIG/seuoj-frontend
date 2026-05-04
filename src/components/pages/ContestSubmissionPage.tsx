@@ -13,6 +13,10 @@ import type {
   SubmissionStatus,
   SubmissionVerdict,
 } from "@/models/submission";
+
+const FOREGROUND_POLL_INTERVAL = 1000;
+const BACKGROUND_POLL_INTERVAL = 5000;
+
 export default function ContestSubmissionPage() {
   const [searchParams] = useSearchParams();
   const title = searchParams.get("title");
@@ -22,11 +26,18 @@ export default function ContestSubmissionPage() {
   const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
   const [submission, setSubmission] = useState<SubmissionData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isPolling, setIsPolling] = useState(true);
+
   useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
+
+    const getNextDelay = () =>
+      document.visibilityState === "hidden"
+        ? BACKGROUND_POLL_INTERVAL
+        : FOREGROUND_POLL_INTERVAL;
+
     const fetchSubmission = async () => {
-      if (!contestId || !submission_no) return;
+      if (!contestId || !submission_no || cancelled) return;
       try {
         const data = await getContestSubmissionDetail(contestId, submission_no);
         if (data) {
@@ -53,32 +64,34 @@ export default function ContestSubmissionPage() {
             username: data.username,
             score: data.score ?? undefined, // 比赛特有的分数
           };
+          if (cancelled) return;
           setSubmission(submissionData);
           setLoading(false);
-          if (
+          const shouldContinuePolling = !(
             submissionData.status === "Finished" ||
             submissionData.status === "Failed"
-          ) {
-            setIsPolling(false);
+          );
+          if (shouldContinuePolling) {
+            timeoutId = setTimeout(fetchSubmission, getNextDelay());
           }
         }
       } catch (error) {
         console.error("Error fetching contest submission:", error);
+        if (cancelled) return;
         setLoading(false);
-        setIsPolling(false);
       }
     };
+
     fetchSubmission();
-    if (isPolling) {
-      intervalId = setInterval(fetchSubmission, 1000);
-    }
+
     return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
+      cancelled = true;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
       }
     };
-  }, [contestId, submission_no, isPolling]);
+  }, [contestId, submission_no]);
 
   if (loading && !submission) {
     return (
