@@ -14,10 +14,20 @@ import {
   QueryCache,
   MutationCache,
 } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import React, { Suspense, lazy } from "react";
 import { injectStore } from "./services/api/axios.ts";
 import { setOnLoginSuccess } from "./features/auth/authSlice.ts";
 injectStore(store, () => persistor.purge());
+
+const ReactQueryDevtools =
+  import.meta.env.DEV
+    ? lazy(() =>
+        import("@tanstack/react-query-devtools").then((module) => ({
+          default: module.ReactQueryDevtools,
+        }))
+      )
+    : null;
+
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error: Error) => {
@@ -56,7 +66,11 @@ createRoot(document.getElementById("root")!).render(
               <App />
             </PersistGate>
           </Provider>
-          <ReactQueryDevtools initialIsOpen={false} />
+          {ReactQueryDevtools ? (
+            <Suspense fallback={null}>
+              <ReactQueryDevtools initialIsOpen={false} />
+            </Suspense>
+          ) : null}
         </QueryClientProvider>
       </HelmetProvider>
     </BrowserRouter>
