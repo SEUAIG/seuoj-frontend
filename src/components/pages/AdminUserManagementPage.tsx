@@ -47,7 +47,6 @@ import {
     FileSpreadsheet,
     Info,
 } from "lucide-react";
-import * as XLSX from "xlsx";
 import ColumnMappingStep from "@/components/bussiness/ColumnMappingStep";
 import {
     findHeaderRow,
@@ -67,6 +66,15 @@ type ImportStep = "config" | "mapping" | "preview" | "result";
 type PreviewImportUserRow = BatchImportUserRow & {
     password_source: BatchImportPasswordSource;
 };
+
+let xlsxModulePromise: Promise<typeof import("xlsx")> | null = null;
+
+function loadXLSX() {
+    if (!xlsxModulePromise) {
+        xlsxModulePromise = import("xlsx");
+    }
+    return xlsxModulePromise;
+}
 
 export default function AdminUserManagementPage() {
     const navigate = useNavigate();
@@ -197,7 +205,8 @@ export default function AdminUserManagementPage() {
         parseAllRows(allRows);
     };
 
-    const parseXLSX = (data: ArrayBuffer) => {
+    const parseXLSX = async (data: ArrayBuffer) => {
+        const XLSX = await loadXLSX();
         const workbook = XLSX.read(data, { type: "array" });
         const sheetName = workbook.SheetNames[0];
         if (!sheetName) throw new Error("Excel 文件中没有工作表");
@@ -298,9 +307,9 @@ export default function AdminUserManagementPage() {
             reader.readAsText(file);
         } else {
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = async (event) => {
                 try {
-                    parseXLSX(event.target?.result as ArrayBuffer);
+                    await parseXLSX(event.target?.result as ArrayBuffer);
                 } catch (err: unknown) {
                     toast.error(
                         "文件解析失败: " +
@@ -350,7 +359,7 @@ export default function AdminUserManagementPage() {
         }
     };
 
-    const downloadAllReport = () => {
+    const downloadAllReport = async () => {
         if (!importResult) return;
         const dateStr = new Date().toISOString().slice(0, 10);
 
@@ -368,6 +377,7 @@ export default function AdminUserManagementPage() {
         ].sort((a, b) => (a[0] as number) - (b[0] as number));
 
         if (uploadedFileType === "xlsx") {
+            const XLSX = await loadXLSX();
             const ws = XLSX.utils.aoa_to_sheet(allRows);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "导入结果");

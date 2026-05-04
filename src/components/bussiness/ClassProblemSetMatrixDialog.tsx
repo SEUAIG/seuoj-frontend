@@ -1,7 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Download } from "lucide-react";
-import * as XLSX from "xlsx";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +22,15 @@ interface Props {
     problemSetTitle: string;
 }
 
+let xlsxModulePromise: Promise<typeof import("xlsx")> | null = null;
+
+function loadXLSX() {
+    if (!xlsxModulePromise) {
+        xlsxModulePromise = import("xlsx");
+    }
+    return xlsxModulePromise;
+}
+
 export default function ClassProblemSetMatrixDialog({
     isOpen,
     onClose,
@@ -38,8 +46,9 @@ export default function ClassProblemSetMatrixDialog({
 
     const matrixData: ClassProblemSetMatrixData | undefined = data?.data;
 
-    const handleExportExcel = () => {
+    const handleExportExcel = async () => {
         if (!matrixData) return;
+        const XLSX = await loadXLSX();
 
         const header = [
             "用户名",
