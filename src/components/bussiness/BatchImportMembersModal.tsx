@@ -34,7 +34,6 @@ import {
     FileSpreadsheet,
     Info,
 } from "lucide-react";
-import * as XLSX from "xlsx";
 import ColumnMappingStep from "@/components/bussiness/ColumnMappingStep";
 import {
     findHeaderRow,
@@ -56,6 +55,15 @@ interface Props {
     onClose: () => void;
     classId: number;
     onSuccess?: () => void;
+}
+
+let xlsxModulePromise: Promise<typeof import("xlsx")> | null = null;
+
+function loadXlsx() {
+    if (!xlsxModulePromise) {
+        xlsxModulePromise = import("xlsx");
+    }
+    return xlsxModulePromise;
 }
 
 export default function BatchImportMembersModal({
@@ -103,7 +111,7 @@ export default function BatchImportMembersModal({
         const { headerRowIndex, mappings } = findHeaderRow(allRows);
         const cleanedHeaders = allRows[headerRowIndex].map((h) =>
             String(h ?? "")
-                .replace(/^﻿/, "")
+                .replace(/^\uFEFF/, "")
                 .trim()
         );
         if (cleanedHeaders.length === 0 || cleanedHeaders.every((h) => !h)) {
@@ -136,7 +144,8 @@ export default function BatchImportMembersModal({
         parseAllRows(allRows);
     };
 
-    const parseXLSX = (data: ArrayBuffer) => {
+    const parseXLSX = async (data: ArrayBuffer) => {
+        const XLSX = await loadXlsx();
         const workbook = XLSX.read(data, { type: "array" });
         const sheetName = workbook.SheetNames[0];
         if (!sheetName) throw new Error("Excel 文件中没有工作表");
@@ -231,9 +240,9 @@ export default function BatchImportMembersModal({
             reader.readAsText(file);
         } else {
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = async (event) => {
                 try {
-                    parseXLSX(event.target?.result as ArrayBuffer);
+                    await parseXLSX(event.target?.result as ArrayBuffer);
                 } catch (err: unknown) {
                     toast.error(
                         "文件解析失败: " +
@@ -282,7 +291,7 @@ export default function BatchImportMembersModal({
         }
     };
 
-    const downloadAllReport = () => {
+    const downloadAllReport = async () => {
         if (!importResult || importResult.rows.length === 0) return;
         const dateStr = new Date().toISOString().slice(0, 10);
 
@@ -300,6 +309,7 @@ export default function BatchImportMembersModal({
         ];
 
         if (uploadedFileType === "xlsx") {
+            const XLSX = await loadXlsx();
             const ws = XLSX.utils.aoa_to_sheet(allRows);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "导入结果");

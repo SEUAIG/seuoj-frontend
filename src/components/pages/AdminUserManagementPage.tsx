@@ -164,7 +164,7 @@ export default function AdminUserManagementPage() {
         const { headerRowIndex, mappings } = findHeaderRow(allRows);
         const cleanedHeaders = allRows[headerRowIndex].map((h) =>
             String(h ?? "")
-                .replace(/^﻿/, "")
+                .replace(/^\uFEFF/, "")
                 .trim()
         );
         if (cleanedHeaders.length === 0 || cleanedHeaders.every((h) => !h)) {

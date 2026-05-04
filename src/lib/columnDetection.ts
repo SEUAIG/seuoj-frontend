@@ -145,7 +145,7 @@ export function findHeaderRow(
 
         const headers = row.map((h) =>
             String(h ?? "")
-                .replace(/^﻿/, "")
+                .replace(/^\uFEFF/, "")
                 .trim()
         );
         const mappings = detectColumnMappings(headers);
@@ -171,7 +171,7 @@ export function findHeaderRow(
     if (bestScore <= 0) {
         const fallbackHeaders = (rows[0] || []).map((h) =>
             String(h ?? "")
-                .replace(/^﻿/, "")
+                .replace(/^\uFEFF/, "")
                 .trim()
         );
         return { headerRowIndex: 0, mappings: detectColumnMappings(fallbackHeaders) };
