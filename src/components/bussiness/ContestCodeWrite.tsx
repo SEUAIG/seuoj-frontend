@@ -1,6 +1,5 @@
-import React, { Dispatch, SetStateAction } from "react";
+import React, { Dispatch, SetStateAction, Suspense, lazy } from "react";
 import SelectContestLanguage from "./SelectContestLanguage";
-import ContestCodeEditor from "./ContestCodeEditor";
 import { cn } from "@/lib/utils";
 interface ContestCodeWriteProps {
   setCodeFile: Dispatch<SetStateAction<string>>;
@@ -10,6 +9,9 @@ interface ContestCodeWriteProps {
   headerExtra?: React.ReactNode;
   footer?: React.ReactNode;
 }
+
+const ContestCodeEditor = lazy(() => import("./ContestCodeEditor"));
+
 export default function ContestCodeWrite({
   setCodeFile,
   contest_id,
@@ -31,7 +33,15 @@ export default function ContestCodeWrite({
       </div>
       <div className="bg-white shadow-sm rounded-lg flex-1 min-h-0 flex flex-col">
         <div className="p-4 flex-1 min-h-0">
-          <ContestCodeEditor contest_id={contest_id} pid={pid} />
+          <Suspense
+            fallback={
+              <div className="flex h-full min-h-[240px] items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-sm text-muted-foreground">
+                编辑器加载中...
+              </div>
+            }
+          >
+            <ContestCodeEditor contest_id={contest_id} pid={pid} />
+          </Suspense>
         </div>
         {footer ? (
           <div className="flex-none px-4 py-2 border-t border-gray-100">
