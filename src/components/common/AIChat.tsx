@@ -1,39 +1,48 @@
 import { deepseekStream, DeepSeekMessage } from "@/services/ai/deepseek";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 
 type Message = {
   role: "user" | "assistant";
   content: string;
 };
+
+const INITIAL_MESSAGE: Message = {
+  role: "assistant",
+  content: "你好，我是deepseek驱动的AI助手，你可以向我提问。",
+};
+
 export default function AIChat() {
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      content: "你好，我是deepseek驱动的AI助手，你可以向我提问。",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
-  async function handleSend() {
+  const messagesRef = useRef<Message[]>([INITIAL_MESSAGE]);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  const handleSend = useCallback(async () => {
     if (!input.trim()) {
       return;
     }
 
     const userInput = input.trim();
-    const userMessage: DeepSeekMessage = {
+    const userMessage: Message = {
       role: "user",
       content: userInput,
     };
-    setMessages((prev) => [
-      ...prev,
-      userMessage,
-      { role: "assistant", content: "" },
-    ]);
+    setMessages((prev) => {
+      const nextMessages: Message[] = [
+        ...prev,
+        userMessage,
+        { role: "assistant", content: "" },
+      ];
+      messagesRef.current = nextMessages;
+      return nextMessages;
+    });
     setInput("");
-    const response = await deepseekStream([
-      ...messages,
-      userMessage,
-    ] as DeepSeekMessage[]);
+    const requestMessages: DeepSeekMessage[] = messagesRef.current.slice(
+      0,
+      -1
+    );
+    const response = await deepseekStream(requestMessages);
     const reader = response.body?.getReader();
     if (!reader) return;
     const decoder = new TextDecoder();
@@ -60,16 +69,21 @@ export default function AIChat() {
               role: "assistant",
               content: assistantText,
             };
+            messagesRef.current = copy;
             return copy;
           });
         } catch {}
       }
     }
-  }
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  }, [input]);
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    const frameId = window.requestAnimationFrame(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    });
+    return () => window.cancelAnimationFrame(frameId);
   }, [messages]);
+
   return (
     <div className="flex h-[500px] w-[360px] flex-col rounded-xl border bg-white shadow">
       <div className="chat-handle border-b px-4 py-3 font-semibold cursor-move select-none bg-gray-50 rounded-t-xl">
