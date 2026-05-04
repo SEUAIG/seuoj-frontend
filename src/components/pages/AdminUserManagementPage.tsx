@@ -98,6 +98,7 @@ export default function AdminUserManagementPage() {
     const [previewData, setPreviewData] = useState<PreviewImportUserRow[]>([]);
     const [importResult, setImportResult] = useState<BatchImportResult | null>(null);
     const [importing, setImporting] = useState(false);
+    const [exporting, setExporting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [sendEmail, setSendEmail] = useState(false);
     const [selectedFileType, setSelectedFileType] = useState<FileType>(null);
@@ -153,6 +154,7 @@ export default function AdminUserManagementPage() {
         setPreviewData([]);
         setImportResult(null);
         setSendEmail(false);
+        setExporting(false);
         setSelectedFileType(null);
         setUploadedFileType(null);
         setRawHeaders([]);
@@ -376,25 +378,35 @@ export default function AdminUserManagementPage() {
             ]),
         ].sort((a, b) => (a[0] as number) - (b[0] as number));
 
-        if (uploadedFileType === "xlsx") {
-            const XLSX = await loadXLSX();
-            const ws = XLSX.utils.aoa_to_sheet(allRows);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "导入结果");
-            XLSX.writeFile(wb, `批量导入结果_${dateStr}.xlsx`);
-        } else {
-            const csv = allRows.map((row) =>
-                row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
-            ).join("\n");
-            const blob = new Blob(["﻿" + csv], {
-                type: "text/csv;charset=utf-8;",
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `批量导入结果_${dateStr}.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
+        setExporting(true);
+        try {
+            if (uploadedFileType === "xlsx") {
+                const XLSX = await loadXLSX();
+                const ws = XLSX.utils.aoa_to_sheet(allRows);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "导入结果");
+                XLSX.writeFile(wb, `批量导入结果_${dateStr}.xlsx`);
+            } else {
+                const csv = allRows.map((row) =>
+                    row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+                ).join("\n");
+                const blob = new Blob(["﻿" + csv], {
+                    type: "text/csv;charset=utf-8;",
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `批量导入结果_${dateStr}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        } catch (err: unknown) {
+            toast.error(
+                "导出失败: " +
+                (err instanceof Error ? err.message : String(err))
+            );
+        } finally {
+            setExporting(false);
         }
     };
 
@@ -870,9 +882,14 @@ export default function AdminUserManagementPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={downloadAllReport}
+                                disabled={exporting}
                             >
-                                <Download className="h-4 w-4 mr-1" />
-                                下载全部记录
+                                {exporting ? (
+                                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                ) : (
+                                    <Download className="h-4 w-4 mr-1" />
+                                )}
+                                {exporting ? "导出中..." : "下载全部记录"}
                             </Button>
                         </div>
                     )}

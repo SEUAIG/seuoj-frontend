@@ -34,9 +34,6 @@ const ProblemSetDetailPage = React.lazy(
 const ProblemSetUpdatePage = React.lazy(
   () => import("./components/pages/ProblemSetUpdatePage")
 );
-const DiscussionPage = React.lazy(
-  () => import("./components/pages/DiscussionPage")
-);
 const AgentChatPage = React.lazy(
   () => import("./components/pages/AgentChatPage")
 );
@@ -218,7 +215,6 @@ function App() {
               element={<ProblemSetUpdatePage />}
             />
           </Route>
-          <Route path="/discussion" element={<DiscussionPage />} />
           <Route path="/chat-agent" element={<AgentChatPage />} />
           <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />
           <Route path="/learning-chain" element={<LearningChainPage />} />
