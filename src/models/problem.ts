@@ -42,6 +42,8 @@ export interface ProblemData {
   submittable?: boolean;
   is_public?: boolean;
   can_write?: boolean;
+  prev_pid?: string | null;
+  next_pid?: string | null;
 }
 
 export interface ProblemDetailQuery {
