@@ -21,7 +21,6 @@ export default function ProblemDetailPage() {
   const [problem, setProblem] = useState<ProblemData | null>(null);
   const [loadingProblem, setLoadingProblem] = useState(true);
   const [problemErrorCode, setProblemErrorCode] = useState<number | null>(null);
-  const [, setCodeFile] = useState("");
   const [hide, setHide] = useState(false);
   const promptedNoTestcasePidRef = useRef<string | null>(null);
   const { language, codeFileObjectArray } = useSelector(
@@ -54,8 +53,8 @@ export default function ProblemDetailPage() {
           return;
         }
         setProblemErrorCode(code);
-      } catch (error) {}
-      finally {
+      } catch (error) {
+      } finally {
         setLoadingProblem(false);
       }
     };
@@ -138,7 +137,8 @@ export default function ProblemDetailPage() {
       data.problem_set_id = Number(problemSetId);
     }
     const result = await submitSolution(data);
-    const submissionNo = result.data?.submissionNo || result.data?.submission_no;
+    const submissionNo =
+      result.data?.submissionNo || result.data?.submission_no;
     if (submissionNo) {
       nav(`/submission/${submissionNo}?title=${title}`);
     }
@@ -151,8 +151,15 @@ export default function ProblemDetailPage() {
       <div className="h-[calc(100vh-5.5rem)] w-full max-w-full overflow-x-hidden overflow-y-hidden flex flex-col lg:flex-row bg-white border-t border-gray-200 relative">
         {hide ? (
           <div className="absolute right-4 top-3 z-20 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-2 py-1.5 rounded-md border border-gray-200 shadow-sm">
-            <Switch id="sethide-practice" checked={hide} onCheckedChange={setHide} />
-            <Label htmlFor="sethide-practice" className="cursor-pointer text-sm">
+            <Switch
+              id="sethide-practice"
+              checked={hide}
+              onCheckedChange={setHide}
+            />
+            <Label
+              htmlFor="sethide-practice"
+              className="cursor-pointer text-sm"
+            >
               隐藏编辑器
             </Label>
           </div>
@@ -172,14 +179,22 @@ export default function ProblemDetailPage() {
             {isAuthenticated ? (
               <ProblemCoding
                 pid={pid}
-                setCodeFile={setCodeFile}
                 handleCodeSubmit={handleCodeSubmit}
                 submitDisabled={!hasTestCases || isAssignmentClosed}
-                submitDisabledReason={isAssignmentClosed ? "作业已关闭，仅供查看" : undefined}
+                submitDisabledReason={
+                  isAssignmentClosed ? "作业已关闭，仅供查看" : undefined
+                }
                 headerExtra={
                   <div className="flex items-center gap-2 rounded-md border border-gray-200 px-2 py-1 bg-white">
-                    <Switch id="sethide-practice" checked={hide} onCheckedChange={setHide} />
-                    <Label htmlFor="sethide-practice" className="cursor-pointer text-sm whitespace-nowrap">
+                    <Switch
+                      id="sethide-practice"
+                      checked={hide}
+                      onCheckedChange={setHide}
+                    />
+                    <Label
+                      htmlFor="sethide-practice"
+                      className="cursor-pointer text-sm whitespace-nowrap"
+                    >
                       隐藏编辑器
                     </Label>
                   </div>

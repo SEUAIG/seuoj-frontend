@@ -18,7 +18,6 @@ export default function ContestProblemDetailPage() {
   const { id, pid: pidParam } = useParams();
   const contestId = Number(id);
   const [hide, setHide] = useState(false);
-  const [codeFile, setCodeFile] = useState("");
   const [problemErrorCode, setProblemErrorCode] = useState<number | null>(null);
   const { language, codeFileObjectArray } = useSelector(
     (store: RootState) => store.contestCode
@@ -124,12 +123,8 @@ export default function ContestProblemDetailPage() {
           toast.error("提交成功，但未返回提交编号");
           return;
         }
-        nav(
-            `/contest/${contestId}/submission/${submission_no}?title=${title}`
-          );
-        
-      } 
-      else {
+        nav(`/contest/${contestId}/submission/${submission_no}?title=${title}`);
+      } else {
         toast.error(result.message || "提交失败");
       }
     } catch (error) {
@@ -146,7 +141,11 @@ export default function ContestProblemDetailPage() {
       <div className="h-[calc(100vh-5.5rem)] w-full max-w-full overflow-x-hidden overflow-y-hidden flex flex-col lg:flex-row bg-white border-t border-gray-200 relative">
         {hide ? (
           <div className="absolute right-4 top-3 z-20 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-2 py-1.5 rounded-md border border-gray-200 shadow-sm">
-            <Switch id="sethide-contest" checked={hide} onCheckedChange={setHide} />
+            <Switch
+              id="sethide-contest"
+              checked={hide}
+              onCheckedChange={setHide}
+            />
             <Label htmlFor="sethide-contest" className="cursor-pointer text-sm">
               隐藏编辑器
             </Label>
@@ -168,12 +167,18 @@ export default function ContestProblemDetailPage() {
               <ContestProblemCoding
                 pid={pid}
                 contest_id={contestId || 0}
-                setCodeFile={setCodeFile}
                 handleCodeSubmit={handleContestCodeSubmit}
                 headerExtra={
                   <div className="flex items-center gap-2 rounded-md border border-gray-200 px-2 py-1 bg-white">
-                    <Switch id="sethide-contest" checked={hide} onCheckedChange={setHide} />
-                    <Label htmlFor="sethide-contest" className="cursor-pointer text-sm whitespace-nowrap">
+                    <Switch
+                      id="sethide-contest"
+                      checked={hide}
+                      onCheckedChange={setHide}
+                    />
+                    <Label
+                      htmlFor="sethide-contest"
+                      className="cursor-pointer text-sm whitespace-nowrap"
+                    >
                       隐藏编辑器
                     </Label>
                   </div>

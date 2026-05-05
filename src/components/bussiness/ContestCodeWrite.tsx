@@ -1,8 +1,7 @@
-import React, { Dispatch, SetStateAction, Suspense, lazy } from "react";
+import React, { Suspense, lazy } from "react";
 import SelectContestLanguage from "./SelectContestLanguage";
 import { cn } from "@/lib/utils";
 interface ContestCodeWriteProps {
-  setCodeFile: Dispatch<SetStateAction<string>>;
   contest_id: number;
   pid: string;
   className?: string;
@@ -13,7 +12,6 @@ interface ContestCodeWriteProps {
 const ContestCodeEditor = lazy(() => import("./ContestCodeEditor"));
 
 export default function ContestCodeWrite({
-  setCodeFile,
   contest_id,
   pid,
   className,

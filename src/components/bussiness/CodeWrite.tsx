@@ -1,10 +1,9 @@
-import React, { Dispatch, SetStateAction, Suspense, lazy } from "react";
+import React, { Suspense, lazy } from "react";
 import SelectLanguage from "./SelectLanguage";
 
 import { cn } from "@/lib/utils";
 
 interface CodeWriteProps {
-  setCodeFile: Dispatch<SetStateAction<string>>;
   pid: string;
   className?: string;
   headerExtra?: React.ReactNode;
@@ -14,14 +13,18 @@ interface CodeWriteProps {
 const CodeEditor = lazy(() => import("./CodeEditor"));
 
 export default function CodeWrite({
-  setCodeFile,
   pid,
   className,
   headerExtra,
   footer,
 }: CodeWriteProps) {
   return (
-    <div className={cn("flex min-h-0 flex-col space-y-3 p-4 bg-gray-50 min-h-36", className)}>
+    <div
+      className={cn(
+        "flex min-h-0 flex-col space-y-3 p-4 bg-gray-50 min-h-36",
+        className
+      )}
+    >
       <div className="flex items-center justify-between space-x-4 ">
         <SelectLanguage />
         <div className="flex items-center gap-3">{headerExtra}</div>

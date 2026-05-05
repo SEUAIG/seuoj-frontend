@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction } from "react";
+import React from "react";
 import ContestCodeWrite from "./ContestCodeWrite";
 import FileUpload from "./FileUpload";
 import { Button } from "@/components/ui/button";
@@ -6,21 +6,18 @@ import { SquarePen } from "lucide-react";
 interface ContestProblemCodingProps {
   contest_id: number;
   pid: string;
-  setCodeFile: Dispatch<SetStateAction<string>>;
   handleCodeSubmit: () => void;
   headerExtra?: React.ReactNode;
 }
 export default function ContestProblemCoding({
   contest_id,
   pid,
-  setCodeFile,
   handleCodeSubmit,
   headerExtra,
 }: ContestProblemCodingProps) {
   return (
     <div className="flex flex-col h-full min-h-0">
       <ContestCodeWrite
-        setCodeFile={setCodeFile}
         contest_id={contest_id}
         pid={pid}
         className="h-full border-none shadow-none"
