@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useNavigate, useParams } from "react-router-dom";
 import { FlaskConical, Play, X } from "lucide-react";
@@ -10,9 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import ProblemDetailInfo from "@/components/bussiness/ProblemDetailInfo";
-import CodeEditor from "@/components/bussiness/CodeEditor";
 import { agentCodingApi } from "@/services/agent/coding";
 import { setCodeFile, setLanguage as setCodeLanguage } from "@/features/Code/codeSlice";
 import type {
@@ -49,6 +47,20 @@ const submitLanguageMap: Record<AgentCodingLanguage, string> = {
   go: "Go1_22",
   nodejs: "Nodejs22",
 };
+
+const LazyCodeEditor = lazy(() => import("@/components/bussiness/CodeEditor"));
+const LazyMarkdownRenderer = lazy(async () => {
+  const mod = await import("@/components/common/MarkdownRenderer");
+  return { default: mod.MarkdownRenderer };
+});
+
+function SectionLoading({ label }: { label: string }) {
+  return (
+    <div className="flex h-full min-h-[120px] items-center justify-center rounded-md border border-dashed bg-muted/20 text-sm text-muted-foreground">
+      {label}
+    </div>
+  );
+}
 
 export default function ProblemAgentPage() {
   const nav = useNavigate();
@@ -411,12 +423,18 @@ export default function ProblemAgentPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="h-[60vh] min-h-[320px] max-h-[640px] rounded-md border bg-white p-3">
-                  <CodeEditor pid={editorPid} />
+                  <Suspense fallback={<SectionLoading label="编辑器加载中..." />}>
+                    <LazyCodeEditor pid={editorPid} />
+                  </Suspense>
                 </div>
                 <ScrollArea className="h-28 rounded-md border bg-sky-50/50 p-3">
                   {suggestions ? (
                     <div className="prose prose-sm max-w-none">
-                      <MarkdownRenderer>{suggestions}</MarkdownRenderer>
+                      <Suspense
+                        fallback={<SectionLoading label="分析建议加载中..." />}
+                      >
+                        <LazyMarkdownRenderer>{suggestions}</LazyMarkdownRenderer>
+                      </Suspense>
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">暂无分析建议</p>
