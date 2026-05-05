@@ -81,4 +81,4 @@ src/
 | 题单 | ProblemSetListPage、ProblemSetDetailPage、ProblemSetCreatePage、ProblemSetUpdatePage | 题单浏览、详情、创建与编辑 |
 | AI 辅助 | AgentChatPage、ProblemAgentPage、KnowledgeGraphPage、LearningChainPage | AI 对话、题目智能辅导、知识图谱可视化、学习路径 |
 | 用户 | LoginPage、SignupPage、ForgetPage、PersonalPage、UserProfilePage、AdminUserManagementPage | 认证、个人主页、资料编辑、管理员用户管理 |
-| 其他 | HomePage、EvaluationPage、RankPage、HelpPage、SubmissionPage、NotFoundPage、UnauthorizedPage | 首页、评测记录、排名、帮助等 |
+| 其他 | HomePage、EvaluationPage、HelpPage、SubmissionPage、NotFoundPage、UnauthorizedPage | 首页、评测记录、帮助等 |
