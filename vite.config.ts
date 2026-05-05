@@ -44,7 +44,6 @@ export default defineConfig({
             "katex",
           ],
           "chart-vendor": ["recharts"],
-          "graph-vendor": ["d3-force"],
         },
       },
     },
