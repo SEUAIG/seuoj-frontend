@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -9,13 +9,18 @@ interface MarkdownRendererProps {
   children: string;
 }
 
-export function MarkdownRenderer({ children }: MarkdownRendererProps) {
+const remarkPlugins = [remarkGfm, remarkMath];
+const rehypePlugins = [rehypeKatex];
+
+export const MarkdownRenderer = memo(function MarkdownRenderer({
+  children,
+}: MarkdownRendererProps) {
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm, remarkMath]}
-      rehypePlugins={[rehypeKatex]}
+      remarkPlugins={remarkPlugins}
+      rehypePlugins={rehypePlugins}
     >
       {children}
     </ReactMarkdown>
   );
-}
+});

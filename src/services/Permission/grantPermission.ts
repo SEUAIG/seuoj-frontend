@@ -5,8 +5,8 @@ import type {
   PermissionActionResponse,
 } from "@/models/permission";
 
-export interface GrantPermissionRequest extends PermissionActionRequest {}
-export interface GrantPermissionResponse extends PermissionActionResponse {}
+export type GrantPermissionRequest = PermissionActionRequest;
+export type GrantPermissionResponse = PermissionActionResponse;
 
 export const grantPermission = async (
   data: GrantPermissionRequest

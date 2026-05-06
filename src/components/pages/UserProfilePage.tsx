@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -30,9 +30,7 @@ import {
 } from "@/lib/rolePermissions";
 import RoleSelect from "@/components/bussiness/RoleSelect";
 import type { CommonUserRole } from "@/models/user";
-import nahida from "@/assets/nahida.png";
 import seu from "@/assets/seu.png";
-
 const roleLabelMap: Record<string, string> = {
   student: "学生",
   teacher: "教师",
@@ -153,8 +151,9 @@ export default function UserProfilePage() {
               <CardContent className="space-y-4 p-6">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-16 w-16">
-                    <AvatarImage src={nahida} />
-                    <AvatarFallback>{initials}</AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 font-semibold text-primary">
+                      {initials}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="flex items-center gap-2">

@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,6 @@ import { toast } from "sonner";
 import { setNickname as setNicknameAction } from "@/features/auth/authSlice";
 import { updateProfile } from "@/services/user/updateProfile";
 import { changePassword } from "@/services/auth";
-import nahida from "@/assets/nahida.png";
 import seu from "@/assets/seu.png";
 import SubmissionHeatmap from "@/components/profile/SubmissionHeatmap";
 
@@ -125,8 +124,9 @@ export default function PersonalPage() {
               <CardContent className="space-y-4 p-6">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-16 w-16">
-                    <AvatarImage src={nahida} />
-                    <AvatarFallback>{(user?.nickname || user?.username || "U")[0].toUpperCase()}</AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 font-semibold text-primary">
+                      {(user?.nickname || user?.username || "U")[0].toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="flex items-center gap-2">

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { Suspense, lazy, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
@@ -56,18 +56,33 @@ import { unlinkContest } from "@/services/Class/unlinkContest";
 import ClassPagination from "../bussiness/ClassPagination";
 import LinkContestModal from "../bussiness/LinkContestModal";
 import AddMemberModal from "../bussiness/AddMemberModal";
-import BatchImportMembersModal from "../bussiness/BatchImportMembersModal";
 import ClassHomepage from "../bussiness/ClassHomepage";
 import AnnouncementList from "../bussiness/AnnouncementList";
 import AssignmentList from "../bussiness/AssignmentList";
 import CreateAssignmentDialog from "../bussiness/CreateAssignmentDialog";
-import AssignmentOverviewDialog from "../bussiness/AssignmentOverviewDialog";
 import {
   getClassOverview,
   type AssignmentProgressItem,
 } from "@/services/Class/getClassOverview";
 import { getClassDetail } from "@/services/Class/getClassDetail";
 import { Progress } from "@/components/ui/progress";
+
+const LazyBatchImportMembersModal = lazy(
+  () => import("../bussiness/BatchImportMembersModal")
+);
+const LazyAssignmentOverviewDialog = lazy(
+  () => import("../bussiness/AssignmentOverviewDialog")
+);
+
+function OverlayLoading({ label }: { label: string }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-[1px]">
+      <div className="rounded-md border bg-background px-4 py-3 text-sm text-muted-foreground shadow-sm">
+        {label}
+      </div>
+    </div>
+  );
+}
 
 export default function ClassDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -783,21 +798,25 @@ export default function ClassDetailPage() {
         />
       )}
       {id && isBatchImportModalOpen && (
-        <BatchImportMembersModal
-          isOpen={isBatchImportModalOpen}
-          onClose={() => setIsBatchImportModalOpen(false)}
-          classId={classId}
-          onSuccess={() => refetch()}
-        />
+        <Suspense fallback={<OverlayLoading label="批量导入模块加载中..." />}>
+          <LazyBatchImportMembersModal
+            isOpen={isBatchImportModalOpen}
+            onClose={() => setIsBatchImportModalOpen(false)}
+            classId={classId}
+            onSuccess={() => refetch()}
+          />
+        </Suspense>
       )}
       {id && assignmentDrilldown && (
-        <AssignmentOverviewDialog
-          isOpen={!!assignmentDrilldown}
-          onClose={() => setAssignmentDrilldown(null)}
-          classId={classId}
-          assignmentId={assignmentDrilldown.assignment_id}
-          assignmentTitle={assignmentDrilldown.title}
-        />
+        <Suspense fallback={<OverlayLoading label="作业分析加载中..." />}>
+          <LazyAssignmentOverviewDialog
+            isOpen={!!assignmentDrilldown}
+            onClose={() => setAssignmentDrilldown(null)}
+            classId={classId}
+            assignmentId={assignmentDrilldown.assignment_id}
+            assignmentTitle={assignmentDrilldown.title}
+          />
+        </Suspense>
       )}
       {isCreateAssignmentOpen && (
         <CreateAssignmentDialog

@@ -13,7 +13,6 @@
 | 代码编辑器 | Monaco Editor（@monaco-editor/react） |
 | 渲染 | react-markdown + remark-gfm + rehype-katex（Markdown/LaTeX） |
 | 图表 | recharts、d3-force（知识图谱可视化） |
-| 拖拽 | @dnd-kit |
 | 其他 | axios、date-fns、xlsx（Excel 导入导出）、react-helmet-async、sonner（Toast） |
 
 ## 快速开始
@@ -36,8 +35,6 @@ src/
 ├── components/
 │   ├── bussiness/              # 业务组件（61 个）
 │   ├── common/                 # 通用组件（20 个）
-│   │   ├── AIChat.tsx          #   AI 对话组件
-│   │   ├── AIChatWidget.tsx    #   AI 悬浮助手
 │   │   ├── MarkdownRenderer.tsx #  Markdown/KaTeX 渲染
 │   │   ├── NavBar.tsx          #   导航栏
 │   │   ├── SearchBox.tsx       #   搜索框
@@ -84,4 +81,4 @@ src/
 | 题单 | ProblemSetListPage、ProblemSetDetailPage、ProblemSetCreatePage、ProblemSetUpdatePage | 题单浏览、详情、创建与编辑 |
 | AI 辅助 | AgentChatPage、ProblemAgentPage、KnowledgeGraphPage、LearningChainPage | AI 对话、题目智能辅导、知识图谱可视化、学习路径 |
 | 用户 | LoginPage、SignupPage、ForgetPage、PersonalPage、UserProfilePage、AdminUserManagementPage | 认证、个人主页、资料编辑、管理员用户管理 |
-| 其他 | HomePage、EvaluationPage、RankPage、DiscussionPage、HelpPage、SubmissionPage、NotFoundPage、UnauthorizedPage | 首页、评测记录、排名、讨论、帮助等 |
+| 其他 | HomePage、EvaluationPage、HelpPage、SubmissionPage、NotFoundPage、UnauthorizedPage | 首页、评测记录、帮助等 |

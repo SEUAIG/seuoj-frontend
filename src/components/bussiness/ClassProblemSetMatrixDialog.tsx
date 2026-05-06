@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Download } from "lucide-react";
-import * as XLSX from "xlsx";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +23,15 @@ interface Props {
     problemSetTitle: string;
 }
 
+let xlsxModulePromise: Promise<typeof import("xlsx")> | null = null;
+
+function loadXLSX() {
+    if (!xlsxModulePromise) {
+        xlsxModulePromise = import("xlsx");
+    }
+    return xlsxModulePromise;
+}
+
 export default function ClassProblemSetMatrixDialog({
     isOpen,
     onClose,
@@ -30,6 +39,7 @@ export default function ClassProblemSetMatrixDialog({
     problemSetId,
     problemSetTitle,
 }: Props) {
+    const [exporting, setExporting] = React.useState(false);
     const { data, isLoading, isError, error } = useQuery({
         queryKey: ["classProblemSetMatrix", classId, problemSetId],
         queryFn: () => getClassProblemSetMatrix(classId, problemSetId),
@@ -38,31 +48,42 @@ export default function ClassProblemSetMatrixDialog({
 
     const matrixData: ClassProblemSetMatrixData | undefined = data?.data;
 
-    const handleExportExcel = () => {
+    const handleExportExcel = async () => {
         if (!matrixData) return;
+        setExporting(true);
+        try {
+            const XLSX = await loadXLSX();
 
-        const header = [
-            "用户名",
-            ...matrixData.problems.map((p) => p.pid),
-            "AC 数",
-            "完成率",
-        ];
+            const header = [
+                "用户名",
+                ...matrixData.problems.map((p) => p.pid),
+                "AC 数",
+                "完成率",
+            ];
 
-        const rows = matrixData.students.map((student) => [
-            student.nickname || student.username,
-            ...student.cells.map((c) =>
-                c === "AC" ? "✓" : c === "ATTEMPTED" ? "✗" : ""
-            ),
-            student.ac_count,
-            matrixData.problems.length > 0
-                ? `${Math.round((student.ac_count / matrixData.problems.length) * 100)}%`
-                : "0%",
-        ]);
+            const rows = matrixData.students.map((student) => [
+                student.nickname || student.username,
+                ...student.cells.map((c) =>
+                    c === "AC" ? "✓" : c === "ATTEMPTED" ? "✗" : ""
+                ),
+                student.ac_count,
+                matrixData.problems.length > 0
+                    ? `${Math.round((student.ac_count / matrixData.problems.length) * 100)}%`
+                    : "0%",
+            ]);
 
-        const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "做题矩阵");
-        XLSX.writeFile(wb, `${problemSetTitle}_做题矩阵.xlsx`);
+            const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "做题矩阵");
+            XLSX.writeFile(wb, `${problemSetTitle}_做题矩阵.xlsx`);
+        } catch (err: unknown) {
+            toast.error(
+                "导出失败: " +
+                (err instanceof Error ? err.message : String(err))
+            );
+        } finally {
+            setExporting(false);
+        }
     };
 
     const statusCell = (status: string) => {
@@ -95,9 +116,18 @@ export default function ClassProblemSetMatrixDialog({
                         题单做题矩阵 — {problemSetTitle}
                     </DialogTitle>
                     {matrixData && (
-                        <Button variant="outline" size="sm" onClick={handleExportExcel}>
-                            <Download className="h-4 w-4 mr-1" />
-                            导出 Excel
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleExportExcel}
+                            disabled={exporting}
+                        >
+                            {exporting ? (
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            ) : (
+                                <Download className="h-4 w-4 mr-1" />
+                            )}
+                            {exporting ? "导出中..." : "导出 Excel"}
                         </Button>
                     )}
                 </DialogHeader>

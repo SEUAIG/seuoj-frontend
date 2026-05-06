@@ -71,7 +71,12 @@ export default function RoleSelect({
         </SelectContent>
       </Select>
 
-      <AlertDialog open={pendingRole !== null} onOpenChange={(open) => { if (!open) setPendingRole(null); }}>
+      <AlertDialog
+        open={pendingRole !== null}
+        onOpenChange={(open: boolean) => {
+          if (!open) setPendingRole(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>确认修改角色</AlertDialogTitle>

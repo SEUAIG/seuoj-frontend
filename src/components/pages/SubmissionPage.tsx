@@ -11,6 +11,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import type { ResultDetailItem, SubmissionData, SubtaskItem } from "@/models/submission";
 import { getSubmissionDetail } from "@/services/Submission/getSubmissionDetail";
+
+const FOREGROUND_POLL_INTERVAL = 1000;
+const BACKGROUND_POLL_INTERVAL = 5000;
+
 export enum SubmissionStatus {
   Pending = "Pending", // 还没有发送给评测端
   Running = "Running", // 成功发送给评测端，正在判题
@@ -41,47 +45,50 @@ export default function SubmissionPage() {
   const { submissionNo } = useParams();
   const [submission, setSubmission] = useState<SubmissionData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isPolling, setIsPolling] = useState(true);
+
   useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
+
+    const getNextDelay = () =>
+      document.visibilityState === "hidden"
+        ? BACKGROUND_POLL_INTERVAL
+        : FOREGROUND_POLL_INTERVAL;
+
     const fetchSubmission = async () => {
-      if (!submissionNo) return;
+      if (!submissionNo || cancelled) return;
       try {
         const result = await getSubmissionDetail(submissionNo);
-        const { code, message, data } = result;
-        console.log("Submission data:", result);
+        const { data } = result;
         if (data) {
+          if (cancelled) return;
           setSubmission(data);
           setLoading(false);
-          // 如果状态是 Finished 或 Failed，停止轮询
-          if (
+          const shouldContinuePolling = !(
             data.status === SubmissionStatus.Finished ||
             data.status === SubmissionStatus.Failed
-          ) {
-            setIsPolling(false);
+          );
+          if (shouldContinuePolling) {
+            timeoutId = setTimeout(fetchSubmission, getNextDelay());
           }
         }
       } catch (error) {
         console.error("Error fetching submission:", error);
+        if (cancelled) return;
         setLoading(false);
-        // 出错时停止轮询
-        setIsPolling(false);
       }
     };
-    // 立即执行一次
+
     fetchSubmission();
-    // 只有在 isPolling 为 true 时才设置轮询
-    if (isPolling) {
-      intervalId = setInterval(fetchSubmission, 1000);
-    }
-    // 清理函数：组件卸载或依赖变化时清除定时器
+
     return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
+      cancelled = true;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
       }
     };
-  }, [submissionNo, isPolling]);
+  }, [submissionNo]);
 
   if (loading && !submission) {
     return (

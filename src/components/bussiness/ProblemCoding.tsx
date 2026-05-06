@@ -1,11 +1,10 @@
-import React, { Dispatch, SetStateAction } from "react";
+import React from "react";
 import CodeWrite from "./CodeWrite";
 import FileUpload from "./FileUpload";
 import { Button } from "@/components/ui/button";
 import { SquarePen } from "lucide-react";
 interface ProblemCodingProps {
   pid: string;
-  setCodeFile: Dispatch<SetStateAction<string>>;
   handleCodeSubmit: () => void;
   submitDisabled?: boolean;
   submitDisabledReason?: string;
@@ -13,7 +12,6 @@ interface ProblemCodingProps {
 }
 export default function ProblemCoding({
   pid,
-  setCodeFile,
   handleCodeSubmit,
   submitDisabled = false,
   submitDisabledReason,
@@ -22,7 +20,6 @@ export default function ProblemCoding({
   return (
     <div className="flex flex-col h-full min-h-0">
       <CodeWrite
-        setCodeFile={setCodeFile}
         pid={pid}
         className="h-full border-none shadow-none"
         headerExtra={headerExtra}
@@ -33,7 +30,9 @@ export default function ProblemCoding({
             </div>
             <div className="flex items-center gap-2">
               {submitDisabledReason && (
-                <span className="text-sm text-muted-foreground">{submitDisabledReason}</span>
+                <span className="text-sm text-muted-foreground">
+                  {submitDisabledReason}
+                </span>
               )}
               <Button
                 className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"

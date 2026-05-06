@@ -1,4 +1,4 @@
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import React from "react";
 import { User } from "../../features/auth/types";
 import { ArrowDown, User as UserIcon, LogOut,ChevronDown } from "lucide-react"; 
@@ -9,7 +9,6 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import nahida from "./../../assets/nahida.png";
 import { useDispatch } from "react-redux";
 import { resetAuth } from "@/features/auth/authSlice";
 import { persistor } from "@/app/store";
@@ -24,8 +23,9 @@ export default function AvatarNew({ user }: { user: User }) {
   return (
     <div className="flex items-center space-x-2">
       <Avatar>
-        <AvatarImage src={nahida} />
-        <AvatarFallback>{initial}</AvatarFallback>
+        <AvatarFallback className="bg-primary/10 font-semibold text-primary">
+          {initial}
+        </AvatarFallback>
       </Avatar>
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>

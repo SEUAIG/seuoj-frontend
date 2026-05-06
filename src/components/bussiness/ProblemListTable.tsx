@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import {
   TableBody,
   Table,
@@ -7,7 +7,6 @@ import {
   TableHead,
   TableCell,
 } from "../ui/table";
-import TagItem from "./TagItem";
 import { Loader2 } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { useNavigate } from "react-router-dom";
@@ -22,7 +21,34 @@ interface ProblemListTableProps {
   records: ProblemRecord[];
   isLoading?: boolean;
 }
-export default function ProblemListTable({
+
+const TAG_COLORS = [
+  "bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200",
+  "bg-green-100 text-green-700 hover:bg-green-200 border-green-200",
+  "bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200",
+  "bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-200",
+  "bg-pink-100 text-pink-700 hover:bg-pink-200 border-pink-200",
+  "bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-indigo-200",
+  "bg-teal-100 text-teal-700 hover:bg-teal-200 border-teal-200",
+  "bg-orange-100 text-orange-700 hover:bg-orange-200 border-orange-200",
+];
+
+const tagColorCache = new Map<string, string>();
+
+function getTagColor(tagName: string) {
+  const cached = tagColorCache.get(tagName);
+  if (cached) return cached;
+
+  let hash = 0;
+  for (let i = 0; i < tagName.length; i++) {
+    hash = tagName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const color = TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
+  tagColorCache.set(tagName, color);
+  return color;
+}
+
+const ProblemListTable = memo(function ProblemListTable({
   records = [],
   isLoading = false,
 }: ProblemListTableProps) {
@@ -43,24 +69,6 @@ export default function ProblemListTable({
       </div>
     );
   }
-  const getTagColor = (tagName: string) => {
-    const colors = [
-      "bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200",
-      "bg-green-100 text-green-700 hover:bg-green-200 border-green-200",
-      "bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200",
-      "bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-200",
-      "bg-pink-100 text-pink-700 hover:bg-pink-200 border-pink-200",
-      "bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-indigo-200",
-      "bg-teal-100 text-teal-700 hover:bg-teal-200 border-teal-200",
-      "bg-orange-100 text-orange-700 hover:bg-orange-200 border-orange-200",
-    ];
-    let hash = 0;
-    for (let i = 0; i < tagName.length; i++) {
-      hash = tagName.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const index = Math.abs(hash) % colors.length;
-    return colors[index];
-  };
   return (
     <div
       className={`rounded-md border ${
@@ -144,4 +152,6 @@ export default function ProblemListTable({
       </Table>
     </div>
   );
-}
+});
+
+export default ProblemListTable;

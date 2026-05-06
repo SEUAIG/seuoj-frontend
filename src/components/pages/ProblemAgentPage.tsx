@@ -14,7 +14,10 @@ import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import ProblemDetailInfo from "@/components/bussiness/ProblemDetailInfo";
 import CodeEditor from "@/components/bussiness/CodeEditor";
 import { agentCodingApi } from "@/services/agent/coding";
-import { setCodeFile, setLanguage as setCodeLanguage } from "@/features/Code/codeSlice";
+import {
+  setCodeFile,
+  setLanguage as setCodeLanguage,
+} from "@/features/Code/codeSlice";
 import type {
   AgentCodeGenerationResponse,
   AgentCodingLanguage,
@@ -52,7 +55,9 @@ const submitLanguageMap: Record<AgentCodingLanguage, string> = {
 
 export default function ProblemAgentPage() {
   const nav = useNavigate();
-  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
+  const from = encodeURIComponent(
+    `${window.location.pathname}${window.location.search}`
+  );
   const dispatch = useDispatch();
   const { id } = useParams();
   const { isAuthenticated } = useSelector((store: RootState) => store.auth);
@@ -81,7 +86,9 @@ export default function ProblemAgentPage() {
   const selectedProblemId = id || "";
   const editorPid = `agent-${selectedProblemId || "temp"}`;
   const editorCode =
-    codeFileObjectArray.find((item: { pid: string; codeFile: string }) => item.pid === editorPid)?.codeFile || "";
+    codeFileObjectArray.find(
+      (item: { pid: string; codeFile: string }) => item.pid === editorPid
+    )?.codeFile || "";
 
   const problemDescriptionForAgent = useMemo(() => {
     if (!problemData) return "无题目描述";
@@ -102,12 +109,12 @@ export default function ProblemAgentPage() {
         language === "cpp"
           ? "Cpp17"
           : language === "python"
-            ? "Python3_12"
-            : language === "java"
-              ? "Java17"
-              : language === "go"
-                ? "Go1_22"
-                : "Nodejs22"
+          ? "Python3_12"
+          : language === "java"
+          ? "Java17"
+          : language === "go"
+          ? "Go1_22"
+          : "Nodejs22"
       )
     );
   }, [dispatch, language]);
@@ -138,14 +145,15 @@ export default function ProblemAgentPage() {
         }
         setProblemData(result.data);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "获取题目详情失败");
+        toast.error(
+          error instanceof Error ? error.message : "获取题目详情失败"
+        );
       } finally {
         setLoadingDetail(false);
       }
     };
     loadProblemDetail();
   }, [dispatch, editorPid, selectedProblemId]);
-
 
   const handleGenerateCode = async () => {
     if (!pseudocode.trim()) return;
@@ -161,7 +169,9 @@ export default function ProblemAgentPage() {
         language
       );
       if (typeof result === "string") {
-        dispatch(setCodeFile({ pid: editorPid, codeFile: extractCodeText(result) }));
+        dispatch(
+          setCodeFile({ pid: editorPid, codeFile: extractCodeText(result) })
+        );
         return;
       }
       const payload = result as AgentCodeGenerationResponse;
@@ -312,7 +322,8 @@ export default function ProblemAgentPage() {
         language: submitLanguageMap[language],
         code,
       });
-      const submissionNo = result?.data?.submissionNo || result?.data?.submission_no;
+      const submissionNo =
+        result?.data?.submissionNo || result?.data?.submission_no;
       if (submissionNo) {
         nav(
           `/submission/${submissionNo}?title=${encodeURIComponent(
@@ -337,13 +348,17 @@ export default function ProblemAgentPage() {
       <div className="h-[calc(100vh-5.5rem)] w-full max-w-full overflow-x-hidden overflow-y-hidden flex flex-col lg:flex-row bg-white border-t border-gray-200 relative">
         <div className="w-full lg:w-1/2 h-full max-w-full min-w-0 flex-shrink overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent border-r border-gray-200">
           {loadingDetail ? (
-            <div className="p-6 text-sm text-muted-foreground">题目加载中...</div>
+            <div className="p-6 text-sm text-muted-foreground">
+              题目加载中...
+            </div>
           ) : problemData ? (
             <ProblemDetailInfo
               problem={problemData}
               isAuthenticated={isAuthenticated}
               practiceButtonLabel="传统练习"
-              onPracticeClick={(pid) => nav(`/problemsLibrary/${pid}?from=${from}`)}
+              onPracticeClick={(pid) =>
+                nav(`/problemsLibrary/${pid}?from=${from}`)
+              }
             />
           ) : (
             <ProblemAccessState code={problemErrorCode} />
@@ -365,16 +380,18 @@ export default function ProblemAgentPage() {
                 />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {(Object.keys(langLabels) as AgentCodingLanguage[]).map((key) => (
-                      <Button
-                        key={key}
-                        size="sm"
-                        variant={language === key ? "default" : "outline"}
-                        onClick={() => setLanguage(key)}
-                      >
-                        {langLabels[key]}
-                      </Button>
-                    ))}
+                    {(Object.keys(langLabels) as AgentCodingLanguage[]).map(
+                      (key) => (
+                        <Button
+                          key={key}
+                          size="sm"
+                          variant={language === key ? "default" : "outline"}
+                          onClick={() => setLanguage(key)}
+                        >
+                          {langLabels[key]}
+                        </Button>
+                      )
+                    )}
                   </div>
                   <Button
                     onClick={handleGenerateCode}
@@ -402,7 +419,9 @@ export default function ProblemAgentPage() {
                     <Button
                       size="sm"
                       onClick={handleSubmit}
-                      disabled={!editorCode.trim() || isSubmitting || !hasTestCases}
+                      disabled={
+                        !editorCode.trim() || isSubmitting || !hasTestCases
+                      }
                     >
                       {isSubmitting ? "提交中..." : "提交评测"}
                     </Button>
@@ -419,7 +438,9 @@ export default function ProblemAgentPage() {
                       <MarkdownRenderer>{suggestions}</MarkdownRenderer>
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">暂无分析建议</p>
+                    <p className="text-sm text-muted-foreground">
+                      暂无分析建议
+                    </p>
                   )}
                 </ScrollArea>
 
@@ -459,7 +480,11 @@ export default function ProblemAgentPage() {
                       placeholder="新增 stdin 用例"
                       className="min-h-16 text-xs font-mono"
                     />
-                    <Button size="sm" onClick={addTestCase} className="self-end">
+                    <Button
+                      size="sm"
+                      onClick={addTestCase}
+                      className="self-end"
+                    >
                       添加
                     </Button>
                   </div>
@@ -486,14 +511,18 @@ export default function ProblemAgentPage() {
                           </div>
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             <div>
-                              <div className="text-muted-foreground mb-1">stdin</div>
+                              <div className="text-muted-foreground mb-1">
+                                stdin
+                              </div>
                               <pre className="rounded border bg-white p-2 whitespace-pre-wrap break-all">
                                 {tc.input || "(空)"}
                               </pre>
                             </div>
                             <div>
                               <div className="text-muted-foreground mb-1">
-                                {tc.expectedOutput != null ? "期望 / 实际" : "stdout"}
+                                {tc.expectedOutput != null
+                                  ? "期望 / 实际"
+                                  : "stdout"}
                               </div>
                               {tc.expectedOutput != null && (
                                 <pre className="rounded border bg-green-50 p-2 whitespace-pre-wrap break-all mb-1 text-green-800">

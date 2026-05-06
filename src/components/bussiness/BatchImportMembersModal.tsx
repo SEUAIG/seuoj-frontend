@@ -34,7 +34,6 @@ import {
     FileSpreadsheet,
     Info,
 } from "lucide-react";
-import * as XLSX from "xlsx";
 import ColumnMappingStep from "@/components/bussiness/ColumnMappingStep";
 import {
     findHeaderRow,
@@ -58,6 +57,15 @@ interface Props {
     onSuccess?: () => void;
 }
 
+let xlsxModulePromise: Promise<typeof import("xlsx")> | null = null;
+
+function loadXlsx() {
+    if (!xlsxModulePromise) {
+        xlsxModulePromise = import("xlsx");
+    }
+    return xlsxModulePromise;
+}
+
 export default function BatchImportMembersModal({
     isOpen,
     onClose,
@@ -71,6 +79,7 @@ export default function BatchImportMembersModal({
     const [importing, setImporting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [sendEmail, setSendEmail] = useState(false);
+    const [exporting, setExporting] = useState(false);
     const [selectedFileType, setSelectedFileType] = useState<FileType>(null);
     const [uploadedFileType, setUploadedFileType] = useState<FileType>(null);
     const [rawHeaders, setRawHeaders] = useState<string[]>([]);
@@ -82,6 +91,7 @@ export default function BatchImportMembersModal({
         setPreviewData([]);
         setImportResult(null);
         setSendEmail(false);
+        setExporting(false);
         setSelectedFileType(null);
         setUploadedFileType(null);
         setRawHeaders([]);
@@ -103,7 +113,7 @@ export default function BatchImportMembersModal({
         const { headerRowIndex, mappings } = findHeaderRow(allRows);
         const cleanedHeaders = allRows[headerRowIndex].map((h) =>
             String(h ?? "")
-                .replace(/^﻿/, "")
+                .replace(/^\uFEFF/, "")
                 .trim()
         );
         if (cleanedHeaders.length === 0 || cleanedHeaders.every((h) => !h)) {
@@ -136,7 +146,8 @@ export default function BatchImportMembersModal({
         parseAllRows(allRows);
     };
 
-    const parseXLSX = (data: ArrayBuffer) => {
+    const parseXLSX = async (data: ArrayBuffer) => {
+        const XLSX = await loadXlsx();
         const workbook = XLSX.read(data, { type: "array" });
         const sheetName = workbook.SheetNames[0];
         if (!sheetName) throw new Error("Excel 文件中没有工作表");
@@ -231,9 +242,9 @@ export default function BatchImportMembersModal({
             reader.readAsText(file);
         } else {
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = async (event) => {
                 try {
-                    parseXLSX(event.target?.result as ArrayBuffer);
+                    await parseXLSX(event.target?.result as ArrayBuffer);
                 } catch (err: unknown) {
                     toast.error(
                         "文件解析失败: " +
@@ -282,7 +293,7 @@ export default function BatchImportMembersModal({
         }
     };
 
-    const downloadAllReport = () => {
+    const downloadAllReport = async () => {
         if (!importResult || importResult.rows.length === 0) return;
         const dateStr = new Date().toISOString().slice(0, 10);
 
@@ -299,24 +310,35 @@ export default function BatchImportMembersModal({
             ]),
         ];
 
-        if (uploadedFileType === "xlsx") {
-            const ws = XLSX.utils.aoa_to_sheet(allRows);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "导入结果");
-            XLSX.writeFile(wb, `班级批量导入结果_${dateStr}.xlsx`);
-        } else {
-            const csv = allRows.map((row) =>
-                row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
-            ).join("\n");
-            const blob = new Blob(["﻿" + csv], {
-                type: "text/csv;charset=utf-8;",
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `班级批量导入结果_${dateStr}.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
+        setExporting(true);
+        try {
+            if (uploadedFileType === "xlsx") {
+                const XLSX = await loadXlsx();
+                const ws = XLSX.utils.aoa_to_sheet(allRows);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "导入结果");
+                XLSX.writeFile(wb, `班级批量导入结果_${dateStr}.xlsx`);
+            } else {
+                const csv = allRows.map((row) =>
+                    row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+                ).join("\n");
+                const blob = new Blob(["﻿" + csv], {
+                    type: "text/csv;charset=utf-8;",
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `班级批量导入结果_${dateStr}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        } catch (err: unknown) {
+            toast.error(
+                "导出失败: " +
+                (err instanceof Error ? err.message : String(err))
+            );
+        } finally {
+            setExporting(false);
         }
     };
 
@@ -590,9 +612,14 @@ export default function BatchImportMembersModal({
                                 <Button
                                     size="sm"
                                     onClick={downloadAllReport}
+                                    disabled={exporting}
                                 >
-                                    <Download className="h-4 w-4 mr-1" />
-                                    下载全部记录
+                                    {exporting ? (
+                                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                    ) : (
+                                        <Download className="h-4 w-4 mr-1" />
+                                    )}
+                                    {exporting ? "导出中..." : "下载全部记录"}
                                 </Button>
                             </div>
                         )}

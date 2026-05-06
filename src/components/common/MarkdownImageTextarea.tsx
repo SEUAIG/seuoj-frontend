@@ -1,10 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { ImageUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { uploadImage } from "@/services/image/uploadImage";
-import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +14,11 @@ interface MarkdownImageTextareaProps
 }
 
 const IMAGE_TEMPLATE = (url: string) => `![](${url})`;
+
+const LazyMarkdownRenderer = lazy(async () => {
+  const mod = await import("@/components/common/MarkdownRenderer");
+  return { default: mod.MarkdownRenderer };
+});
 
 function normalizeImageUrl(rawUrl: string) {
   return rawUrl;
@@ -39,6 +43,7 @@ export function MarkdownImageTextarea({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const latestValueRef = useRef(value);
   const [isUploading, setIsUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
 
   useEffect(() => {
     latestValueRef.current = value;
@@ -121,7 +126,11 @@ export function MarkdownImageTextarea({
 
   return (
     <div className="space-y-2">
-      <Tabs defaultValue="edit" className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={(next) => setActiveTab(next as "edit" | "preview")}
+        className="w-full"
+      >
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <input
@@ -175,7 +184,15 @@ export function MarkdownImageTextarea({
           >
             {value.trim() ? (
               <div className="prose prose-sm max-w-none">
-                <MarkdownRenderer>{value}</MarkdownRenderer>
+                <Suspense
+                  fallback={
+                    <div className="flex min-h-[120px] items-center justify-center text-muted-foreground">
+                      预览加载中...
+                    </div>
+                  }
+                >
+                  <LazyMarkdownRenderer>{value}</LazyMarkdownRenderer>
+                </Suspense>
               </div>
             ) : (
               <p className="text-muted-foreground">暂无内容可预览</p>

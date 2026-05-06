@@ -17,6 +17,11 @@ import ContestFilterPanel from "@/components/bussiness/ContestFilterPanel";
 import ContestListTable from "@/components/bussiness/ContestListTable";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import type {
+  ContestListQuery,
+  ContestRuleType,
+  ContestStatus,
+} from "@/models/contest";
 
 export default function CompetitionPage() {
   const dispatch = useDispatch();
@@ -123,13 +128,13 @@ export default function CompetitionPage() {
     const map = statusClassMap.get(key) ?? ruleTypeClassMap.get(key);
     return map ? map.outline : "";
   };
-  const queryParams = useMemo(
+  const queryParams = useMemo<ContestListQuery>(
     () => ({
       current: Number(current),
       size: Number(size),
-      status: status ?? undefined,
+      status: (status ?? undefined) as ContestStatus | undefined,
       title: title ?? undefined,
-      rule_type: rule_type ?? undefined,
+      rule_type: (rule_type ?? undefined) as ContestRuleType | undefined,
     }),
     [current, size, status, title, rule_type]
   );
