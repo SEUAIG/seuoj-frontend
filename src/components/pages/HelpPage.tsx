@@ -90,6 +90,70 @@ export default function HelpPage() {
                 <p>
                   进入题目详情后可查看题面、限制和样例，并选择语言进行提交。目前支持 C/C++/Java/Python/Go/Node.js。
                 </p>
+                <div className="rounded-lg border bg-background/70 p-4 space-y-2">
+                  <p className="font-medium text-foreground">代码编写格式</p>
+                  <p>
+                    提交代码时需要编写<strong>完整程序</strong>（包含 main 函数），而非仅编写函数。
+                  </p>
+                  <p>
+                    输入：从标准输入（stdin）读取数据。<br />
+                    输出：将结果输出到标准输出（stdout）。
+                  </p>
+                  <div className="space-y-2 mt-3">
+                    <p className="font-medium text-foreground text-xs">各语言模板示例</p>
+                    <div className="rounded-md bg-muted/50 p-3 font-mono text-xs overflow-x-auto">
+                      <pre>{`// C++
+#include <iostream>
+using namespace std;
+int main() {
+    int n;
+    cin >> n;
+    cout << n << endl;
+    return 0;
+}
+
+// C
+#include <stdio.h>
+int main() {
+    int n;
+    scanf("%d", &n);
+    printf("%d\\n", n);
+    return 0;
+}
+
+// Java
+import java.util.Scanner;
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt();
+        System.out.println(n);
+    }
+}
+
+// Python
+n = int(input())
+print(n)
+
+// Go
+package main
+import "fmt"
+func main() {
+    var n int
+    fmt.Scan(&n)
+    fmt.Println(n)
+}
+
+// Node.js
+const readline = require('readline');
+const rl = readline.createInterface({ input: process.stdin });
+rl.on('line', (line) => {
+    console.log(line);
+    rl.close();
+});`}</pre>
+                    </div>
+                  </div>
+                </div>
                 <p>
                   题目详情页还提供"AI 练习"入口，可借助 AI 辅助分析题意、生成思路并调试代码。
                 </p>

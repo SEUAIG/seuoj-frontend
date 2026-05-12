@@ -25,10 +25,11 @@ import {
 } from "@/features/ProblemList/problemListSlice";
 import ProblemListTable, { ProblemRecord } from "../bussiness/ProblemListTable";
 import ProblemListPageChoose from "../bussiness/ProblemListPageChoose";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function ProblemsLibraryPage() {
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
   const role = useSelector((state: RootState) => state.auth.user?.role ?? "guest");
   const isTeacherOrAbove = role === "teacher" || role === "admin" || role === "superadmin";
   const { tags } = useSelector((state: RootState) => state.tags);
@@ -42,13 +43,29 @@ export default function ProblemsLibraryPage() {
     (state: RootState) => state.problemList
   );
 
-  // 进入页面时重置筛选条件
+  // 进入页面时重置筛选条件，但如果从详情页返回则恢复页码
   useEffect(() => {
     dispatch(clearTags());
     dispatch(setTitle(""));
-    dispatch(setCurrent(1));
     setKeyword("");
-  }, [dispatch]);
+
+    const fromParam = searchParams.get("from");
+    if (fromParam) {
+      try {
+        const decodedFrom = decodeURIComponent(fromParam);
+        const fromUrl = new URL(decodedFrom, window.location.origin);
+        const page = fromUrl.searchParams.get("current");
+        if (page) {
+          const pageNum = parseInt(page, 10);
+          if (!isNaN(pageNum) && pageNum > 0) {
+            dispatch(setCurrent(pageNum));
+            return;
+          }
+        }
+      } catch {}
+    }
+    dispatch(setCurrent(1));
+  }, [dispatch, searchParams]);
 
   const { data, isLoading, isFetching, refetch } =
     useSearchQueryByKeyword<ProblemRecord>(current, size, title, tag_ids);
