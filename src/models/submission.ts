@@ -12,6 +12,7 @@ export type SubmissionVerdict =
   | "RuntimeError"
   | "SystemError"
   | "PartiallyAccepted"
+  | "CodeTooLong"
   | "Skipped"
   | null;
 

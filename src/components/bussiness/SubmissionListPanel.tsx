@@ -67,6 +67,10 @@ const verdictDisplayMap: Record<string, { label: string; color: string }> = {
     label: "PA",
     color: "bg-teal-100 text-teal-700 border-teal-300",
   },
+  CodeTooLong: {
+    label: "CTL",
+    color: "bg-red-100 text-red-700 border-red-300",
+  },
 };
 
 const verdictOptions = [
@@ -78,6 +82,7 @@ const verdictOptions = [
   { value: "CompileError", label: "CE - Compile Error" },
   { value: "SystemError", label: "SE - System Error" },
   { value: "PartiallyAccepted", label: "PA - Partially Accepted" },
+  { value: "CodeTooLong", label: "CTL - Code Too Long" },
 ];
 
 const languageOptions = [

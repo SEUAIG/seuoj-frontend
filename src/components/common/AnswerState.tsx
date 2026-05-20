@@ -22,6 +22,7 @@ export type States =
   | "JudgeError"
   | "SystemError"
   | "PartiallyAccepted"
+  | "CodeTooLong"
   | "Skipped";
 
 const iconMap: Record<string, LucideIcon> = {
@@ -34,6 +35,7 @@ const iconMap: Record<string, LucideIcon> = {
   JudgeError: Gavel,
   SystemError: ServerCrash,
   PartiallyAccepted: CheckCircle, // Uses CheckCircle but will have different color
+  CodeTooLong: XCircle,
   Skipped: MoreHorizontal,
 };
 
@@ -47,6 +49,7 @@ export const stateColorMap: Record<string, string> = {
   JudgeError: "text-rose-600",
   SystemError: "text-red-700",
   PartiallyAccepted: "text-lime-500",
+  CodeTooLong: "text-red-500",
   Skipped: "text-gray-400",
 };
 
@@ -60,6 +63,7 @@ const hoverStateColorMap: Record<string, string> = {
   JudgeError: "group-hover:text-rose-600",
   SystemError: "group-hover:text-red-700",
   PartiallyAccepted: "group-hover:text-lime-500",
+  CodeTooLong: "group-hover:text-red-500",
   Skipped: "group-hover:text-gray-400",
 };
 interface AnswerStateProps {

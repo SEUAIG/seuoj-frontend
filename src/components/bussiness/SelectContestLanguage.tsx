@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useEffect } from "react";
 
 import {
   Select,
@@ -19,6 +20,13 @@ export default function SelectContestLanguage() {
   const { language } = useSelector((store: RootState) => store.contestCode);
   const { data, isLoading, isError } = useQueryToGetLanguages();
   const languages = Array.isArray(data?.data?.languages) ? data.data.languages : [];
+  const available = languages.filter((lang) => lang.available);
+
+  useEffect(() => {
+    if (available.length > 0 && !available.some((lang) => lang.name === language)) {
+      dispatch(setContestLanguage(available[0].name));
+    }
+  }, [available, language, dispatch]);
 
   return (
     <Select
