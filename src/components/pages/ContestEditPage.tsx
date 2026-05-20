@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, Suspense, lazy } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -44,15 +44,19 @@ import { ContestProblemOverviewInEditPage } from "@/services/Contest/getContestP
 import SortListTable from "../common/SortListTable";
 import { useSaveShortcut } from "@/hooks/useSaveShortcut";
 import { MarkdownImageTextarea } from "@/components/common/MarkdownImageTextarea";
+
+const MonacoEditor = lazy(() => import("@monaco-editor/react"));
 const contestFormSchema = z.object({
   title: z.string().min(1, "标题不能为空"),
   subtitle: z.string().optional(),
   description: z.string().optional(),
   start_time: z.coerce.date(),
   end_time: z.coerce.date(),
-  rule_type: z.enum(["ACM", "NOI", "IOI"]),
+  rule_type: z.enum(["ACM", "NOI", "IOI", "CUSTOM"]),
   is_public: z.boolean().default(false),
   hide_statistics: z.boolean().default(false),
+  scoring_config: z.string().optional(),
+  scoring_script: z.string().optional(),
 });
 type ContestFormValues = z.infer<typeof contestFormSchema>;
 export default function ContestEditPage() {
@@ -103,12 +107,17 @@ export default function ContestEditPage() {
         end_time: contestDetail.end_time
           ? new Date(contestDetail.end_time)
           : undefined,
-        rule_type: (contestDetail.rule_type as "NOI" | "IOI" | "ACM") || "ACM",
+        rule_type: (contestDetail.rule_type as "NOI" | "IOI" | "ACM" | "CUSTOM") || "ACM",
         is_public: contestDetail.is_public || false,
         hide_statistics: contestDetail.hide_statistics || false,
+        scoring_config: contestDetail.scoring_config || "",
+        scoring_script: contestDetail.scoring_script || "",
       });
     }
   }, [contestDetail, form]);
+
+  const ruleType = form.watch("rule_type");
+
   const onSubmit = async (values: ContestFormValues) => {
     if (!contestId) return;
     setIsSubmitting(true);
@@ -117,6 +126,8 @@ export default function ContestEditPage() {
         ...values,
         start_time: format(values.start_time, "yyyy-MM-dd'T'HH:mm:ss"),
         end_time: format(values.end_time, "yyyy-MM-dd'T'HH:mm:ss"),
+        scoring_config: values.scoring_config || undefined,
+        scoring_script: values.scoring_script || undefined,
       };
       // 并行执行更新请求
       const updateInfoPromise = updateContest(contestId, payload);
@@ -356,6 +367,7 @@ export default function ContestEditPage() {
                     <SelectItem value="ACM">ACM</SelectItem>
                     <SelectItem value="NOI">NOI</SelectItem>
                     <SelectItem value="IOI">IOI</SelectItem>
+                    <SelectItem value="CUSTOM">CUSTOM</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormDescription>
@@ -365,6 +377,74 @@ export default function ContestEditPage() {
               </FormItem>
             )}
           />
+          {ruleType === "CUSTOM" && (
+            <>
+              <FormField
+                control={form.control}
+                name="scoring_config"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>评分配置（JSON）</FormLabel>
+                    <FormControl>
+                      <div className="border rounded-md overflow-hidden">
+                        <Suspense fallback={<div className="h-[150px] flex items-center justify-center text-muted-foreground">编辑器加载中...</div>}>
+                          <MonacoEditor
+                            height="150px"
+                            language="json"
+                            value={field.value ?? ""}
+                            onChange={(val) => field.onChange(val ?? "")}
+                            options={{
+                              minimap: { enabled: false },
+                              lineNumbers: "on",
+                              scrollBeyondLastLine: false,
+                              fontSize: 13,
+                              tabSize: 2,
+                            }}
+                          />
+                        </Suspense>
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      JSON 字符串，存储评分配置参数（如 {"{"}"penalty_minutes": 20{"}"}）。
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="scoring_script"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>自定义评分脚本</FormLabel>
+                    <FormControl>
+                      <div className="border rounded-md overflow-hidden">
+                        <Suspense fallback={<div className="h-[300px] flex items-center justify-center text-muted-foreground">编辑器加载中...</div>}>
+                          <MonacoEditor
+                            height="300px"
+                            language="javascript"
+                            value={field.value ?? ""}
+                            onChange={(val) => field.onChange(val ?? "")}
+                            options={{
+                              minimap: { enabled: false },
+                              lineNumbers: "on",
+                              scrollBeyondLastLine: false,
+                              fontSize: 13,
+                              tabSize: 2,
+                            }}
+                          />
+                        </Suspense>
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      JavaScript 脚本代码，通过 GraalVM 沙箱执行，需实现 computeStandings 函数。
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
           <div className="flex flex-row gap-8">
             <FormField
               control={form.control}

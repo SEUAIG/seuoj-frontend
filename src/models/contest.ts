@@ -1,7 +1,7 @@
 import type { ApiResponse, ApiResponseBase } from "@/models/common";
 import type { ProblemContent } from "@/models/problem";
 
-export type ContestRuleType = "NOI" | "IOI" | "ACM";
+export type ContestRuleType = "NOI" | "IOI" | "ACM" | "CUSTOM";
 export type ContestStatus = "NOT_STARTED" | "IN_PROGRESS" | "FINISHED";
 
 export interface ContestProblemOverview {
@@ -49,6 +49,8 @@ export interface CreateContestRequest {
   rule_type: ContestRuleType;
   is_public?: boolean;
   hide_statistics?: boolean;
+  scoring_config?: string;
+  scoring_script?: string;
 }
 
 export type CreateContestResponse = ApiResponse<{ contest_id: number } | undefined>;
@@ -64,6 +66,8 @@ export interface ContestDetailData {
   rule_type?: ContestRuleType;
   is_public?: boolean;
   hide_statistics?: boolean;
+  scoring_config?: string;
+  scoring_script?: string;
   problem_list: ContestProblemOverview[];
   can_write?: boolean;
 }
@@ -204,6 +208,8 @@ export interface UpdateContestRequest {
   rule_type?: ContestRuleType;
   is_public?: boolean;
   hide_statistics?: boolean;
+  scoring_config?: string;
+  scoring_script?: string;
 }
 
 export type UpdateContestResponse = ApiResponseBase;

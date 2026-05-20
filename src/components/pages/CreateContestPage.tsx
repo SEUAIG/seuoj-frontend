@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -39,6 +39,8 @@ import {
 import { useSaveShortcut } from "@/hooks/useSaveShortcut";
 import { useQueryClient } from "@tanstack/react-query";
 import { MarkdownImageTextarea } from "@/components/common/MarkdownImageTextarea";
+
+const MonacoEditor = lazy(() => import("@monaco-editor/react"));
 const contestFormSchema = z
   .object({
     title: z.string().min(1, "标题不能为空"),
@@ -46,9 +48,11 @@ const contestFormSchema = z
     description: z.string().optional(),
     start_time: z.coerce.date(),
     end_time: z.coerce.date(),
-    rule_type: z.enum(["ACM", "NOI", "IOI"]),
+    rule_type: z.enum(["ACM", "NOI", "IOI", "CUSTOM"]),
     is_public: z.boolean().default(false),
     hide_statistics: z.boolean().default(false),
+    scoring_config: z.string().optional(),
+    scoring_script: z.string().optional(),
   })
   .refine((data) => data.end_time > data.start_time, {
     message: "结束时间必须晚于开始时间",
@@ -68,6 +72,8 @@ export default function CreateContestPage() {
       rule_type: "ACM",
       is_public: false,
       hide_statistics: false,
+      scoring_config: "",
+      scoring_script: "",
     },
   });
   const onSubmit: any = async (values: ContestFormValues) => {
@@ -82,6 +88,8 @@ export default function CreateContestPage() {
         rule_type: values.rule_type,
         is_public: values.is_public,
         hide_statistics: values.hide_statistics,
+        scoring_config: values.scoring_config || undefined,
+        scoring_script: values.scoring_script || undefined,
       };
       const res = await createContest(payload);
       if (res.code === 0) {
@@ -267,6 +275,7 @@ export default function CreateContestPage() {
                     <SelectItem value="ACM">ACM</SelectItem>
                     <SelectItem value="NOI">NOI</SelectItem>
                     <SelectItem value="IOI">IOI</SelectItem>
+                    <SelectItem value="CUSTOM">CUSTOM</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormDescription>
@@ -276,6 +285,74 @@ export default function CreateContestPage() {
               </FormItem>
             )}
           />
+          {form.watch("rule_type") === "CUSTOM" && (
+            <>
+              <FormField
+                control={form.control}
+                name="scoring_config"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>评分配置（JSON）</FormLabel>
+                    <FormControl>
+                      <div className="border rounded-md overflow-hidden">
+                        <Suspense fallback={<div className="h-[150px] flex items-center justify-center text-muted-foreground">编辑器加载中...</div>}>
+                          <MonacoEditor
+                            height="150px"
+                            language="json"
+                            value={field.value ?? ""}
+                            onChange={(val) => field.onChange(val ?? "")}
+                            options={{
+                              minimap: { enabled: false },
+                              lineNumbers: "on",
+                              scrollBeyondLastLine: false,
+                              fontSize: 13,
+                              tabSize: 2,
+                            }}
+                          />
+                        </Suspense>
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      JSON 字符串，存储评分配置参数（如 {"{"}"penalty_minutes": 20{"}"}）。
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="scoring_script"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>自定义评分脚本</FormLabel>
+                    <FormControl>
+                      <div className="border rounded-md overflow-hidden">
+                        <Suspense fallback={<div className="h-[300px] flex items-center justify-center text-muted-foreground">编辑器加载中...</div>}>
+                          <MonacoEditor
+                            height="300px"
+                            language="javascript"
+                            value={field.value ?? ""}
+                            onChange={(val) => field.onChange(val ?? "")}
+                            options={{
+                              minimap: { enabled: false },
+                              lineNumbers: "on",
+                              scrollBeyondLastLine: false,
+                              fontSize: 13,
+                              tabSize: 2,
+                            }}
+                          />
+                        </Suspense>
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      JavaScript 脚本代码，通过 GraalVM 沙箱执行，需实现 computeStandings 函数。
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
           <div className="flex flex-row gap-8">
             <FormField
               control={form.control}
