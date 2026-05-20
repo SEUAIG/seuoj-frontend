@@ -35,7 +35,9 @@ function toLocalDatetimeStr(iso: string | null | undefined): string {
 
 function toISOOrUndefined(val: string): string | undefined {
   if (!val) return undefined;
-  return new Date(val).toISOString();
+  const d = new Date(val);
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
 interface AssignmentEditDialogProps {

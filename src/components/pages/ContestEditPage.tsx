@@ -115,8 +115,8 @@ export default function ContestEditPage() {
     try {
       const payload: UpdateContestRequest = {
         ...values,
-        start_time: values.start_time.toISOString(),
-        end_time: values.end_time.toISOString(),
+        start_time: format(values.start_time, "yyyy-MM-dd'T'HH:mm:ss"),
+        end_time: format(values.end_time, "yyyy-MM-dd'T'HH:mm:ss"),
       };
       // 并行执行更新请求
       const updateInfoPromise = updateContest(contestId, payload);
