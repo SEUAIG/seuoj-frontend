@@ -109,3 +109,15 @@ export interface OnlineJudgeResultData {
 }
 
 export type OnlineJudgeResponse = ApiResponse<OnlineJudgeResultData>;
+
+export interface Language {
+  name: string;
+  available: boolean;
+  version: string | null;
+}
+
+export interface LanguagesData {
+  languages: Language[];
+}
+
+export type LanguagesResponse = ApiResponse<LanguagesData>;

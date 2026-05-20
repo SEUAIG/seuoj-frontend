@@ -3,4 +3,5 @@ export const submissionEndpoints = {
   byNo: (submissionNo: string) => `/api/submission/${submissionNo}`,
   create: "/api/submission",
   online: "/api/submission/online",
+  languages: "/api/submission/languages",
 };
