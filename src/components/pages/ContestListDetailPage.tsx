@@ -288,6 +288,22 @@ export default function ContestListDetailPage() {
               </div>
             </div>
           )}
+          {data.rule_type === "ACM" && data.scoring_config && (
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold mb-3">评分配置</h3>
+              <pre className="text-sm bg-muted/30 p-4 rounded-lg overflow-x-auto font-mono">
+                {data.scoring_config}
+              </pre>
+            </div>
+          )}
+          {data.rule_type === "CUSTOM" && data.scoring_script && (
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold mb-3">自定义评分脚本</h3>
+              <pre className="text-sm bg-muted/30 p-4 rounded-lg overflow-x-auto font-mono">
+                {data.scoring_script}
+              </pre>
+            </div>
+          )}
           <div>
             <h3 className="text-lg font-semibold mb-3">题目列表</h3>
             <div className="rounded-md border">
