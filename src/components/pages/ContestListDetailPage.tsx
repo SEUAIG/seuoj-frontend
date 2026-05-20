@@ -305,7 +305,7 @@ export default function ContestListDetailPage() {
                     data.problem_list.map((problem) => (
                       <TableRow key={problem.pid}>
                         <TableCell className="font-medium">
-                          {String.fromCharCode(65 + (problem.sort_order ?? 0))}
+                          {String.fromCharCode(64 + (problem.sort_order ?? 1))}
                         </TableCell>
                         <TableCell>{problem.pid}</TableCell>
                         <TableCell>

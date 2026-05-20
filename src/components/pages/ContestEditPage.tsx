@@ -377,73 +377,81 @@ export default function ContestEditPage() {
               </FormItem>
             )}
           />
+          {ruleType === "ACM" && (
+            <FormField
+              control={form.control}
+              name="scoring_config"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>评分配置（JSON）</FormLabel>
+                  <FormControl>
+                    <div className="border rounded-md overflow-hidden">
+                      <Suspense fallback={<div className="h-[150px] flex items-center justify-center text-muted-foreground">编辑器加载中...</div>}>
+                        <MonacoEditor
+                          height="150px"
+                          language="json"
+                          value={field.value ?? ""}
+                          onChange={(val) => field.onChange(val ?? "")}
+                          options={{
+                            minimap: { enabled: false },
+                            lineNumbers: "on",
+                            scrollBeyondLastLine: false,
+                            fontSize: 13,
+                            tabSize: 2,
+                          }}
+                        />
+                      </Suspense>
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    可选。JSON 字符串，存储评分配置参数（如 {"{"}"penalty_minutes": 20{"}"}）。
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
           {ruleType === "CUSTOM" && (
-            <>
-              <FormField
-                control={form.control}
-                name="scoring_config"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>评分配置（JSON）</FormLabel>
-                    <FormControl>
-                      <div className="border rounded-md overflow-hidden">
-                        <Suspense fallback={<div className="h-[150px] flex items-center justify-center text-muted-foreground">编辑器加载中...</div>}>
-                          <MonacoEditor
-                            height="150px"
-                            language="json"
-                            value={field.value ?? ""}
-                            onChange={(val) => field.onChange(val ?? "")}
-                            options={{
-                              minimap: { enabled: false },
-                              lineNumbers: "on",
-                              scrollBeyondLastLine: false,
-                              fontSize: 13,
-                              tabSize: 2,
-                            }}
-                          />
-                        </Suspense>
-                      </div>
-                    </FormControl>
+            <FormField
+              control={form.control}
+              name="scoring_script"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>自定义评分脚本</FormLabel>
+                  <FormControl>
+                    <div className="border rounded-md overflow-hidden">
+                      <Suspense fallback={<div className="h-[300px] flex items-center justify-center text-muted-foreground">编辑器加载中...</div>}>
+                        <MonacoEditor
+                          height="300px"
+                          language="javascript"
+                          value={field.value ?? ""}
+                          onChange={(val) => field.onChange(val ?? "")}
+                          options={{
+                            minimap: { enabled: false },
+                            lineNumbers: "on",
+                            scrollBeyondLastLine: false,
+                            fontSize: 13,
+                            tabSize: 2,
+                          }}
+                        />
+                      </Suspense>
+                    </div>
+                  </FormControl>
                     <FormDescription>
-                      JSON 字符串，存储评分配置参数（如 {"{"}"penalty_minutes": 20{"}"}）。
+                      JavaScript 脚本代码，详情参考{" "}
+                      <a
+                        href="https://github.com/SEUAIG/seuoj-backend/blob/master/docs/custom_contest_script.md"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline"
+                      >
+                        自定义评分脚本文档
+                      </a>
                     </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="scoring_script"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>自定义评分脚本</FormLabel>
-                    <FormControl>
-                      <div className="border rounded-md overflow-hidden">
-                        <Suspense fallback={<div className="h-[300px] flex items-center justify-center text-muted-foreground">编辑器加载中...</div>}>
-                          <MonacoEditor
-                            height="300px"
-                            language="javascript"
-                            value={field.value ?? ""}
-                            onChange={(val) => field.onChange(val ?? "")}
-                            options={{
-                              minimap: { enabled: false },
-                              lineNumbers: "on",
-                              scrollBeyondLastLine: false,
-                              fontSize: 13,
-                              tabSize: 2,
-                            }}
-                          />
-                        </Suspense>
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      JavaScript 脚本代码，通过 GraalVM 沙箱执行，需实现 computeStandings 函数。
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           )}
           <div className="flex flex-row gap-8">
             <FormField
