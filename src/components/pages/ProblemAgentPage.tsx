@@ -325,11 +325,7 @@ export default function ProblemAgentPage() {
       const submissionNo =
         result?.data?.submissionNo || result?.data?.submission_no;
       if (submissionNo) {
-        nav(
-          `/submission/${submissionNo}?title=${encodeURIComponent(
-            problemData?.title || ""
-          )}`
-        );
+        nav(`/submission/${submissionNo}`);
         return;
       }
       toast.error(result?.message || "提交失败");

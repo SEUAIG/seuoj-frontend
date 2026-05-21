@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import AnswerState from "../common/AnswerState";
+import AnswerState, { AnswerStateNew } from "../common/AnswerState";
 import ScoreBadge from "../common/ScoreBadage";
 import type { SubmissionData } from "@/models/submission";
 import { format } from "date-fns";
@@ -95,9 +95,12 @@ export default function SubmissionRecord({
               {title || pid}
             </span>
           </TableCell>
-          {/* 优先使用查询参数的title 否则使用pid */}
           <TableCell className="text-center">
-            {verdict && <AnswerState state={verdict} />}
+            {verdict ? (
+              <AnswerState state={verdict} />
+            ) : (
+              <AnswerStateNew status={status} />
+            )}
           </TableCell>
           <TableCell className="text-center group">
             <ScoreBadge score={scoreDisplay} />

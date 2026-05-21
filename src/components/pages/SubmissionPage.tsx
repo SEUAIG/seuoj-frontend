@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import SubmissionRecord from "../bussiness/SubmissionRecord";
 import CodeShow from "../common/CodeShow";
 import TestPoints from "../bussiness/TestPoints";
-import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, AlertCircle, CheckCircle2, Clock } from "lucide-react";
@@ -11,6 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import type { ResultDetailItem, SubmissionData, SubtaskItem } from "@/models/submission";
 import { getSubmissionDetail } from "@/services/Submission/getSubmissionDetail";
+import { getProblemDetail } from "@/services/Problem/getProblemDetail";
+import { useQuery } from "@tanstack/react-query";
 
 const FOREGROUND_POLL_INTERVAL = 1000;
 const BACKGROUND_POLL_INTERVAL = 5000;
@@ -36,15 +38,19 @@ export enum SubmissionVerdict {
 }
 // 参考http://eoj.seucpc.com/submission/63869
 export default function SubmissionPage() {
-  const [searchParams] = useSearchParams();
-  const title = searchParams.get("title");
   const nav = useNavigate();
   const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
-  // 获取查询参数 使用数组进行解构 因为他返回了一个长度为2的数组 但本身是一个对象
-  // 这不是一个普通对象 不能直接获取值 而是一个实例 使用get
   const { submissionNo } = useParams();
   const [submission, setSubmission] = useState<SubmissionData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const { data: problemData } = useQuery({
+    queryKey: ["problemTitle", submission?.pid],
+    queryFn: () => getProblemDetail(submission!.pid, {}),
+    enabled: !!submission?.pid,
+    staleTime: 5 * 60 * 1000,
+  });
+  const title = problemData?.data?.title ?? null;
 
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -125,16 +131,22 @@ export default function SubmissionPage() {
   }
   if (submission.status === SubmissionStatus.Running) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6 w-full max-w-4xl mx-auto p-8">
-        <div className="bg-blue-50 border border-blue-200 rounded-full p-8">
-          <Loader2 className="w-16 h-16 text-blue-600 animate-spin" />
+      <div className="flex flex-col pb-6 p-2 mx-auto w-4/5">
+        <div className="flex justify-end mb-4 space-x-4">
+          <Button
+            variant="outline"
+            onClick={() => nav(`/problemsLibrary/${submission.pid}?from=${from}`)}
+          >
+            返回题目
+          </Button>
+          <Button variant="default" onClick={() => nav(`/evaluation`)}>
+            返回评测
+          </Button>
         </div>
-        <h2 className="text-3xl font-bold text-blue-700">评测中</h2>
-        <p className="text-gray-500 text-lg">正在评测您的提交...</p>
-        <div className="w-full max-w-md bg-blue-100 h-2 rounded-full overflow-hidden">
-          <div className="bg-blue-500 h-full w-2/3 animate-indeterminate-progress"></div>
-          {/* 现在这是一个定死的进度条 后续会具有欺骗性 */}
-        </div>
+        <SubmissionRecord submission={submission} title={title} />
+        {submission.code && (
+          <CodeShow language={submission.language}>{submission.code}</CodeShow>
+        )}
       </div>
     );
   }

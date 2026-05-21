@@ -157,7 +157,7 @@ export default function ProblemDetailPage() {
     const submissionNo =
       result.data?.submissionNo || result.data?.submission_no;
     if (submissionNo) {
-      nav(`/submission/${submissionNo}?title=${title}`);
+      nav(`/submission/${submissionNo}`);
     }
   };
   return (

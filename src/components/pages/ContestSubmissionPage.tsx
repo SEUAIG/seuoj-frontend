@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import ContestSubmissionRecord from "../bussiness/ContestSubmissionRecord";
 import CodeShow from "../common/CodeShow";
 import ContestTestPoints from "../bussiness/ContestTestPoints";
-import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Loader2, AlertCircle, Clock } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,8 +18,6 @@ const FOREGROUND_POLL_INTERVAL = 1000;
 const BACKGROUND_POLL_INTERVAL = 5000;
 
 export default function ContestSubmissionPage() {
-  const [searchParams] = useSearchParams();
-  const title = searchParams.get("title");
   const { id, submission_no } = useParams();
   const contestId = Number(id);
   const nav = useNavigate();

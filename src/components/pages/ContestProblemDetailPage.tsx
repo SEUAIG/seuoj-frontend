@@ -140,7 +140,7 @@ export default function ContestProblemDetailPage() {
           toast.error("提交成功，但未返回提交编号");
           return;
         }
-        nav(`/contest/${contestId}/submission/${submission_no}?title=${title}`);
+        nav(`/contest/${contestId}/submission/${submission_no}`);
       } else {
         toast.error(result.message || "提交失败");
       }
