@@ -14,13 +14,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { KeyRound, Pencil } from "lucide-react";
+import { KeyRound, Pencil, Bot, Loader2 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/app/store";
 import { toast } from "sonner";
 import { setNickname as setNicknameAction } from "@/features/auth/authSlice";
 import { updateProfile } from "@/services/user/updateProfile";
 import { changePassword } from "@/services/auth";
+import { api } from "@/services/api/axios";
 import seu from "@/assets/seu.png";
 import SubmissionHeatmap from "@/components/profile/SubmissionHeatmap";
 
@@ -39,6 +40,94 @@ export default function PersonalPage() {
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [editNickname, setEditNickname] = useState("");
   const [editProfileLoading, setEditProfileLoading] = useState(false);
+
+  const [classifyLoading, setClassifyLoading] = useState(false);
+  const [classifyResult, setClassifyResult] = useState<{
+    total: number;
+    classified: number;
+    failed: number;
+    details: Array<{
+      pid: string;
+      title: string;
+      status: string;
+      reason?: string;
+      tagIds?: number[];
+      newTags?: string[];
+    }>;
+    suggestedNewTags: string[];
+  } | null>(null);
+  const [classifyResultOpen, setClassifyResultOpen] = useState(false);
+  const [createTagsLoading, setCreateTagsLoading] = useState(false);
+  const [selectedNewTags, setSelectedNewTags] = useState<Set<string>>(new Set());
+
+  const isSuperAdmin = user?.role === "superadmin";
+
+  const handleClassifyTags = async () => {
+    setClassifyLoading(true);
+    setClassifyResult(null);
+    setSelectedNewTags(new Set());
+    try {
+      const res = await api.post("/api/admin/problem/classify-tags");
+      if (res.data.code === 0) {
+        const data = res.data.data;
+        setClassifyResult(data);
+        setClassifyResultOpen(true);
+        // 默认全选建议的新标签
+        if (data.suggestedNewTags?.length > 0) {
+          setSelectedNewTags(new Set(data.suggestedNewTags));
+        }
+        toast.success(
+          `分类完成：共 ${data.total} 题，成功 ${data.classified} 题`
+        );
+      } else {
+        toast.error(res.data.message || "分类失败");
+      }
+    } catch (err: unknown) {
+      toast.error(
+        "分类失败: " + (err instanceof Error ? err.message : String(err))
+      );
+    } finally {
+      setClassifyLoading(false);
+    }
+  };
+
+  const handleCreateNewTags = async () => {
+    const tagsToCreate = Array.from(selectedNewTags);
+    if (tagsToCreate.length === 0) {
+      toast.error("请至少选择一个新标签");
+      return;
+    }
+    setCreateTagsLoading(true);
+    try {
+      const res = await api.post("/api/admin/problem/create-tags", {
+        tag_names: tagsToCreate,
+      });
+      if (res.data.code === 0) {
+        const { created, skipped } = res.data.data;
+        toast.success(`新标签创建完成：成功 ${created} 个，跳过 ${skipped} 个`);
+        // 从建议列表中移除已创建的
+        setClassifyResult((prev) =>
+          prev
+            ? {
+                ...prev,
+                suggestedNewTags: prev.suggestedNewTags.filter(
+                  (t) => !selectedNewTags.has(t)
+                ),
+              }
+            : prev
+        );
+        setSelectedNewTags(new Set());
+      } else {
+        toast.error(res.data.message || "创建失败");
+      }
+    } catch (err: unknown) {
+      toast.error(
+        "创建失败: " + (err instanceof Error ? err.message : String(err))
+      );
+    } finally {
+      setCreateTagsLoading(false);
+    }
+  };
 
   const openEditProfile = () => {
     setEditNickname(user?.nickname || "");
@@ -159,6 +248,21 @@ export default function PersonalPage() {
                     <KeyRound className="h-4 w-4 mr-1" />
                     修改密码
                   </Button>
+                  {isSuperAdmin && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={handleClassifyTags}
+                      disabled={classifyLoading}
+                    >
+                      {classifyLoading ? (
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      ) : (
+                        <Bot className="h-4 w-4 mr-1" />
+                      )}
+                      {classifyLoading ? "分类中..." : "智能标签分类"}
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -342,6 +446,111 @@ export default function PersonalPage() {
                 disabled={editProfileLoading}
               >
                 {editProfileLoading ? "保存中..." : "保存"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Classify Result Dialog */}
+        <Dialog open={classifyResultOpen} onOpenChange={setClassifyResultOpen}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>标签分类结果</DialogTitle>
+              <DialogDescription>
+                共 {classifyResult?.total ?? 0} 道无标签题目，
+                成功分类 {classifyResult?.classified ?? 0} 道，
+                失败 {classifyResult?.failed ?? 0} 道。
+              </DialogDescription>
+            </DialogHeader>
+            {classifyResult?.details && classifyResult.details.length > 0 && (
+              <div className="space-y-2 py-2">
+                {classifyResult.details.map((item) => (
+                  <div
+                    key={item.pid}
+                    className="flex items-start justify-between gap-2 rounded-md border p-3 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">
+                        {item.pid} - {item.title}
+                      </div>
+                      {item.reason && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {item.reason}
+                        </div>
+                      )}
+                    </div>
+                    <Badge
+                      variant={
+                        item.status === "success"
+                          ? "default"
+                          : item.status === "skipped"
+                          ? "secondary"
+                          : "destructive"
+                      }
+                      className="shrink-0"
+                    >
+                      {item.status === "success"
+                        ? "成功"
+                        : item.status === "skipped"
+                        ? "跳过"
+                        : "失败"}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+            {classifyResult?.suggestedNewTags &&
+              classifyResult.suggestedNewTags.length > 0 && (
+                <div className="border-t pt-3 mt-2">
+                  <div className="text-sm font-medium mb-2">
+                    LLM 建议新增以下标签（请确认是否创建）：
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {classifyResult.suggestedNewTags.map((tag) => (
+                      <label
+                        key={tag}
+                        className="flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-sm cursor-pointer hover:bg-accent"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedNewTags.has(tag)}
+                          onChange={(e) => {
+                            const next = new Set(selectedNewTags);
+                            if (e.target.checked) {
+                              next.add(tag);
+                            } else {
+                              next.delete(tag);
+                            }
+                            setSelectedNewTags(next);
+                          }}
+                          className="accent-primary"
+                        />
+                        {tag}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            <DialogFooter>
+              {classifyResult?.suggestedNewTags &&
+                classifyResult.suggestedNewTags.length > 0 && (
+                  <Button
+                    variant="default"
+                    onClick={handleCreateNewTags}
+                    disabled={
+                      createTagsLoading || selectedNewTags.size === 0
+                    }
+                  >
+                    {createTagsLoading
+                      ? "创建中..."
+                      : `确认创建选中标签 (${selectedNewTags.size})`}
+                  </Button>
+                )}
+              <Button
+                variant="outline"
+                onClick={() => setClassifyResultOpen(false)}
+              >
+                关闭
               </Button>
             </DialogFooter>
           </DialogContent>
