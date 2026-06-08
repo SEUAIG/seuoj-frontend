@@ -67,21 +67,215 @@ export default function PersonalPage() {
     setClassifyResult(null);
     setSelectedNewTags(new Set());
     try {
-      const res = await api.post("/api/admin/problem/classify-tags");
-      if (res.data.code === 0) {
-        const data = res.data.data;
-        setClassifyResult(data);
-        setClassifyResultOpen(true);
-        // 默认全选建议的新标签
-        if (data.suggestedNewTags?.length > 0) {
-          setSelectedNewTags(new Set(data.suggestedNewTags));
+      // 1. 分页获取所有题目
+      let allProblems: Array<{
+        pid: string; title: string;
+        tags?: string[];
+        totalSubmit?: number; totalAccept?: number;
+      }> = [];
+      let current = 1;
+      let total = 0;
+      const pageSize = 100;
+
+      do {
+        const pageRes = await api.get("/api/problem/page", {
+          params: { current, size: pageSize },
+        });
+        if (pageRes.data.code !== 0) {
+          throw new Error(pageRes.data.message || "获取题目列表失败");
         }
-        toast.success(
-          `分类完成：共 ${data.total} 题，成功 ${data.classified} 题`
-        );
-      } else {
-        toast.error(res.data.message || "分类失败");
+        const pageData = pageRes.data.data;
+        allProblems.push(...pageData.records);
+        total = pageData.total;
+        current++;
+      } while (allProblems.length < total);
+
+      // 2. 筛选无标签题目
+      const untagged = allProblems.filter(
+        (p) => !p.tags || p.tags.length === 0
+      );
+
+      if (untagged.length === 0) {
+        toast("所有题目都已有标签，无需分类");
+        setClassifyLoading(false);
+        return;
       }
+
+      // 3. 获取已有标签列表（扁平化）
+      const tagsRes = await api.get("/api/problem/tag");
+      if (tagsRes.data.code !== 0) {
+        throw new Error(tagsRes.data.message || "获取标签列表失败");
+      }
+      const tagsData = tagsRes.data.data;
+      const flatTags: Array<{ tag_id: string; tag_name: string }> = [];
+      for (const category of ["algorithm", "source", "time", "special"]) {
+        if (tagsData[category]) {
+          for (const group of tagsData[category]) {
+            for (const tag of group.tags) {
+              flatTags.push({
+                tag_id: String(tag.tag_id),
+                tag_name: tag.tag_name,
+              });
+            }
+          }
+        }
+      }
+
+      // 4. 逐题分类
+      const details: Array<{
+        pid: string; title: string; status: string;
+        reason?: string; tagIds?: number[]; newTags?: string[];
+      }> = [];
+      const newTagSet = new Set<string>();
+      let classified = 0;
+      let failed = 0;
+
+      for (let i = 0; i < untagged.length; i++) {
+        const problem = untagged[i];
+        try {
+          // 4a. 获取题目详情
+          const detailRes = await api.get(`/api/problem/${problem.pid}`);
+          if (detailRes.data.code !== 0) {
+            failed++;
+            details.push({
+              pid: problem.pid,
+              title: problem.title,
+              status: "failed",
+              reason: detailRes.data.message || "获取题目详情失败",
+            });
+            continue;
+          }
+
+          const pd = detailRes.data.data;
+          const c = pd.content || {};
+
+          // 4b. 调用 agentend 分类
+          const classifyRes = await api.post(
+            "/agent/classify_tags",
+            {
+              title: pd.title || problem.title,
+              description: c.description || "",
+              input: c.input || "",
+              output: c.output || "",
+              hint: c.hint || "",
+              examples: (c.example || []).map(
+                (ex: { in: string; ans: string }) => ({
+                  in: ex.in || "",
+                  ans: ex.ans || "",
+                })
+              ),
+              available_tags: flatTags,
+            },
+            { timeout: 120000 }
+          );
+
+          if (classifyRes.data.code !== 0) {
+            failed++;
+            details.push({
+              pid: problem.pid,
+              title: problem.title,
+              status: "failed",
+              reason: classifyRes.data.message || "分类失败",
+            });
+            continue;
+          }
+
+          const cd = classifyRes.data.data;
+          const tagIds: number[] = cd.tag_ids || [];
+          const newTags: string[] = cd.new_tags || [];
+
+          newTags.forEach((t) => newTagSet.add(t));
+
+          if (tagIds.length === 0 && newTags.length === 0) {
+            // LLM 没有匹配到任何标签
+            details.push({
+              pid: problem.pid,
+              title: problem.title,
+              status: "skipped",
+              reason: "未匹配到合适的算法标签",
+            });
+          } else if (tagIds.length > 0) {
+            // 4c. 将匹配到的标签写回后端
+            try {
+              const patchRes = await api.patch("/api/problem/edit", {
+                pid: problem.pid,
+                tags: tagIds,
+                description: c.description,
+                input: c.input,
+                output: c.output,
+                hint: c.hint,
+                example: c.example,
+              });
+              if (patchRes.data.code === 0) {
+                classified++;
+                details.push({
+                  pid: problem.pid,
+                  title: problem.title,
+                  status: "success",
+                  tagIds,
+                  newTags,
+                });
+              } else {
+                failed++;
+                details.push({
+                  pid: problem.pid,
+                  title: problem.title,
+                  status: "failed",
+                  reason: patchRes.data.message || "标签写入失败",
+                  tagIds,
+                  newTags,
+                });
+              }
+            } catch {
+              failed++;
+              details.push({
+                pid: problem.pid,
+                title: problem.title,
+                status: "failed",
+                reason: "标签写入请求失败",
+                tagIds,
+                newTags,
+              });
+            }
+          } else {
+            // 仅有新标签建议，没有已有标签可关联
+            classified++;
+            details.push({
+              pid: problem.pid,
+              title: problem.title,
+              status: "skipped",
+              reason: "仅有新标签建议，创建新标签后需手动关联",
+              tagIds,
+              newTags,
+            });
+          }
+        } catch (err: unknown) {
+          failed++;
+          details.push({
+            pid: problem.pid,
+            title: problem.title,
+            status: "failed",
+            reason: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+
+      // 5. 汇总结果
+      const suggestedNewTags = [...newTagSet];
+      setClassifyResult({
+        total: untagged.length,
+        classified,
+        failed,
+        details,
+        suggestedNewTags,
+      });
+      setClassifyResultOpen(true);
+      if (suggestedNewTags.length > 0) {
+        setSelectedNewTags(new Set(suggestedNewTags));
+      }
+      toast.success(
+        `分类完成：共 ${untagged.length} 题，成功 ${classified} 题，失败 ${failed} 题`
+      );
     } catch (err: unknown) {
       toast.error(
         "分类失败: " + (err instanceof Error ? err.message : String(err))
@@ -99,27 +293,40 @@ export default function PersonalPage() {
     }
     setCreateTagsLoading(true);
     try {
-      const res = await api.post("/api/admin/problem/create-tags", {
-        tag_names: tagsToCreate,
-      });
-      if (res.data.code === 0) {
-        const { created, skipped } = res.data.data;
-        toast.success(`新标签创建完成：成功 ${created} 个，跳过 ${skipped} 个`);
-        // 从建议列表中移除已创建的
-        setClassifyResult((prev) =>
-          prev
-            ? {
-                ...prev,
-                suggestedNewTags: prev.suggestedNewTags.filter(
-                  (t) => !selectedNewTags.has(t)
-                ),
-              }
-            : prev
-        );
-        setSelectedNewTags(new Set());
-      } else {
-        toast.error(res.data.message || "创建失败");
+      let created = 0;
+      let skipped = 0;
+
+      for (const tagName of tagsToCreate) {
+        try {
+          const res = await api.post("/api/problem/tag", {
+            tag_name: tagName,
+            category_name: "algorithm",
+          });
+          if (res.data.code === 0) {
+            created++;
+          } else {
+            skipped++;
+          }
+        } catch {
+          skipped++;
+        }
       }
+
+      toast.success(
+        `新标签创建完成：成功 ${created} 个，跳过 ${skipped} 个`
+      );
+      // 从建议列表中移除已创建的
+      setClassifyResult((prev) =>
+        prev
+          ? {
+              ...prev,
+              suggestedNewTags: prev.suggestedNewTags.filter(
+                (t) => !selectedNewTags.has(t)
+              ),
+            }
+          : prev
+      );
+      setSelectedNewTags(new Set());
     } catch (err: unknown) {
       toast.error(
         "创建失败: " + (err instanceof Error ? err.message : String(err))
