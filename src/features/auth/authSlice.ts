@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { User, AuthState } from "./types";
 import { loginRequest, signupRequest } from "@/services/auth";
+import axios from "axios";
 
 let onLoginSuccess: (() => void) | null = null;
 export const setOnLoginSuccess = (cb: () => void) => { onLoginSuccess = cb; };
@@ -63,14 +64,14 @@ export const signup = createAsyncThunk(
         code,
       });
       if (!isSuccessCode(result.code)) {
-        if (result.code === 409) {
-          return thunkAPI.rejectWithValue("注册时用户名重复");
-        }
-        return thunkAPI.rejectWithValue("注册失败");
+        return thunkAPI.rejectWithValue(result.message || "注册失败，请稍后重试");
       }
       return result;
-    } catch {
-      return thunkAPI.rejectWithValue("http 请求失败");
+    } catch (error: unknown) {
+      const message = axios.isAxiosError<{ message?: string }>(error)
+        ? error.response?.data?.message
+        : error instanceof Error ? error.message : undefined;
+      return thunkAPI.rejectWithValue(message || "网络连接失败，请稍后重试");
     }
   }
 );

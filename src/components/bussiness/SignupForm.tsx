@@ -46,7 +46,7 @@ export default function SignupForm() {
     error: verificationError,
     verificationID,
   } = useSelector((state: RootState) => state.verification);
-  const { setFocus, setValue, reset, watch } = form;
+  const { setFocus, setValue, watch } = form;
   const verificationCode = watch("verificationCode");
   const [expireLeft, setExpireLeft] = useState<number>(0);
   const [resendLeft, setResendLeft] = useState<number>(0);
@@ -55,10 +55,9 @@ export default function SignupForm() {
       toast.error(typeof error === "string" ? error : "发生错误", {
         position: "top-center",
       });
-      reset();
       dispatch(setError(""));
     }
-  }, [error, reset, dispatch]);
+  }, [error, dispatch]);
   useEffect(() => {
     setFocus("account");
   }, [setFocus]);
