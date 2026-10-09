@@ -1,6 +1,5 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
-import Fortune from "@/components/bussiness/Fortune";
 import SubmissionHeatmap from "@/components/profile/SubmissionHeatmap";
 import { useSelector } from "react-redux";
 import { RootState } from "@/app/store";
@@ -22,7 +21,7 @@ export default function HomePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Main Content Area - 3/4 width on large screens */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className={isAuthenticated ? "lg:col-span-3 space-y-6" : "lg:col-span-4 space-y-6"}>
           {/* Welcome Section */}
           <section>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -73,13 +72,11 @@ export default function HomePage() {
         </div>
 
         {/* Sidebar Area - 1/4 width on large screens */}
-        <div className="space-y-6">
-          {/* Fortune Component */}
-          <Fortune />
-
-          {/* Submission Heatmap */}
-          {isAuthenticated && <SubmissionHeatmap year={currentYear} />}
-        </div>
+        {isAuthenticated && (
+          <div className="space-y-6">
+            <SubmissionHeatmap year={currentYear} />
+          </div>
+        )}
       </div>
     </div>
   );
