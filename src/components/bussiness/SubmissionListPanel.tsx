@@ -241,12 +241,12 @@ export default function SubmissionListPanel({
       {isAssignmentView && <div className="space-y-2 rounded-md border p-3 text-sm">
         <label className="flex flex-wrap items-center gap-2">提交范围
           <select aria-label="提交范围" className="rounded border bg-background p-2" value={scope} onChange={e=>{setScope(e.target.value as "learning"|"linked");setCurrent(1);}}>
-            <option value="learning">解题记录（统计口径）</option>
+            <option value="learning">全部历史提交</option>
             <option value="linked">本作业入口提交</option>
           </select>
         </label>
         <p className="text-muted-foreground">{scope === "learning"
-          ? "查询班级成员对本作业题目的全部历史提交，含题库练习和其他作业入口的提交；不限作业时间。有班级管理权限可查看全班，其他用户仅查看本人。"
+          ? "查询班级成员对本作业题目的全部历史提交，含题库练习和其他作业入口的提交；不限作业时间。"
           : "仅查询明确关联本作业的提交；通过题库或其他作业入口完成的记录不在此范围。"}</p>
       </div>}
       {/* filters */}
