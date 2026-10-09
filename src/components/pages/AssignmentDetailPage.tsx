@@ -617,6 +617,7 @@ export default function AssignmentDetailPage() {
         <TabsContent value="submissions" className="!mt-0">
           <SubmissionListPanel
             assignmentId={assignmentId}
+            classId={classId}
             queryKeyPrefix="assignmentSubmissionPanel"
           />
         </TabsContent>
@@ -634,6 +635,9 @@ export default function AssignmentDetailPage() {
             </div>
           ) : (
             <div className="space-y-6">
+              <p className="rounded-md border p-3 text-sm text-muted-foreground">
+                统计班级成员对本作业题目的全部历史解题记录，含题库练习和其他作业入口提交；不限作业时间。此处完成率表示题目已通过，不代表经本作业入口提交或按时完成。
+              </p>
               {/* Summary cards */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="rounded-lg border p-4 text-center">

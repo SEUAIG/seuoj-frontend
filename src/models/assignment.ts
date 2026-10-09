@@ -60,6 +60,11 @@ export type AssignmentProgressResponse = ApiResponse<AssignmentProgressItem[]>;
 export interface AssignmentSubmissionPageRequest {
   current?: number;
   size?: number;
+  scope?: "learning" | "linked";
+  pid?: string;
+  verdict?: string;
+  language?: string;
+  username?: string;
 }
 
 export type AssignmentSubmissionPageResponse = ApiResponse<PageData<SubmissionListItem>>;
