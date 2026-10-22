@@ -1,5 +1,5 @@
 # --- 第一阶段：编译阶段 ---
-FROM node:24-alpine AS build-stage
+FROM node:24.22.1-alpine AS build-stage
 
 # 设置容器内的工作目录
 WORKDIR /app
@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # --- 第二阶段：生产运行阶段 ---
-FROM nginx:stable-alpine AS production-stage
+FROM nginx:1.30.6-alpine AS production-stage
 
 # 从 build-stage 阶段拷贝编译后的静态文件到 nginx 目录
 # 如果你的项目打包产物目录不是 dist（比如是 build），请修改下方路径
