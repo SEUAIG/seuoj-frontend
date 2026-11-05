@@ -8,6 +8,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import ContestShell from "@/components/contest/ContestShell";
 import { getContestSubmissionDetail } from "@/services/Contest/getContestSubmissionDetail";
+import { skipContestSubmissions } from "@/services/Submission/skipSubmissions";
+import SkipNotice from "@/components/bussiness/SkipNotice";
 import type {
   SubmissionData,
   SubmissionStatus,
@@ -22,10 +24,9 @@ export default function ContestSubmissionPage() {
   const contestId = Number(id);
   const [submission, setSubmission] = useState<SubmissionData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    setSubmission(null);
-    setLoading(true);
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
 
@@ -59,6 +60,10 @@ export default function ContestSubmissionPage() {
             code: data.code || "",
             username: data.username,
             score: data.score ?? undefined, // 比赛特有的分数
+            skipped: data.skipped,
+            originalVerdict: data.original_verdict,
+            skipReason: data.skip_reason,
+            canSkip: data.can_skip,
           };
           if (cancelled) return;
           setSubmission(submissionData);
@@ -87,6 +92,12 @@ export default function ContestSubmissionPage() {
         timeoutId = null;
       }
     };
+  }, [contestId, submission_no, reloadKey]);
+
+  // 换了一条提交才清空，skip 后重新拉取时保留旧内容避免闪烁
+  useEffect(() => {
+    setSubmission(null);
+    setLoading(true);
   }, [contestId, submission_no]);
 
   if (loading && !submission) {
@@ -120,6 +131,16 @@ export default function ContestSubmissionPage() {
           全部提交
         </Link>
       </div>
+      <SkipNotice
+        skipped={submission.skipped}
+        originalVerdict={submission.originalVerdict}
+        skipReason={submission.skipReason}
+        canSkip={submission.canSkip}
+        run={(skipped, reason) =>
+          skipContestSubmissions(contestId, { submissionNos: [submission.submissionNo], skipped, reason })
+        }
+        onDone={() => setReloadKey((k) => k + 1)}
+      />
       <ContestSubmissionRecord submission={submission} />
       {submission.code && (
         <CodeShow language={submission.language}>{submission.code}</CodeShow>

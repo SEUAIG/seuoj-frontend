@@ -55,7 +55,7 @@ export default function ContestSubmissionRecord({
             {verdict ? <AnswerState state={verdict} /> : <AnswerStateNew status={submission.status} />}
           </TableCell>
           {score != null && <TableCell className="text-center">
-             <ScoreBadge score={score} />
+             <span className={submission.skipped ? "line-through opacity-40" : undefined} title={submission.skipped ? "已跳过，不计分" : undefined}><ScoreBadge score={score} /></span>
           </TableCell>}
           <TableCell className="text-center">{submission.maxTime == null ? "—" : `${submission.maxTime}ms`}</TableCell>
           <TableCell className="text-center">{submission.maxMemory == null ? "—" : `${(submission.maxMemory / 1024).toFixed(0)}KB`}</TableCell>

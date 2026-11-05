@@ -38,6 +38,8 @@ export interface SubmissionListItem {
   submission_no: string;
   submit_time: string;
   finish_time: string | null;
+  skipped?: boolean;
+  original_verdict?: string | null;
 }
 
 export type SubmissionPageResponse = ApiResponse<PageData<SubmissionListItem>>;
@@ -84,6 +86,11 @@ export interface SubmissionData {
   userId?: number;
   score?: number | null;
   subtasks?: SubtaskItem[];
+  /** 被管理者跳过：verdict 为 Skipped，不计入任何统计 */
+  skipped?: boolean;
+  originalVerdict?: string | null;
+  skipReason?: string | null;
+  canSkip?: boolean;
 }
 
 export type SubmissionDetailResponse = ApiResponse<SubmissionData>;

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
 import { Loader2, X } from "lucide-react";
 import { getContestSubmissionPage } from "@/services/Contest/getContestSubmissionPage";
@@ -12,6 +12,8 @@ import SubmitterLink from "@/components/common/SubmitterLink";
 import { isAcm, isMine, letterOf, parseTime, scoreColor, sortProblems, useCurrentUser } from "@/components/contest/contestKit";
 import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
 import { cn } from "@/lib/utils";
+import SkipSubmissionsDialog from "@/components/bussiness/SkipSubmissionsDialog";
+import { skipContestSubmissions } from "@/services/Submission/skipSubmissions";
 
 const SIZE = 30;
 const TH = "whitespace-nowrap px-2.5 pb-2 pt-3 text-left text-xs font-medium text-slate-500";
@@ -33,7 +35,7 @@ export default function ContestSubmissionListPage() {
   // 筛选条件放在地址栏里：榜单可以直接链接到“某人某题的提交”，刷新也不丢
   const [params, setParams] = useSearchParams();
   const pid = params.get("pid") ?? "";
-  const result = (params.get("result") ?? "") as "" | "accepted" | "rejected";
+  const result = (params.get("result") ?? "") as "" | "accepted" | "rejected" | "skipped";
   const username = params.get("user") ?? "";
   const [userInput, setUserInput] = useState(username);
   useEffect(() => setUserInput(username), [username]);
@@ -44,6 +46,10 @@ export default function ContestSubmissionListPage() {
     setParams(next, { replace: true });
     setPage(1);
   };
+  const queryClient = useQueryClient();
+  // 管理者勾选（跨页、跨筛选保留），key 为 submission_no
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [skipAction, setSkipAction] = useState<null | { skipped: boolean; whole: boolean }>(null);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["contestSubmissions", contestId, page, pid, result, username],
@@ -68,7 +74,7 @@ export default function ContestSubmissionListPage() {
   const letters = Object.fromEntries((detail?.problem_list ?? []).map((p) => [p.pid, letterOf(p.sort_order)]));
   // 选手只能看到自己的提交，只有比赛管理者需要“选手”这一列
   const showWho = !!detail?.can_write;
-  const cols = (showScore ? 7 : 6) - (showWho ? 0 : 1);
+  const cols = (showScore ? 7 : 6) + (showWho ? 1 : -1);
   const start = parseTime(detail?.start_time);
   const end = parseTime(detail?.end_time);
   /** 比赛时间外的提交（管理者赛前验题、赛后补题）不计入榜单 */
@@ -105,6 +111,7 @@ export default function ContestSubmissionListPage() {
             { value: "", label: "全部结果" },
             { value: "accepted", label: "通过" },
             { value: "rejected", label: "未通过" },
+            { value: "skipped", label: "已跳过" },
           ]}
         />
         {showWho &&
@@ -137,9 +144,76 @@ export default function ContestSubmissionListPage() {
             </form>
           ))}
       </div>
+      {showWho && (selected.size > 0 || username) && (
+        <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md bg-slate-100 px-3 py-2 text-[13px] text-slate-700">
+          {selected.size > 0 && (
+            <>
+              <span>已选 {selected.size} 条</span>
+              <button type="button" className="font-medium text-red-600 hover:underline" onClick={() => setSkipAction({ skipped: true, whole: false })}>
+                跳过所选
+              </button>
+              <button type="button" className="font-medium hover:underline" onClick={() => setSkipAction({ skipped: false, whole: false })}>
+                取消跳过
+              </button>
+              <button type="button" className="text-slate-500 hover:underline" onClick={() => setSelected(new Set())}>
+                清空选择
+              </button>
+            </>
+          )}
+          {username && (
+            <span className="ml-auto flex gap-4">
+              <button type="button" className="font-medium text-red-600 hover:underline" onClick={() => setSkipAction({ skipped: true, whole: true })}>
+                跳过 {username} 本场全部提交
+              </button>
+              <button type="button" className="font-medium hover:underline" onClick={() => setSkipAction({ skipped: false, whole: true })}>
+                全部取消跳过
+              </button>
+            </span>
+          )}
+        </div>
+      )}
+      <SkipSubmissionsDialog
+        open={skipAction !== null}
+        skipped={skipAction?.skipped ?? true}
+        target={skipAction?.whole ? ` ${username} 本场的全部提交` : ` ${selected.size} 条提交`}
+        onOpenChange={(open) => !open && setSkipAction(null)}
+        run={(reason) =>
+          skipContestSubmissions(
+            contestId,
+            skipAction?.whole
+              ? { username, skipped: skipAction.skipped, reason }
+              : { submissionNos: Array.from(selected), skipped: skipAction?.skipped ?? true, reason }
+          )
+        }
+        onDone={() => {
+          if (!skipAction?.whole) setSelected(new Set());
+          queryClient.invalidateQueries({ queryKey: ["contestSubmissions", contestId] });
+          queryClient.invalidateQueries({ queryKey: ["contestStandings"] });
+        }}
+      />
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr>
+            {showWho && (
+              <th className={cn(TH, "w-8")}>
+                <input
+                  type="checkbox"
+                  aria-label="选择本页"
+                  className="accent-primary"
+                  checked={records.length > 0 && records.every((r) => selected.has(r.submission_no))}
+                  onChange={(e) =>
+                    setSelected((prev) => {
+                      const next = new Set(prev);
+                      for (const r of records) {
+                        if (e.target.checked) next.add(r.submission_no);
+                        else next.delete(r.submission_no);
+                      }
+                      return next;
+                    })
+                  }
+                />
+              </th>
+            )}
             <th className={cn(TH, "hidden sm:table-cell")}>#</th>
             <th className={TH}>时间</th>
             {showWho && <th className={cn(TH, "w-full")}>选手</th>}
@@ -178,6 +252,24 @@ export default function ContestSubmissionListPage() {
                   className={cn("cursor-pointer", mine ? "bg-primary/[0.07]" : "hover:bg-white")}
                   onClick={() => nav(detailPath)}
                 >
+                  {showWho && (
+                    <td className={TD} onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        aria-label={`选择提交 ${r.submission_no.slice(0, 8)}`}
+                        className="accent-primary"
+                        checked={selected.has(r.submission_no)}
+                        onChange={(e) =>
+                          setSelected((prev) => {
+                            const next = new Set(prev);
+                            if (e.target.checked) next.add(r.submission_no);
+                            else next.delete(r.submission_no);
+                            return next;
+                          })
+                        }
+                      />
+                    </td>
+                  )}
                   <td className={cn(TD, "hidden font-mono text-slate-400 sm:table-cell")} title={r.submission_no}>
                     {r.submission_no.slice(0, 8)}
                   </td>
@@ -210,12 +302,12 @@ export default function ContestSubmissionListPage() {
                     </Link>
                   </td>
                   <td className={TD}>
-                    <Verdict status={r.status} verdict={r.verdict} />
+                    <Verdict status={r.status} verdict={r.verdict} originalVerdict={r.original_verdict} />
                   </td>
                   {showScore && (
                     <td
-                      className={cn(TD, "text-right font-mono")}
-                      style={r.score != null ? { color: scoreColor(r.score) } : undefined}
+                      className={cn(TD, "text-right font-mono", r.skipped && "text-slate-300 line-through")}
+                      style={r.score != null && !r.skipped ? { color: scoreColor(r.score) } : undefined}
                     >
                       {r.score ?? ""}
                     </td>

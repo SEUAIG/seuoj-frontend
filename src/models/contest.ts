@@ -144,7 +144,8 @@ export type ContestSubmissionVerdict =
   | "TimeLimitExceeded"
   | "MemoryLimitExceeded"
   | "RuntimeError"
-  | "SystemError";
+  | "SystemError"
+  | "Skipped";
 
 export type ContestSubmissionResultType =
   | "Accepted"
@@ -177,6 +178,11 @@ export interface ContestSubmissionDetailData {
   code: string | null;
   username: string;
   problem: ContestProblemOverview;
+  /** 被管理者跳过：verdict 为 Skipped，不计入榜单 */
+  skipped?: boolean;
+  original_verdict?: string | null;
+  skip_reason?: string | null;
+  can_skip?: boolean;
 }
 
 export type ContestSubmissionDetailResponse = ApiResponse<ContestSubmissionDetailData | undefined>;
@@ -185,8 +191,8 @@ export interface ContestSubmissionPageQuery {
   current?: number;
   size?: number;
   pid?: string;
-  /** accepted 只看通过；rejected 只看已评完未通过 */
-  result?: "accepted" | "rejected";
+  /** accepted 只看通过；rejected 只看已评完未通过；skipped 只看被跳过的 */
+  result?: "accepted" | "rejected" | "skipped";
   /** 按账号名筛选，只对比赛管理者生效 */
   username?: string;
 }
@@ -202,6 +208,8 @@ export interface ContestSubmissionRecord {
   nickname?: string;
   user_id?: number;
   problem: ContestProblemOverview;
+  skipped?: boolean;
+  original_verdict?: string | null;
 }
 
 export interface ContestSubmissionPageData {

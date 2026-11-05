@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
+import SkipSubmissionsDialog from "./SkipSubmissionsDialog";
+import { skipSubmissions } from "@/services/Submission/skipSubmissions";
 import { useSelector } from "react-redux";
 import { RootState } from "@/app/store";
 import { getSubmissionPage } from "@/services/Submission/getSubmissionPage";
@@ -75,6 +77,10 @@ const verdictDisplayMap: Record<string, { label: string; color: string }> = {
     label: "CTL",
     color: "bg-red-100 text-red-700 border-red-300",
   },
+  Skipped: {
+    label: "SKIP",
+    color: "bg-slate-100 text-slate-500 border-slate-300",
+  },
 };
 
 const verdictOptions = [
@@ -87,6 +93,7 @@ const verdictOptions = [
   { value: "SystemError", label: "SE - System Error" },
   { value: "PartiallyAccepted", label: "PA - Partially Accepted" },
   { value: "CodeTooLong", label: "CTL - Code Too Long" },
+  { value: "Skipped", label: "SKIP - 已跳过" },
 ];
 
 const languageOptions = [
@@ -181,6 +188,17 @@ export default function SubmissionListPanel({
   const [languageFilter, setLanguageFilter] = useState("");
   const [scope, setScope] = useState<"learning" | "linked">("learning");
   const isAssignmentView = classId !== undefined && assignmentId !== undefined;
+  const queryClient = useQueryClient();
+  // 教师 / 管理员可勾选后批量跳过；能否处理每条提交由后端按题目、班级、比赛权限判断
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [skipTarget, setSkipTarget] = useState<boolean | null>(null);
+  const toggle = (no: string, checked: boolean) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(no);
+      else next.delete(no);
+      return next;
+    });
 
   const hasFilters = pidFilter || verdictFilter || languageFilter || usernameFilter;
 
@@ -343,6 +361,34 @@ export default function SubmissionListPanel({
         </div>
       </div>
 
+      {isPrivileged && selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
+          <span>已选 {selected.size} 条提交</span>
+          <div className="ml-auto flex gap-2">
+            <Button size="sm" variant="destructive" onClick={() => setSkipTarget(true)}>
+              跳过所选
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setSkipTarget(false)}>
+              取消跳过
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+              清空选择
+            </Button>
+          </div>
+        </div>
+      )}
+      <SkipSubmissionsDialog
+        open={skipTarget !== null}
+        skipped={skipTarget ?? true}
+        target={` ${selected.size} 条提交`}
+        onOpenChange={(open) => !open && setSkipTarget(null)}
+        run={(reason) => skipSubmissions({ submissionNos: Array.from(selected), skipped: skipTarget ?? true, reason })}
+        onDone={() => {
+          setSelected(new Set());
+          queryClient.invalidateQueries({ queryKey: [queryKeyPrefix] });
+        }}
+      />
+
       <Card className="flex-1 flex flex-col border-none shadow-none bg-transparent">
         <CardContent className="flex-1 p-0 flex flex-col">
           {isLoading ? (
@@ -373,6 +419,17 @@ export default function SubmissionListPanel({
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50 hover:bg-muted/50 h-10">
+                      {isPrivileged && (
+                        <TableHead className="w-[40px] text-center h-10 py-2">
+                          <input
+                            type="checkbox"
+                            aria-label="选择本页"
+                            className="accent-primary"
+                            checked={records.length > 0 && records.every((r) => selected.has(r.submission_no))}
+                            onChange={(e) => records.forEach((r) => toggle(r.submission_no, e.target.checked))}
+                          />
+                        </TableHead>
+                      )}
                       <TableHead className="w-[60px] text-center h-10 py-2">
                         #
                       </TableHead>
@@ -416,6 +473,17 @@ export default function SubmissionListPanel({
                             navigate(`/submission/${item.submission_no}?${new URLSearchParams({ from, ...(assignmentId !== undefined ? { assignment_id: String(assignmentId) } : {}) })}`)
                           }
                         >
+                          {isPrivileged && (
+                            <TableCell className="text-center py-2" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                aria-label={`选择提交 ${item.submission_no.slice(0, 8)}`}
+                                className="accent-primary"
+                                checked={selected.has(item.submission_no)}
+                                onChange={(e) => toggle(item.submission_no, e.target.checked)}
+                              />
+                            </TableCell>
+                          )}
                           <TableCell className="text-muted-foreground text-xs text-center py-2">
                             {(current - 1) * size + idx + 1}
                           </TableCell>
@@ -446,6 +514,7 @@ export default function SubmissionListPanel({
                               <Badge
                                 variant="outline"
                                 className={`text-[11px] px-2 py-0 h-5 font-semibold border ${verdictInfo.color}`}
+                                title={item.skipped && item.original_verdict ? `已跳过，原结果 ${item.original_verdict}` : undefined}
                               >
                                 {verdictInfo.label}
                               </Badge>

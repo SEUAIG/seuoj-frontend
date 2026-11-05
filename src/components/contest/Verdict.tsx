@@ -1,4 +1,4 @@
-import { Check, MoreHorizontal, X } from "lucide-react";
+import { Ban, Check, MoreHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ABBR: Record<string, string> = {
@@ -11,6 +11,7 @@ const ABBR: Record<string, string> = {
   JudgeError: "JE",
   SystemError: "SE",
   PartiallyAccepted: "PA",
+  Skipped: "SKIP",
 };
 
 const NAME: Record<string, string> = {
@@ -23,6 +24,7 @@ const NAME: Record<string, string> = {
   JudgeError: "Judge Error",
   SystemError: "System Error",
   PartiallyAccepted: "Partially Accepted",
+  Skipped: "Skipped",
 };
 
 const COLOR: Record<string, string> = {
@@ -38,12 +40,26 @@ const COLOR: Record<string, string> = {
 export default function Verdict({
   status,
   verdict,
+  originalVerdict,
   className,
 }: {
   status?: string | null;
   verdict?: string | null;
+  /** 被跳过的提交的原结果，只用于悬停提示 */
+  originalVerdict?: string | null;
   className?: string;
 }) {
+  if (verdict === "Skipped") {
+    return (
+      <span
+        className={cn("inline-flex items-center gap-1 font-mono text-[13px] font-semibold text-slate-400", className)}
+        title={`已跳过，不计入榜单${originalVerdict ? `（原结果 ${NAME[originalVerdict] ?? originalVerdict}）` : ""}`}
+      >
+        <Ban className="h-3.5 w-3.5" strokeWidth={3} />
+        SKIP
+      </span>
+    );
+  }
   const pending = status === "Pending" || status === "Running" || (!verdict && status !== "Failed");
   if (pending) {
     return (

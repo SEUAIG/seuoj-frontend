@@ -9,6 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import type { SubmissionData } from "@/models/submission";
 import { getSubmissionDetail } from "@/services/Submission/getSubmissionDetail";
+import { skipSubmissions } from "@/services/Submission/skipSubmissions";
+import SkipNotice from "@/components/bussiness/SkipNotice";
 import { getProblemDetail } from "@/services/Problem/getProblemDetail";
 import { useQuery } from "@tanstack/react-query";
 
@@ -44,6 +46,7 @@ export default function SubmissionPage() {
   const { submissionNo } = useParams();
   const [submission, setSubmission] = useState<SubmissionData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const context = problemContext(searchParams);
   if (submission?.contestId != null) context.contest_id = String(submission.contestId);
@@ -59,8 +62,6 @@ export default function SubmissionPage() {
   const title = problemData?.data?.title ?? null;
 
   useEffect(() => {
-    setSubmission(null);
-    setLoading(true);
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
 
@@ -102,6 +103,11 @@ export default function SubmissionPage() {
         timeoutId = null;
       }
     };
+  }, [submissionNo, reloadKey]);
+
+  useEffect(() => {
+    setSubmission(null);
+    setLoading(true);
   }, [submissionNo]);
 
   if (loading && !submission) {
@@ -136,6 +142,14 @@ export default function SubmissionPage() {
           返回评测
         </Button>
       </div>
+      <SkipNotice
+        skipped={submission.skipped}
+        originalVerdict={submission.originalVerdict}
+        skipReason={submission.skipReason}
+        canSkip={submission.canSkip}
+        run={(skipped, reason) => skipSubmissions({ submissionNos: [submission.submissionNo], skipped, reason })}
+        onDone={() => setReloadKey((k) => k + 1)}
+      />
       <SubmissionRecord submission={submission} title={title} problemUrl={problemPath(submission.pid, context, from)} />
       {submission.code && (
         <CodeShow language={submission.language}>{submission.code}</CodeShow>

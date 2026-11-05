@@ -108,7 +108,7 @@ export default function SubmissionRecord({
             )}
           </TableCell>
           {showScore && <TableCell className="text-center group">
-            <ScoreBadge score={scoreDisplay ?? 0} />
+            <span className={submission.skipped ? "line-through opacity-40" : undefined} title={submission.skipped ? "已跳过，不计分" : undefined}><ScoreBadge score={scoreDisplay ?? 0} /></span>
           </TableCell>}
           <TableCell className="text-center">{timeDisplay}</TableCell>
           <TableCell className="text-center">{memoryDisplay}</TableCell>
