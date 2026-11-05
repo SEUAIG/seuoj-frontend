@@ -8,6 +8,8 @@ export interface GetUserPageRequest {
   username?: string;
   email?: string;
   roles?: CommonUserRole[];
+  /** true 只看封禁中，false 只看未封禁 */
+  banned?: boolean;
 }
 
 export interface UserPageRecord {
@@ -17,6 +19,12 @@ export interface UserPageRecord {
   nickname: string | null;
   email: string;
   roles: CommonUserRole[];
+  /** 仅用户管理者能看到封禁详情 */
+  banned?: boolean;
+  banReason?: string | null;
+  /** 空表示永久 */
+  bannedUntil?: string | null;
+  bannedAt?: string | null;
 }
 
 export interface UserPageData {

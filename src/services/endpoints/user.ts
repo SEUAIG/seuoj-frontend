@@ -6,4 +6,6 @@ export const userEndpoints = {
   myHeatmap: "/api/me/heatmap",
   adminUpdateRole: (userId: number) => `/api/admin/user/${userId}/role`,
   adminUpdateProfile: (userId: number) => `/api/admin/user/${userId}/profile`,
+  adminBan: "/api/admin/users/ban",
+  adminUnban: "/api/admin/users/unban",
 };

@@ -1,6 +1,10 @@
 import SubmitterLink from "@/components/common/SubmitterLink";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/app/store";
+import { Checkbox } from "@/components/ui/checkbox";
+import UserBanDialog, { type BanDialogMode, type BanTargetUser } from "@/components/bussiness/UserBanDialog";
 
 
 import { Button } from "@/components/ui/button";
@@ -47,6 +51,7 @@ import {
     FileText,
     FileSpreadsheet,
     Info,
+    Ban,
 } from "lucide-react";
 import ColumnMappingStep from "@/components/bussiness/ColumnMappingStep";
 import {
@@ -63,6 +68,17 @@ import {
 
 
 type FileType = "csv" | "xlsx" | null;
+type BanFilter = "all" | "active" | "banned";
+const BAN_FILTERS: { key: BanFilter; label: string }[] = [
+    { key: "all", label: "全部" },
+    { key: "active", label: "正常" },
+    { key: "banned", label: "封禁中" },
+];
+
+function formatBanUntil(until?: string | null) {
+    if (!until) return "永久";
+    return until.replace("T", " ").slice(0, 16);
+}
 type ImportStep = "config" | "mapping" | "preview" | "result";
 type PreviewImportUserRow = BatchImportUserRow & {
     password_source: BatchImportPasswordSource;
@@ -79,6 +95,7 @@ function loadXLSX() {
 
 export default function AdminUserManagementPage() {
     const navigate = useNavigate();
+    const currentUserId = useSelector((state: RootState) => state.auth.user?.id);
 
 
     // User list state
@@ -89,8 +106,16 @@ export default function AdminUserManagementPage() {
     const [searchUsername, setSearchUsername] = useState("");
     const [searchEmail, setSearchEmail] = useState("");
     const [loading, setLoading] = useState(false);
+    const [banFilter, setBanFilter] = useState<BanFilter>("all");
 
-    // Role editing state
+    // 封禁：勾选跨页保留，key 为 user_id
+    const [selected, setSelected] = useState<Map<number, UserPageRecord>>(new Map());
+    const [banDialog, setBanDialog] = useState<{
+        open: boolean;
+        mode: BanDialogMode;
+        users: BanTargetUser[];
+        allowUsernames: boolean;
+    }>({ open: false, mode: "ban", users: [], allowUsernames: false });
 
 
     // Batch import state
@@ -110,14 +135,16 @@ export default function AdminUserManagementPage() {
 
     // Fetch user list
     const fetchUsers = useCallback(
-        async (page?: number) => {
+        async (page?: number, filter?: BanFilter) => {
             setLoading(true);
+            const status = filter ?? banFilter;
             try {
                 const res = await getUserPage({
                     current: page ?? currentPage,
                     size: pageSize,
                     username: searchUsername || undefined,
                     email: searchEmail || undefined,
+                    banned: status === "all" ? undefined : status === "banned",
                 });
                 if (res.code === 0) {
                     setUsers(res.data.records);
@@ -132,7 +159,7 @@ export default function AdminUserManagementPage() {
                 setLoading(false);
             }
         },
-        [currentPage, pageSize, searchUsername, searchEmail]
+        [currentPage, pageSize, searchUsername, searchEmail, banFilter]
     );
 
     useEffect(() => {
@@ -149,6 +176,45 @@ export default function AdminUserManagementPage() {
         setCurrentPage(page);
         fetchUsers(page);
     };
+
+    const handleBanFilter = (filter: BanFilter) => {
+        setBanFilter(filter);
+        setCurrentPage(1);
+        fetchUsers(1, filter);
+    };
+
+    const canBan = (user: UserPageRecord) =>
+        user.canManageProfile && String(user.user_id) !== String(currentUserId);
+    const selectableOnPage = users.filter(canBan);
+    const allOnPageSelected =
+        selectableOnPage.length > 0 && selectableOnPage.every((u) => selected.has(u.user_id));
+
+    const toggleSelected = (user: UserPageRecord, checked: boolean) => {
+        setSelected((prev) => {
+            const next = new Map(prev);
+            if (checked) next.set(user.user_id, user);
+            else next.delete(user.user_id);
+            return next;
+        });
+    };
+
+    const togglePage = (checked: boolean) => {
+        setSelected((prev) => {
+            const next = new Map(prev);
+            for (const u of selectableOnPage) {
+                if (checked) next.set(u.user_id, u);
+                else next.delete(u.user_id);
+            }
+            return next;
+        });
+    };
+
+    const openBanDialog = (mode: BanDialogMode, targets: UserPageRecord[], allowUsernames = false) => {
+        setBanDialog({ open: true, mode, users: targets, allowUsernames });
+    };
+
+    const selectedUsers = Array.from(selected.values());
+    const selectedBannedCount = selectedUsers.filter((u) => u.banned).length;
 
     const resetImportDialog = () => {
         setImportStep("config");
@@ -433,7 +499,11 @@ export default function AdminUserManagementPage() {
         <div className="container mx-auto px-4 py-8 max-w-6xl">
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold">用户管理</h1>
-                <div>
+                <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => openBanDialog("ban", [], true)}>
+                        <Ban className="h-4 w-4 mr-1" />
+                        按账号名封禁
+                    </Button>
                     <input
                         ref={fileInputRef}
                         type="file"
@@ -468,7 +538,41 @@ export default function AdminUserManagementPage() {
                     <Search className="h-4 w-4 mr-1" />
                     搜索
                 </Button>
+                <div className="ml-auto flex rounded-md border p-0.5" role="group" aria-label="账号状态">
+                    {BAN_FILTERS.map((f) => (
+                        <Button
+                            key={f.key}
+                            size="sm"
+                            variant={banFilter === f.key ? "secondary" : "ghost"}
+                            className="h-8"
+                            aria-pressed={banFilter === f.key}
+                            onClick={() => handleBanFilter(f.key)}
+                        >
+                            {f.label}
+                        </Button>
+                    ))}
+                </div>
             </div>
+
+            {selected.size > 0 && (
+                <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm">
+                    <span>
+                        已选 {selected.size} 个账号
+                        {selectedBannedCount > 0 && <span className="text-muted-foreground">（其中 {selectedBannedCount} 个已封禁）</span>}
+                    </span>
+                    <div className="ml-auto flex gap-2">
+                        <Button size="sm" variant="destructive" onClick={() => openBanDialog("ban", selectedUsers)}>
+                            封禁所选
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => openBanDialog("unban", selectedUsers)}>
+                            解封所选
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setSelected(new Map())}>
+                            清空选择
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* User table */}
             {loading && users.length === 0 ? (
@@ -481,6 +585,14 @@ export default function AdminUserManagementPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead className="w-[40px]">
+                                        <Checkbox
+                                            aria-label="选择本页"
+                                            checked={allOnPageSelected}
+                                            disabled={selectableOnPage.length === 0}
+                                            onCheckedChange={(v) => togglePage(v === true)}
+                                        />
+                                    </TableHead>
                                     <TableHead className="w-[160px]">用户名</TableHead>
                                     <TableHead className="w-[120px]">昵称</TableHead>
                                     <TableHead className="w-[280px]">邮箱</TableHead>
@@ -491,7 +603,7 @@ export default function AdminUserManagementPage() {
                                 {users.length === 0 ? (
                                     <TableRow>
                                         <TableCell
-                                            colSpan={4}
+                                            colSpan={5}
                                             className="text-center py-8 text-muted-foreground"
                                         >
                                             暂无数据
@@ -505,8 +617,32 @@ export default function AdminUserManagementPage() {
                                                 className="cursor-pointer hover:bg-muted/50"
                                                 onClick={() => navigate(`/user/${user.user_id}`)}
                                             >
+                                                <TableCell onClick={(e) => e.stopPropagation()}>
+                                                    <Checkbox
+                                                        aria-label={`选择 ${user.username}`}
+                                                        checked={selected.has(user.user_id)}
+                                                        disabled={!canBan(user)}
+                                                        onCheckedChange={(v) => toggleSelected(user, v === true)}
+                                                    />
+                                                </TableCell>
                                                 <TableCell className="font-medium">
-                                                    <SubmitterLink username={user.username} userId={user.user_id} />
+                                                    <div className="flex items-center gap-2">
+                                                        <SubmitterLink username={user.username} userId={user.user_id} />
+                                                        {user.banned && (
+                                                            <Badge
+                                                                variant="destructive"
+                                                                className="shrink-0"
+                                                                title={`${user.banReason || "未填写原因"}，解封：${formatBanUntil(user.bannedUntil)}`}
+                                                            >
+                                                                封禁
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    {user.banned && (
+                                                        <p className="mt-0.5 text-xs font-normal text-muted-foreground">
+                                                            {user.bannedUntil ? `至 ${formatBanUntil(user.bannedUntil)}` : "永久封禁"}
+                                                        </p>
+                                                    )}
                                                 </TableCell>
                                                 <TableCell className="text-muted-foreground">{user.nickname || "-"}</TableCell>
                                                 <TableCell>{user.email}</TableCell>
@@ -514,6 +650,9 @@ export default function AdminUserManagementPage() {
                                                     <div className="flex items-center gap-2 flex-wrap">
                                                         {user.roles.map(role => <Badge key={role} variant="secondary" className={roleColors[role] || ""}>{role}</Badge>)}
                                                         {user.canManageProfile ? <Button variant="link" size="sm" onClick={() => navigate(`/user/${user.user_id}/edit`)}>编辑资料</Button> : <span className="text-sm text-muted-foreground">无编辑权限</span>}
+                                                        {canBan(user) && (user.banned
+                                                            ? <Button variant="link" size="sm" className="px-0" onClick={() => openBanDialog("unban", [user])}>解封</Button>
+                                                            : <Button variant="link" size="sm" className="px-0 text-destructive" onClick={() => openBanDialog("ban", [user])}>封禁</Button>)}
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -574,6 +713,18 @@ export default function AdminUserManagementPage() {
                     )}
                 </>
             )}
+
+            <UserBanDialog
+                open={banDialog.open}
+                mode={banDialog.mode}
+                users={banDialog.users}
+                allowUsernames={banDialog.allowUsernames}
+                onOpenChange={(open) => setBanDialog((d) => ({ ...d, open }))}
+                onDone={() => {
+                    setSelected(new Map());
+                    fetchUsers();
+                }}
+            />
 
             {/* Batch Import Dialog - 3-step flow */}
             <Dialog
