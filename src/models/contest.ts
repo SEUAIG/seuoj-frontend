@@ -114,6 +114,7 @@ export interface ContestStandingsScoreDetail {
 }
 
 export interface ContestStandingsRecord {
+  user_id?: number;
   rank: number | null;
   display_name?: string;
   is_starred?: boolean;

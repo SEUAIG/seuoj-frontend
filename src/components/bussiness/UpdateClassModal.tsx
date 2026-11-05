@@ -1,3 +1,4 @@
+import SubmitterLink from "@/components/common/SubmitterLink";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -354,7 +355,7 @@ export default function UpdateClassModal({
                     >
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">
-                          {displayName(perm)}
+                          <SubmitterLink username={perm.username} nickname={perm.nickname ?? undefined} userId={perm.user_id} />
                           {isSelf && (
                             <span className="ml-1.5 text-xs text-muted-foreground">
                               (我)

@@ -1,3 +1,4 @@
+import SubmitterLink from "@/components/common/SubmitterLink";
 import React, { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate } from "react-router-dom";
@@ -766,7 +767,7 @@ export default function AssignmentDetailPage() {
                               className="bg-card hover:bg-muted/50 transition-colors"
                             >
                               <td className="px-6 py-3 font-medium">
-                                {s.nickname || s.username}
+                                <SubmitterLink username={s.username} nickname={s.nickname} userId={s.user_id} />
                               </td>
                               <td className="px-6 py-3 text-center font-mono">
                                 {s.ac_count} / {stats.problem_count}

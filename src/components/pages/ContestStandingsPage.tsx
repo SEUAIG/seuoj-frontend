@@ -1,3 +1,4 @@
+import SubmitterLink from "@/components/common/SubmitterLink";
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
@@ -200,14 +201,14 @@ export default function ContestStandingsPage() {
                 ) : (
                   records.map((record) => (
                     <TableRow
-                      key={record.username}
+                      key={record.user_id ?? record.username}
                       className="hover:bg-muted/50"
                     >
                       <TableCell className="text-center">
                         {record.is_starred ? <span title="打星，不占正式名次" aria-label="打星" className="text-lg text-muted-foreground">*</span> : record.rank != null ? <RankBadge rank={record.rank} /> : "—"}
                       </TableCell>
                       <TableCell className="font-medium">
-                        {record.display_name || record.nickname || record.username}
+                        <SubmitterLink username={record.username} nickname={record.display_name || record.nickname} userId={record.user_id} />
                         {(record.display_name || record.nickname) && (
                           <span className="text-xs text-muted-foreground ml-1">
                             @{record.username}

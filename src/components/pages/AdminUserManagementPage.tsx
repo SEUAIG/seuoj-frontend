@@ -1,3 +1,4 @@
+import SubmitterLink from "@/components/common/SubmitterLink";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -505,7 +506,7 @@ export default function AdminUserManagementPage() {
                                                 onClick={() => navigate(`/user/${user.user_id}`)}
                                             >
                                                 <TableCell className="font-medium">
-                                                    {user.username}
+                                                    <SubmitterLink username={user.username} userId={user.user_id} />
                                                 </TableCell>
                                                 <TableCell className="text-muted-foreground">{user.nickname || "-"}</TableCell>
                                                 <TableCell>{user.email}</TableCell>

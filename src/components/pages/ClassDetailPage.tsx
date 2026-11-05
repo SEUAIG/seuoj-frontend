@@ -1,3 +1,4 @@
+import SubmitterLink from "@/components/common/SubmitterLink";
 import React, { Suspense, lazy, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
@@ -405,7 +406,7 @@ export default function ClassDetailPage() {
                               {member.user_id}
                             </td>
                             <td className="px-6 py-4 font-medium">
-                              {member.nickname || member.username}
+                              <SubmitterLink username={member.username} nickname={member.nickname} userId={member.user_id} />
                             </td>
                             <td className="px-6 py-4 text-muted-foreground flex items-center gap-2">
                               <Calendar className="h-4 w-4" />
@@ -643,7 +644,7 @@ export default function ClassDetailPage() {
                                 : 0;
                               return (
                                 <tr key={s.user_id} className="bg-card hover:bg-muted/50 transition-colors">
-                                  <td className="px-6 py-3 font-medium">{s.nickname || s.username}</td>
+                                  <td className="px-6 py-3 font-medium"><SubmitterLink username={s.username} nickname={s.nickname} userId={s.user_id} /></td>
                                   <td className="px-6 py-3 text-center font-mono">
                                     {s.ac_count} / {overview.total_problems}
                                   </td>
