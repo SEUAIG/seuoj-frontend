@@ -6,7 +6,7 @@ import App from "./App.tsx";
 import { BrowserRouter } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { Provider } from "react-redux";
-import { Toaster, toast } from "sonner";
+import { toast } from "sonner";
 import { PersistGate } from "redux-persist/integration/react";
 import { store, persistor } from "@/app/store";
 import {
@@ -63,7 +63,6 @@ createRoot(document.getElementById("root")!).render(
               }
               persistor={persistor}
             >
-              <Toaster />
               <AuthRefresh />
               <App />
             </PersistGate>
