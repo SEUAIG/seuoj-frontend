@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import SkipSubmissionsDialog from "@/components/bussiness/SkipSubmissionsDialog";
 import type { SkipOutcome } from "@/services/Submission/skipSubmissions";
+import RejudgeDialog from "@/components/bussiness/RejudgeDialog";
+import type { RejudgeOutcome } from "@/services/Submission/rejudge";
 
 const NAME: Record<string, string> = {
   Accepted: "Accepted",
@@ -15,13 +17,14 @@ const NAME: Record<string, string> = {
   PartiallyAccepted: "Partially Accepted",
 };
 
-/** 提交详情页：被跳过时的说明条，以及管理者的跳过 / 取消跳过按钮 */
+/** 提交详情页：被跳过时的说明条，以及管理者的重测、跳过 / 取消跳过按钮（权限相同，后端返回 can_skip） */
 export default function SkipNotice({
   skipped,
   originalVerdict,
   skipReason,
   canSkip,
   run,
+  rejudge,
   onDone,
 }: {
   skipped?: boolean;
@@ -29,9 +32,11 @@ export default function SkipNotice({
   skipReason?: string | null;
   canSkip?: boolean;
   run: (skipped: boolean, reason: string | undefined) => Promise<SkipOutcome>;
+  rejudge?: () => Promise<RejudgeOutcome>;
   onDone: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [rejudgeOpen, setRejudgeOpen] = useState(false);
   if (!skipped && !canSkip) return null;
   return (
     <div
@@ -51,9 +56,25 @@ export default function SkipNotice({
         </div>
       )}
       {canSkip && (
-        <Button size="sm" variant={skipped ? "outline" : "ghost"} onClick={() => setOpen(true)}>
-          {skipped ? "取消跳过" : "跳过这条提交"}
-        </Button>
+        <div className="flex gap-2">
+          {rejudge && (
+            <Button size="sm" variant="outline" onClick={() => setRejudgeOpen(true)}>
+              重测
+            </Button>
+          )}
+          <Button size="sm" variant={skipped ? "outline" : "ghost"} onClick={() => setOpen(true)}>
+            {skipped ? "取消跳过" : "跳过这条提交"}
+          </Button>
+        </div>
+      )}
+      {rejudge && (
+        <RejudgeDialog
+          open={rejudgeOpen}
+          target="这条提交"
+          onOpenChange={setRejudgeOpen}
+          run={rejudge}
+          onDone={onDone}
+        />
       )}
       <SkipSubmissionsDialog
         open={open}

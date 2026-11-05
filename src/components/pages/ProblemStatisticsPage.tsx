@@ -23,6 +23,9 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getProblemStatistics } from "@/services/Problem/getProblemStatistics";
+import { useState } from "react";
+import RejudgeDialog from "@/components/bussiness/RejudgeDialog";
+import { rejudgeProblem } from "@/services/Submission/rejudge";
 
 const SCORE_COLORS = [
   "hsl(0, 84%, 60%)",
@@ -42,7 +45,8 @@ export default function ProblemStatisticsPage() {
   const nav = useNavigate();
   const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
 
-  const { data, isLoading, isError } = useQuery({
+  const [rejudgeOpen, setRejudgeOpen] = useState(false);
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["problemStatistics", id],
     queryFn: () => getProblemStatistics(id!),
     enabled: !!id,
@@ -102,6 +106,17 @@ export default function ProblemStatisticsPage() {
               <Activity className="h-6 w-6" />
               #{id} 题目统计
             </h1>
+            <Button variant="outline" size="sm" className="ml-auto" onClick={() => setRejudgeOpen(true)}>
+              重测整题
+            </Button>
+            <RejudgeDialog
+              open={rejudgeOpen}
+              target={` #${id} 的全部提交`}
+              note="只重测题库、题单和作业里的提交；比赛里的提交请到对应比赛的提交页重测，避免改动已结束比赛的榜单。"
+              onOpenChange={setRejudgeOpen}
+              run={() => rejudgeProblem(id!)}
+              onDone={() => refetch()}
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

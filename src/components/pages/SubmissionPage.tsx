@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import type { SubmissionData } from "@/models/submission";
 import { getSubmissionDetail } from "@/services/Submission/getSubmissionDetail";
 import { skipSubmissions } from "@/services/Submission/skipSubmissions";
+import { rejudgeSubmissions } from "@/services/Submission/rejudge";
 import SkipNotice from "@/components/bussiness/SkipNotice";
 import { getProblemDetail } from "@/services/Problem/getProblemDetail";
 import { useQuery } from "@tanstack/react-query";
@@ -147,6 +148,7 @@ export default function SubmissionPage() {
         skipReason={submission.skipReason}
         canSkip={submission.canSkip}
         run={(skipped, reason) => skipSubmissions({ submissionNos: [submission.submissionNo], skipped, reason })}
+        rejudge={() => rejudgeSubmissions([submission.submissionNo])}
         onDone={() => setReloadKey((k) => k + 1)}
       />
       <SubmissionRecord submission={submission} title={title} problemUrl={problemUrl} />

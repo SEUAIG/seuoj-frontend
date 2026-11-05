@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import SkipSubmissionsDialog from "./SkipSubmissionsDialog";
 import { skipSubmissions } from "@/services/Submission/skipSubmissions";
+import RejudgeDialog from "./RejudgeDialog";
+import { rejudgeSubmissions } from "@/services/Submission/rejudge";
 import { useSelector } from "react-redux";
 import { RootState } from "@/app/store";
 import { getSubmissionPage } from "@/services/Submission/getSubmissionPage";
@@ -192,6 +194,7 @@ export default function SubmissionListPanel({
   // 教师 / 管理员可勾选后批量跳过；能否处理每条提交由后端按题目、班级、比赛权限判断
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [skipTarget, setSkipTarget] = useState<boolean | null>(null);
+  const [rejudgeOpen, setRejudgeOpen] = useState(false);
   const toggle = (no: string, checked: boolean) =>
     setSelected((prev) => {
       const next = new Set(prev);
@@ -371,6 +374,9 @@ export default function SubmissionListPanel({
             <Button size="sm" variant="outline" onClick={() => setSkipTarget(false)}>
               取消跳过
             </Button>
+            <Button size="sm" variant="outline" onClick={() => setRejudgeOpen(true)}>
+              重测所选
+            </Button>
             <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
               清空选择
             </Button>
@@ -383,6 +389,17 @@ export default function SubmissionListPanel({
         target={` ${selected.size} 条提交`}
         onOpenChange={(open) => !open && setSkipTarget(null)}
         run={(reason) => skipSubmissions({ submissionNos: Array.from(selected), skipped: skipTarget ?? true, reason })}
+        onDone={() => {
+          setSelected(new Set());
+          queryClient.invalidateQueries({ queryKey: [queryKeyPrefix] });
+        }}
+      />
+
+      <RejudgeDialog
+        open={rejudgeOpen}
+        target={` ${selected.size} 条提交`}
+        onOpenChange={setRejudgeOpen}
+        run={() => rejudgeSubmissions(Array.from(selected))}
         onDone={() => {
           setSelected(new Set());
           queryClient.invalidateQueries({ queryKey: [queryKeyPrefix] });

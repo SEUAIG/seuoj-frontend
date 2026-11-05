@@ -14,6 +14,8 @@ import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
 import { cn } from "@/lib/utils";
 import SkipSubmissionsDialog from "@/components/bussiness/SkipSubmissionsDialog";
 import { skipContestSubmissions } from "@/services/Submission/skipSubmissions";
+import RejudgeDialog from "@/components/bussiness/RejudgeDialog";
+import { rejudgeInContest } from "@/services/Submission/rejudge";
 
 const SIZE = 30;
 const TH = "whitespace-nowrap px-2.5 pb-2 pt-3 text-left text-xs font-medium text-slate-500";
@@ -50,6 +52,8 @@ export default function ContestSubmissionListPage() {
   // 管理者勾选（跨页、跨筛选保留），key 为 submission_no
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [skipAction, setSkipAction] = useState<null | { skipped: boolean; whole: boolean }>(null);
+  // 重测：selected = 勾选的提交；problem = 本场当前筛选题目的全部提交
+  const [rejudgeAction, setRejudgeAction] = useState<null | "selected" | "problem">(null);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["contestSubmissions", contestId, page, pid, result, username],
@@ -144,7 +148,7 @@ export default function ContestSubmissionListPage() {
             </form>
           ))}
       </div>
-      {showWho && (selected.size > 0 || username) && (
+      {showWho && (selected.size > 0 || username || pid) && (
         <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md bg-slate-100 px-3 py-2 text-[13px] text-slate-700">
           {selected.size > 0 && (
             <>
@@ -155,10 +159,20 @@ export default function ContestSubmissionListPage() {
               <button type="button" className="font-medium hover:underline" onClick={() => setSkipAction({ skipped: false, whole: false })}>
                 取消跳过
               </button>
+              <button type="button" className="font-medium text-primary hover:underline" onClick={() => setRejudgeAction("selected")}>
+                重测所选
+              </button>
               <button type="button" className="text-slate-500 hover:underline" onClick={() => setSelected(new Set())}>
                 清空选择
               </button>
             </>
+          )}
+          {pid && !username && (
+            <span className="ml-auto">
+              <button type="button" className="font-medium text-primary hover:underline" onClick={() => setRejudgeAction("problem")}>
+                重测本场 {letters[pid] ?? pid} 题全部提交
+              </button>
+            </span>
           )}
           {username && (
             <span className="ml-auto flex gap-4">
@@ -187,6 +201,22 @@ export default function ContestSubmissionListPage() {
         }
         onDone={() => {
           if (!skipAction?.whole) setSelected(new Set());
+          queryClient.invalidateQueries({ queryKey: ["contestSubmissions", contestId] });
+          queryClient.invalidateQueries({ queryKey: ["contestStandings"] });
+        }}
+      />
+      <RejudgeDialog
+        open={rejudgeAction !== null}
+        target={rejudgeAction === "problem" ? `本场 ${letters[pid] ?? pid} 题的全部提交` : ` ${selected.size} 条提交`}
+        note={rejudgeAction === "problem" ? "只重测本场比赛里的提交，题库和其他比赛的提交不受影响。" : undefined}
+        onOpenChange={(open) => !open && setRejudgeAction(null)}
+        run={() =>
+          rejudgeAction === "problem"
+            ? rejudgeInContest(contestId, { pid })
+            : rejudgeInContest(contestId, { submissionNos: Array.from(selected) })
+        }
+        onDone={() => {
+          if (rejudgeAction === "selected") setSelected(new Set());
           queryClient.invalidateQueries({ queryKey: ["contestSubmissions", contestId] });
           queryClient.invalidateQueries({ queryKey: ["contestStandings"] });
         }}

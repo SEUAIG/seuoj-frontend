@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ContestShell from "@/components/contest/ContestShell";
 import { getContestSubmissionDetail } from "@/services/Contest/getContestSubmissionDetail";
 import { skipContestSubmissions } from "@/services/Submission/skipSubmissions";
+import { rejudgeInContest } from "@/services/Submission/rejudge";
 import SkipNotice from "@/components/bussiness/SkipNotice";
 import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
 import { letterOf } from "@/components/contest/contestKit";
@@ -139,6 +140,7 @@ export default function ContestSubmissionPage() {
         run={(skipped, reason) =>
           skipContestSubmissions(contestId, { submissionNos: [submission.submissionNo], skipped, reason })
         }
+        rejudge={() => rejudgeInContest(contestId, { submissionNos: [submission.submissionNo] })}
         onDone={() => setReloadKey((k) => k + 1)}
       />
       <ContestSubmissionRecord
