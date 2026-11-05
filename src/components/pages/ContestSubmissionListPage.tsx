@@ -44,7 +44,9 @@ export default function ContestSubmissionListPage() {
   const pages = Math.max(1, Math.ceil((data?.total ?? 0) / SIZE));
   const showScore = !!detail?.rule_type && !isAcm(detail.rule_type);
   const letters = Object.fromEntries((detail?.problem_list ?? []).map((p) => [p.pid, letterOf(p.sort_order)]));
-  const cols = showScore ? 7 : 6;
+  // 选手只能看到自己的提交，只有比赛管理者需要“选手”这一列
+  const showWho = !!detail?.can_write;
+  const cols = (showScore ? 7 : 6) - (showWho ? 0 : 1);
   const start = parseTime(detail?.start_time);
   const end = parseTime(detail?.end_time);
   /** 比赛时间外的提交（管理者赛前验题、赛后补题）不计入榜单 */
@@ -64,8 +66,8 @@ export default function ContestSubmissionListPage() {
           <tr>
             <th className={cn(TH, "hidden sm:table-cell")}>#</th>
             <th className={TH}>时间</th>
-            <th className={cn(TH, "w-full")}>选手</th>
-            <th className={TH}>题目</th>
+            {showWho && <th className={cn(TH, "w-full")}>选手</th>}
+            <th className={cn(TH, !showWho && "w-full")}>题目</th>
             <th className={TH}>结果</th>
             {showScore && <th className={cn(TH, "text-right")}>分数</th>}
             <th className={cn(TH, "hidden sm:table-cell")}>语言</th>
@@ -92,7 +94,7 @@ export default function ContestSubmissionListPage() {
             </tr>
           ) : (
             records.map((r) => {
-              const mine = isMine(r, user);
+              const mine = showWho && isMine(r, user);
               const detailPath = `/contest/${contestId}/submission/${r.submission_no}`;
               return (
                 <tr
@@ -111,14 +113,16 @@ export default function ContestSubmissionListPage() {
                       </span>
                     )}
                   </td>
-                  <td className={cn(TD, mine && "font-semibold")}>
-                    <SubmitterLink
-                      username={r.username}
-                      nickname={r.nickname}
-                      userId={r.user_id}
-                      className="text-inherit hover:underline"
-                    />
-                  </td>
+                  {showWho && (
+                    <td className={cn(TD, mine && "font-semibold")}>
+                      <SubmitterLink
+                        username={r.username}
+                        nickname={r.nickname}
+                        userId={r.user_id}
+                        className="text-inherit hover:underline"
+                      />
+                    </td>
+                  )}
                   <td className={TD}>
                     <Link
                       to={`/contest/${contestId}/${r.problem.pid}`}
