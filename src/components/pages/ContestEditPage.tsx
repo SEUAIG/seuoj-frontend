@@ -525,7 +525,7 @@ export default function ContestEditPage() {
                   <div className="space-y-1 leading-none">
                     <FormLabel>隐藏统计</FormLabel>
                     <FormDescription>
-                      开启后，普通用户无法查看题目统计信息。
+                      开启后，比赛结束前只有比赛管理者能看到排名，结束后公开。建议用于作业或者练习，正式比赛不要开启。
                     </FormDescription>
                   </div>
                 </FormItem>

@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../app/store";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import ContestProblemCoding from "@/components/bussiness/ContestProblemCoding";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import SubmitPanel from "@/components/bussiness/SubmitPanel";
+import { setContestCodeFile, setContestLanguage } from "@/features/Code/contestCodeSlice";
 import useQueryToGetContestProblemDetail from "@/hooks/useQueryToGetContestProblemDetail";
 import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
 import type { ProblemData } from "@/models/problem";
@@ -32,12 +31,14 @@ export default function ContestProblemDetailPage() {
   const user = useCurrentUser();
   const { id, pid: pidParam } = useParams();
   const contestId = Number(id);
-  const [hide, setHide] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [problemErrorCode, setProblemErrorCode] = useState<number | null>(null);
   const { language, codeFileObjectArray } = useSelector(
     (store: RootState) => store.contestCode
   );
   const nav = useNavigate();
+  const dispatch = useDispatch();
+  const changeLanguage = useCallback((value: string) => dispatch(setContestLanguage(value)), [dispatch]);
   const { data, isLoading, isError, error } = useQueryToGetContestProblemDetail(
     contestId || 0,
     pidParam || ""
@@ -68,7 +69,7 @@ export default function ContestProblemDetailPage() {
 
   /** 题号导航：字母按我的结果着色，当前题加下划线 */
   const problemNav = (
-    <nav className="sticky top-0 z-10 flex items-center gap-0.5 overflow-x-auto border-b bg-white/95 px-3 backdrop-blur-sm md:px-6">
+    <nav className="-mt-4 flex items-center gap-0.5 overflow-x-auto border-b">
       {problems.map((p) => {
         const state = cellStateOf(me?.score_details?.[p.pid], standings?.rule_type);
         const on = p.pid === pidParam;
@@ -92,7 +93,7 @@ export default function ContestProblemDetailPage() {
   );
 
   const shell = (children: React.ReactNode) => (
-    <ContestShell contestId={contestId} tab="problem" fill>
+    <ContestShell contestId={contestId} tab="problem">
       {children}
     </ContestShell>
   );
@@ -108,7 +109,7 @@ export default function ContestProblemDetailPage() {
     const isKnown404 = problemErrorCode === 40401 || problemErrorCode === 40402;
     if (isKnown404) {
       return shell(
-        <div className="h-full w-full border-t bg-gray-50">
+        <div className="min-h-[50vh] w-full">
           <ProblemAccessState code={problemErrorCode} />
         </div>
       );
@@ -145,6 +146,7 @@ export default function ContestProblemDetailPage() {
       return;
     }
     const payload = { pid, language, code };
+    setSubmitting(true);
     try {
       const result = await submitContestSolution(contestId, payload);
       if (result.code === 0 || result.code === "0") {
@@ -160,56 +162,31 @@ export default function ContestProblemDetailPage() {
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "提交失败，请稍后重试");
+    } finally {
+      setSubmitting(false);
     }
   };
-  const hideToggle = (
-    <div className="flex items-center gap-2">
-      <Switch id="sethide-contest" checked={hide} onCheckedChange={setHide} />
-      <Label htmlFor="sethide-contest" className="cursor-pointer whitespace-nowrap text-sm text-slate-500">
-        隐藏编辑器
-      </Label>
-    </div>
-  );
+  const draftCode =
+    codeFileObjectArray.find(
+      (item: { contest_id: number; pid: string }) => item.contest_id === contestId && item.pid === pid
+    )?.codeFile ?? "";
   return shell(
     <>
       <Helmet>
         <title>{`${letter}. ${title} - SEUOJ`}</title>
       </Helmet>
-      <div className="relative flex h-full w-full max-w-full flex-col overflow-hidden border-t bg-white lg:flex-row">
-        {hide ? (
-          <div className="absolute right-4 top-2 z-20 bg-white/90 px-2 py-1.5 backdrop-blur-sm">{hideToggle}</div>
-        ) : null}
-        <div
-          className={cn(
-            hide ? "w-full" : "w-full lg:w-1/2",
-            "h-full min-w-0 max-w-full flex-shrink overflow-y-auto overflow-x-hidden border-r"
-          )}
-        >
-          {problemNav}
-          <ContestProblemDetailInfo
-            problem={{ ...problemData, pid: letter }}
-            isAuthenticated={isAuthenticated}
-          />
-        </div>
-        {hide ? null : (
-          <div className="relative h-full w-full min-w-0 max-w-full flex-shrink overflow-y-auto overflow-x-hidden bg-gray-50 lg:w-1/2">
-            {isAuthenticated ? (
-              <ContestProblemCoding
-                pid={pid}
-                contest_id={contestId || 0}
-                handleCodeSubmit={handleContestCodeSubmit}
-                headerExtra={hideToggle}
-              />
-            ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 text-gray-500">
-                <div className="space-y-4 p-8 text-center">
-                  <h3 className="text-xl font-semibold text-gray-700">需要登录</h3>
-                  <p>请登录后查看代码编辑器并提交代码。</p>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+      {problemNav}
+      <ContestProblemDetailInfo problem={{ ...problemData, pid: letter }} isAuthenticated={isAuthenticated} />
+      <div className="mx-auto max-w-[58rem] px-5 md:px-8">
+        <SubmitPanel
+          code={draftCode}
+          onCodeChange={(codeFile) => dispatch(setContestCodeFile({ contest_id: contestId, pid, codeFile }))}
+          language={language}
+          onLanguageChange={changeLanguage}
+          onSubmit={handleContestCodeSubmit}
+          isAuthenticated={isAuthenticated}
+          submitting={submitting}
+        />
       </div>
     </>
   );
