@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { hasCapability } from "@/lib/capabilities";
+import React from "react";
 import { Helmet } from "react-helmet-async";
 import {
   Dialog,
@@ -11,77 +12,58 @@ import {
 } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import TagSelector, { Tag } from "../bussiness/TagSelector";
-import { Search, RotateCcw, Filter, Plus } from "lucide-react";
+import TagSelector, { Tag, tagItem } from "../bussiness/TagSelector";
+import { Search, RotateCcw, Filter, Plus, X } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/app/store";
-import TagItem from "../bussiness/TagItem";
-import { clearTags } from "@/features/Tags/tagsSlice";
+import { addTag, clearTags } from "@/features/Tags/tagsSlice";
 import { useSearchQueryByKeyword } from "@/hooks/useSearchQueryByKeyword";
-import {
-  setTagIds,
-  setTitle,
-  setCurrent,
-} from "@/features/ProblemList/problemListSlice";
 import ProblemListTable, { ProblemRecord } from "../bussiness/ProblemListTable";
-import ProblemListPageChoose from "../bussiness/ProblemListPageChoose";
+import ClassPagination from "../bussiness/ClassPagination";
+import useQueryToGetTags from "@/hooks/useQueryToGetTags";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function ProblemsLibraryPage() {
   const nav = useNavigate();
-  const [searchParams] = useSearchParams();
-  const role = useSelector((state: RootState) => state.auth.user?.role ?? "guest");
-  const isTeacherOrAbove = role === "teacher" || role === "admin" || role === "superadmin";
-  const { tags } = useSelector((state: RootState) => state.tags);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isTeacherOrAbove = hasCapability(user, "PROBLEM_CREATE");
+  const draftTags = useSelector((state: RootState) => state.tags.tags);
   const dispatch = useDispatch();
-  const [keyword, setKeyword] = useState("");
-  const handleClearTags = () => {
-    dispatch(clearTags());
-    setKeyword("");
+  const keyword = searchParams.get("title") ?? "";
+  const pageParam = Number(searchParams.get("current") ?? 1);
+  const current = Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1;
+  const size = 10;
+  const tagIds = (searchParams.get("tag_ids") ?? "").split(",")
+    .filter(Boolean).map(Number).filter((id) => Number.isInteger(id) && id > 0);
+  const { data: tagGroups } = useQueryToGetTags();
+  const allTags = Object.values((tagGroups ?? {}) as Record<string, tagItem[]>)
+    .flatMap((groups) => groups.flatMap((group) => group.tags));
+  const tags = allTags.filter((tag) => tagIds.includes(tag.tag_id));
+
+  const changeFilter = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.delete("current");
+    if (value) params.set(key, value);
+    else params.delete(key);
+    setSearchParams(params, { replace: true });
   };
-  const { current, size, tag_ids, title } = useSelector(
-    (state: RootState) => state.problemList
-  );
-
-  // 进入页面时重置筛选条件，但如果从详情页返回则恢复页码
-  useEffect(() => {
-    dispatch(clearTags());
-    dispatch(setTitle(""));
-    setKeyword("");
-
-    const fromParam = searchParams.get("from");
-    if (fromParam) {
-      try {
-        const decodedFrom = decodeURIComponent(fromParam);
-        const fromUrl = new URL(decodedFrom, window.location.origin);
-        const page = fromUrl.searchParams.get("current");
-        if (page) {
-          const pageNum = parseInt(page, 10);
-          if (!isNaN(pageNum) && pageNum > 0) {
-            dispatch(setCurrent(pageNum));
-            return;
-          }
-        }
-      } catch {}
+  const changePage = (page: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("current", String(page));
+    setSearchParams(params);
+  };
+  const prepareTagSelection = (open: boolean) => {
+    if (open) {
+      dispatch(clearTags());
+      tags.forEach((tag) => dispatch(addTag(tag)));
     }
-    dispatch(setCurrent(1));
-  }, [dispatch, searchParams]);
-
+  };
   const { data, isLoading, isFetching, refetch } =
-    useSearchQueryByKeyword<ProblemRecord>(current, size, title, tag_ids);
-  const records = data?.records || [];
-  const total = data?.total || 0;
-  const selectedTagIds = useMemo(
-    () => tags.map((item: Tag) => item.tag_id),
-    [tags]
-  );
-  useEffect(() => {
-    dispatch(setTitle(keyword));
-  }, [keyword, dispatch]);
-  useEffect(() => {
-    dispatch(setTagIds(selectedTagIds));
-  }, [selectedTagIds, dispatch]);
-  const pages = Math.ceil(total / Number(size));
+    useSearchQueryByKeyword<ProblemRecord>(current, size, keyword, tagIds);
+  const records = data?.records ?? [];
+  const total = data?.total ?? 0;
+  const pages = Math.ceil(total / size);
   return (
     <div className="w-4/5 mx-auto py-6 space-y-6 min-h-screen overflow-x-hidden">
       <Helmet>
@@ -109,7 +91,7 @@ export default function ProblemsLibraryPage() {
             <span className="text-sm font-medium text-muted-foreground w-16 shrink-0">
               筛选条件
             </span>
-            <Dialog>
+            <Dialog onOpenChange={prepareTagSelection}>
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
@@ -128,7 +110,7 @@ export default function ProblemsLibraryPage() {
                 <TagSelector className="h-auto min-h-0" />
                 <DialogFooter>
                   <DialogClose asChild>
-                    <Button>确认</Button>
+                    <Button onClick={() => changeFilter("tag_ids", draftTags.map((tag) => tag.tag_id).join(","))}>确认</Button>
                   </DialogClose>
                 </DialogFooter>
               </DialogContent>
@@ -142,7 +124,7 @@ export default function ProblemsLibraryPage() {
               <Input
                 placeholder="算法、标题或题目编号"
                 value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
+                onChange={(e) => changeFilter("title", e.target.value)}
                 className="w-full bg-background/50"
               />
             </div>
@@ -155,13 +137,15 @@ export default function ProblemsLibraryPage() {
           <div className="flex-1 min-h-[2rem] flex items-center">
             {tags.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {tags.map((tag: Tag, idx: number) => (
-                  <TagItem
-                    key={idx}
-                    tag_id={tag.tag_id}
-                    tag_name={tag.tag_name}
-                    from={tag.from}
-                  />
+                {tags.map((tag: Tag) => (
+                  <Button
+                    key={tag.tag_id}
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => changeFilter("tag_ids", tagIds.filter((id) => id !== tag.tag_id).join(","))}
+                  >
+                    {tag.tag_name}<X className="ml-1 h-3 w-3" />
+                  </Button>
                 ))}
               </div>
             ) : (
@@ -180,7 +164,7 @@ export default function ProblemsLibraryPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleClearTags}
+              onClick={() => setSearchParams({}, { replace: true })}
               className="text-muted-foreground hover:text-destructive transition-colors"
             >
               <RotateCcw className="mr-2 h-3.5 w-3.5" />
@@ -204,14 +188,7 @@ export default function ProblemsLibraryPage() {
         />
       </div>
       <div className="mt-6">
-        {pages && (
-          <ProblemListPageChoose
-            pages={pages}
-            current={current}
-            dispatch={dispatch}
-            refetch={refetch}
-          />
-        )}
+        <ClassPagination totalPages={pages} currentPage={current} onPageChange={changePage} />
       </div>
     </div>
   );

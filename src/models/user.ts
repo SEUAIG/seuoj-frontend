@@ -11,6 +11,7 @@ export interface GetUserPageRequest {
 }
 
 export interface UserPageRecord {
+  canManageProfile: boolean;
   user_id: number;
   username: string;
   nickname: string | null;
@@ -74,6 +75,7 @@ export interface BatchImportResult {
 export type BatchImportResponse = ApiResponse<BatchImportResult>;
 
 export interface UserProfile {
+  canManageProfile: boolean;
   id: number;
   username: string;
   nickname: string | null;
@@ -85,6 +87,9 @@ export interface UpdateProfileRequest {
 }
 
 export interface UserMeResponse {
+  role: import("@/features/auth/types").UserRole;
+  capabilities: import("@/lib/capabilities").Capability[];
+  allowNicknameChange: boolean;
   id: number;
   username: string;
   nickname: string | null;

@@ -62,6 +62,7 @@ const ProblemEditPage = React.lazy(
 const ProblemCreatePage = React.lazy(
   () => import("./components/pages/ProblemCreatePage")
 );
+const ProfileEditPage = React.lazy(() => import("./components/pages/ProfileEditPage"));
 const PersonalPage = React.lazy(
   () => import("./components/pages/PersonalPage")
 );
@@ -92,6 +93,8 @@ const ContestSubmissionListPage = React.lazy(
 const ContestStandingsPage = React.lazy(
   () => import("./components/pages/ContestStandingsPage")
 );
+const ContestMemberImportPage = React.lazy(() => import("./components/pages/ContestMemberImportPage"));
+const ContestMembersPage = React.lazy(() => import("./components/pages/ContestMembersPage"));
 const ContestEditPage = React.lazy(
   () => import("./components/pages/ContestEditPage")
 );
@@ -151,7 +154,7 @@ function App() {
               element={<ProblemJudgeConfigPage />}
             />
           </Route>
-          <Route element={<ProtectedRoute allowRole="teacher" />}>
+          <Route element={<ProtectedRoute allowRole="student" />}>
             <Route
               path="/problemsLibrary/:id/statistics"
               element={<ProblemStatisticsPage />}
@@ -160,10 +163,11 @@ function App() {
           </Route>
           <Route element={<ProtectedRoute allowRole="student" />}>
             <Route path="/submission">
-              <Route index element={<SubmissionPage />} />
+              <Route index element={<Navigate to="/evaluation" replace />} />
               <Route path=":submissionNo" element={<SubmissionPage />} />
             </Route>
             <Route path="/personal" element={<PersonalPage />} />
+            <Route path="/personal/edit" element={<ProfileEditPage key="self" />} />
             <Route path="/problemsAgent/:id" element={<ProblemAgentPage />} />
           </Route>
           <Route
@@ -190,7 +194,9 @@ function App() {
             />
           </Route>
           <Route element={<ProtectedRoute allowRole="student" />}>
-            <Route path="/contest/create" element={<CreateContestPage />} />
+            <Route path="/contest/:id/members/import" element={<ContestMemberImportPage />} />
+            <Route path="/contest/:id/members" element={<ContestMembersPage />} />
+            <Route element={<ProtectedRoute capability="CONTEST_CREATE" />}><Route path="/contest/create" element={<CreateContestPage />} /></Route>
             <Route
               path="/contest/:id/edit"
               element={<ContestEditPage />}
@@ -220,8 +226,9 @@ function App() {
           <Route path="/learning-chain" element={<LearningChainPage />} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="/contributors" element={<ContributorsPage />} />
-          <Route element={<ProtectedRoute allowRole="admin" />}>
+          <Route element={<ProtectedRoute capability="USER_MANAGE" />}>
             <Route path="/admin/users" element={<AdminUserManagementPage />} />
+            <Route path="/user/:userId/edit" element={<ProfileEditPage key="admin" />} />
           </Route>
         </Route>
         <Route path="*" element={<NotFoundPage />}></Route>

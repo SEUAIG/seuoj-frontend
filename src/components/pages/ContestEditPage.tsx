@@ -178,7 +178,10 @@ export default function ContestEditPage() {
   return (
     <div className="container mx-auto py-10 max-w-3xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">编辑比赛信息</h1>
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-3xl font-bold">编辑比赛信息</h1>
+          <Button variant="outline" onClick={() => nav(`/contest/${contestId}/members`)}>成员与权限</Button>
+        </div>
         <p className="text-muted-foreground mt-2">
           更新比赛的基础配置信息，包括时间、规则和可见性设置。
         </p>
@@ -485,7 +488,7 @@ export default function ContestEditPage() {
                   <div className="space-y-1 leading-none">
                     <FormLabel>公开比赛</FormLabel>
                     <FormDescription>
-                      公开比赛对所有用户可见，否则仅通过链接或邀请可见。
+                      公开比赛对所有用户可见；私有比赛需在“成员与权限”中添加成员，或通过关联班级授权。
                     </FormDescription>
                   </div>
                 </FormItem>

@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { RootState } from "@/app/store";
+
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -57,9 +57,9 @@ import {
     resolveBatchImportPassword,
     type BatchImportPasswordSource,
 } from "@/lib/batchImportPassword";
-import { getAssignableRoles, canEditUserRole } from "@/lib/rolePermissions";
-import { updateUserRole } from "@/services/user/updateUserRole";
-import RoleSelect from "@/components/bussiness/RoleSelect";
+
+
+
 
 type FileType = "csv" | "xlsx" | null;
 type ImportStep = "config" | "mapping" | "preview" | "result";
@@ -78,7 +78,7 @@ function loadXLSX() {
 
 export default function AdminUserManagementPage() {
     const navigate = useNavigate();
-    const currentUser = useSelector((state: RootState) => state.auth.user);
+
 
     // User list state
     const [users, setUsers] = useState<UserPageRecord[]>([]);
@@ -90,7 +90,7 @@ export default function AdminUserManagementPage() {
     const [loading, setLoading] = useState(false);
 
     // Role editing state
-    const [editingUserId, setEditingUserId] = useState<number | null>(null);
+
 
     // Batch import state
     const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -498,13 +498,6 @@ export default function AdminUserManagementPage() {
                                     </TableRow>
                                 ) : (
                                     users.map((user) => {
-                                        const primaryRole = user.roles[0] ?? "STUDENT";
-                                        const editable = canEditUserRole(
-                                            currentUser?.role,
-                                            currentUser?.username ?? "",
-                                            user.username,
-                                            primaryRole
-                                        );
                                         return (
                                             <TableRow
                                                 key={user.user_id}
@@ -517,42 +510,10 @@ export default function AdminUserManagementPage() {
                                                 <TableCell className="text-muted-foreground">{user.nickname || "-"}</TableCell>
                                                 <TableCell>{user.email}</TableCell>
                                                 <TableCell onClick={(e) => e.stopPropagation()}>
-                                                    {editable ? (
-                                                        <RoleSelect
-                                                            currentRole={primaryRole}
-                                                            assignableRoles={getAssignableRoles(currentUser?.role)}
-                                                            loading={editingUserId === user.user_id}
-                                                            disabled={editingUserId !== null}
-                                                            onRoleChange={async (newRole) => {
-                                                                setEditingUserId(user.user_id);
-                                                                try {
-                                                                    const res = await updateUserRole(user.user_id, newRole);
-                                                                    if (res.code === 0) {
-                                                                        toast.success(`已将 ${user.username} 的角色更改为 ${newRole}`);
-                                                                        fetchUsers();
-                                                                    } else {
-                                                                        toast.error(res.message || "角色修改失败");
-                                                                    }
-                                                                } catch (err: unknown) {
-                                                                    toast.error("角色修改失败: " + (err instanceof Error ? err.message : String(err)));
-                                                                } finally {
-                                                                    setEditingUserId(null);
-                                                                }
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        <div className="flex gap-1 flex-wrap">
-                                                            {user.roles.map((role) => (
-                                                                <Badge
-                                                                    key={role}
-                                                                    variant="secondary"
-                                                                    className={roleColors[role] || ""}
-                                                                >
-                                                                    {role}
-                                                                </Badge>
-                                                            ))}
-                                                        </div>
-                                                    )}
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        {user.roles.map(role => <Badge key={role} variant="secondary" className={roleColors[role] || ""}>{role}</Badge>)}
+                                                        {user.canManageProfile ? <Button variant="link" size="sm" onClick={() => navigate(`/user/${user.user_id}/edit`)}>编辑资料</Button> : <span className="text-sm text-muted-foreground">无编辑权限</span>}
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
                                         );

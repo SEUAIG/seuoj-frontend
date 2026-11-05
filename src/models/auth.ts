@@ -1,3 +1,4 @@
+import type { Capability } from "@/lib/capabilities";
 import type { ApiResponse, ApiResponseBase } from "@/models/common";
 
 export interface LoginRequest {
@@ -6,6 +7,8 @@ export interface LoginRequest {
 }
 
 export interface LoginData {
+  id: number;
+  capabilities: Capability[];
   jwt: string;
   username: string;
   nickname?: string;

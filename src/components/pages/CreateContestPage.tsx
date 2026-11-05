@@ -46,8 +46,8 @@ const contestFormSchema = z
     title: z.string().min(1, "标题不能为空"),
     subtitle: z.string().optional(),
     description: z.string().optional(),
-    start_time: z.coerce.date(),
-    end_time: z.coerce.date(),
+    start_time: z.coerce.date({ message: "请选择有效的开始时间" }),
+    end_time: z.coerce.date({ message: "请选择有效的结束时间" }),
     rule_type: z.enum(["ACM", "NOI", "IOI", "CUSTOM"]),
     is_public: z.boolean().default(false),
     hide_statistics: z.boolean().default(false),
@@ -376,7 +376,7 @@ export default function CreateContestPage() {
                   <div className="space-y-1 leading-none">
                     <FormLabel>公开比赛</FormLabel>
                     <FormDescription>
-                      公开比赛对所有用户可见，否则仅通过链接或邀请可见。
+                      公开比赛对所有用户可见；私有比赛需在创建后添加成员，或通过关联班级授权。
                     </FormDescription>
                   </div>
                 </FormItem>

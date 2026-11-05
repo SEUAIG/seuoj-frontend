@@ -1,5 +1,7 @@
 import { resetAuth } from "@/features/auth/authSlice";
 
+import { loginPath } from "@/lib/loginRedirect";
+
 let store: any;
 let purge: (() => Promise<void>) | null = null;
 let handlingUnauthorized = false;
@@ -23,8 +25,7 @@ export const handleUnauthorized = () => {
     }
     if (typeof window !== "undefined" && window.location.pathname !== "/login") {
       const from = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-      const next = encodeURIComponent(from || "/");
-      window.location.replace(`/login?next=${next}`);
+      window.location.replace(loginPath(from));
     }
   } finally {
     setTimeout(() => {

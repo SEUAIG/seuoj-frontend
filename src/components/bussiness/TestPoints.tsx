@@ -13,9 +13,11 @@ import { Badge } from "@/components/ui/badge";
 export default function TestPoints({
   resultDetail,
   subtasks,
+  showData = true,
 }: {
-  resultDetail: ResultDetailItem[] | null;
+  resultDetail?: ResultDetailItem[] | null;
   subtasks?: SubtaskItem[];
+  showData?: boolean;
 }) {
   const [selected, setSelected] = useState<string | undefined>(undefined);
 
@@ -23,7 +25,15 @@ export default function TestPoints({
     return null;
   }
 
-  const renderTestPoints = (points: ResultDetailItem[], startIndex: number = 0) => (
+  const renderTestPoints = (points: ResultDetailItem[], startIndex: number = 0) => !showData ? (
+    <div className="space-y-2">
+      {points.map((item, index) => (
+        <div key={item.id ?? index} className="rounded-md border p-4">
+          <TestPointOverview active={false} item={item} index={startIndex + index} />
+        </div>
+      ))}
+    </div>
+  ) : (
     <Accordion
       type="single"
       collapsible
@@ -75,7 +85,7 @@ export default function TestPoints({
                   )}
                 </div>
                 <div className="font-mono font-bold">
-                  Score: <span className="text-primary">{subtask.score}</span>
+                  满分：<span className="text-primary">{subtask.score}</span>
                 </div>
               </div>
               <div className="p-2">

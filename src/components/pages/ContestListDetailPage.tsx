@@ -182,6 +182,9 @@ export default function ContestListDetailPage() {
               <Settings className="mr-2 h-4 w-4" />
               编辑比赛
             </Button>
+            <Button variant="outline" onClick={() => nav(`/contest/${contestId}/members`)}>
+              成员与权限
+            </Button>
             <Button
               variant="outline"
               className="text-red-500 hover:text-red-700 hover:bg-red-50"
@@ -199,10 +202,10 @@ export default function ContestListDetailPage() {
               variant="outline"
               className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
               onClick={handleUnregister}
-              disabled={isRegistering}
+              disabled={isRegistering || !data.can_unregister}
             >
               <UserMinus className="mr-2 h-4 w-4" />
-              取消报名
+              {data.can_unregister ? "取消报名" : "已报名"}
             </Button>
           ) : (
             <Button

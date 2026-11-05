@@ -1,3 +1,4 @@
+import { hasCapability } from "@/lib/capabilities";
 import React, { useEffect, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import { useDispatch, useSelector } from "react-redux";
@@ -26,8 +27,8 @@ import type {
 export default function CompetitionPage() {
   const dispatch = useDispatch();
   const nav = useNavigate();
-  const role = useSelector((state: RootState) => state.auth.user?.role ?? "guest");
-  const isTeacherOrAbove = role === "teacher" || role === "admin" || role === "superadmin";
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isTeacherOrAbove = hasCapability(user, "CONTEST_CREATE");
   const {
     current,
     size,

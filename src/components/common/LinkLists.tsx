@@ -1,3 +1,4 @@
+import { hasCapability } from "@/lib/capabilities";
 import {
   List,
   Trophy,
@@ -32,10 +33,8 @@ const PRACTICE_ROUTES = ["/problemsLibrary", "/evaluation", "/problemset"];
 
 
 export default function LinkLists() {
-  const role = useSelector(
-    (state: RootState) => state.auth.user?.role ?? "guest"
-  );
-  const isAdmin = role === "admin" || role === "superadmin";
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isAdmin = hasCapability(user, "USER_MANAGE");
   const location = useLocation();
   const navigate = useNavigate();
   const aiActive = AI_ROUTES.some((r) => location.pathname.startsWith(r));

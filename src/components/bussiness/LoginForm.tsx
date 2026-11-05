@@ -13,11 +13,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { User, Lock, Eye, EyeOff } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { login, setError } from "@/features/auth/authSlice";
 import { AppDispatch, RootState } from "@/app/store";
 import { toast } from "sonner";
+import { loginDestination } from "@/lib/loginRedirect";
+
 export default function LoginForm() {
   // 我们虽然使用ShadCn组件库 但form组件是基于react hook form的 这个还是很强大的 推荐你学习一下 用于处理表单提交
   const form = useForm<login_Values>({
@@ -32,6 +34,8 @@ export default function LoginForm() {
   // 避免直接操作dom 尽量使用提供的函数
   const dispatch = useDispatch<AppDispatch>();
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
+  const destination = loginDestination(searchParams.get("next"));
   const error = useSelector((state: RootState) => state.auth.error);
   useEffect(() => {
     if (error && error !== "") {
@@ -49,21 +53,13 @@ export default function LoginForm() {
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   useEffect(() => {
     if (isAuthenticated) {
-      nav("/home");
+      nav(destination, { replace: true });
     }
-  }, [isAuthenticated, nav]);
+  }, [isAuthenticated, nav, destination]);
   const [showPassword, setShowPassword] = useState(false);
   const { handleSubmit, register, control } = form;
   async function onSubmit(values: login_Values) {
-    try {
-      await dispatch(
-        login({
-          identifier: values.identifier,
-          password: values.password,
-        })
-      ).unwrap();
-      nav("/home");
-    } catch (error) {}
+    await dispatch(login({ identifier: values.identifier, password: values.password }));
   }
   return (
     <Form {...form}>
@@ -147,6 +143,7 @@ export default function LoginForm() {
         </div>
         <Button
           type="submit"
+          disabled={form.formState.isSubmitting}
           className="w-full h-12"
         >
           登录

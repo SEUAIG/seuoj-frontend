@@ -7,7 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import React from "react";
-import AnswerState from "../common/AnswerState";
+import AnswerState, { AnswerStateNew } from "../common/AnswerState";
 import ScoreBadge from "../common/ScoreBadage";
 import type { SubmissionData } from "@/models/submission";
 import { format } from "date-fns";
@@ -39,7 +39,9 @@ export default function ContestSubmissionRecord({
           <TableHead className="text-center">题号</TableHead>
           <TableHead className="text-center">用户名</TableHead>
           <TableHead className="text-center">状态</TableHead>
-          <TableHead className="text-center">分数</TableHead>
+          {score != null && <TableHead className="text-center">分数</TableHead>}
+          <TableHead className="text-center">最大单点耗时</TableHead>
+          <TableHead className="text-center">峰值内存</TableHead>
           <TableHead className="text-center">语言</TableHead>
           <TableHead className="text-center">提交时间</TableHead>
         </TableRow>
@@ -50,11 +52,13 @@ export default function ContestSubmissionRecord({
           <TableCell className="text-center">{pid}</TableCell>
           <TableCell className="text-center">{nickname || username}</TableCell>
           <TableCell className="text-center">
-            {verdict && <AnswerState state={verdict} />}
+            {verdict ? <AnswerState state={verdict} /> : <AnswerStateNew status={submission.status} />}
           </TableCell>
-          <TableCell className="text-center">
-             <ScoreBadge score={score ?? 0} />
-          </TableCell>
+          {score != null && <TableCell className="text-center">
+             <ScoreBadge score={score} />
+          </TableCell>}
+          <TableCell className="text-center">{submission.maxTime == null ? "—" : `${submission.maxTime}ms`}</TableCell>
+          <TableCell className="text-center">{submission.maxMemory == null ? "—" : `${(submission.maxMemory / 1024).toFixed(0)}KB`}</TableCell>
           <TableCell className="text-center">{language}</TableCell>
           <TableCell className="text-center">{formattedTime}</TableCell>
         </TableRow>

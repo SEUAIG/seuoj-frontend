@@ -1,18 +1,18 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import SubmissionRecord from "../bussiness/SubmissionRecord";
 import CodeShow from "../common/CodeShow";
 import TestPoints from "../bussiness/TestPoints";
-import { useParams, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import type { ResultDetailItem, SubmissionData, SubtaskItem } from "@/models/submission";
+import type { SubmissionData } from "@/models/submission";
 import { getSubmissionDetail } from "@/services/Submission/getSubmissionDetail";
 import { getProblemDetail } from "@/services/Problem/getProblemDetail";
 import { useQuery } from "@tanstack/react-query";
+
+import { problemContext, problemPath } from "@/lib/problemNavigation";
 
 const FOREGROUND_POLL_INTERVAL = 1000;
 const BACKGROUND_POLL_INTERVAL = 5000;
@@ -39,20 +39,28 @@ export enum SubmissionVerdict {
 // 参考http://eoj.seucpc.com/submission/63869
 export default function SubmissionPage() {
   const nav = useNavigate();
-  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
+  const from = `${window.location.pathname}${window.location.search}`;
+  const [searchParams] = useSearchParams();
   const { submissionNo } = useParams();
   const [submission, setSubmission] = useState<SubmissionData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const context = problemContext(searchParams);
+  if (submission?.contestId != null) context.contest_id = String(submission.contestId);
+  if (submission?.assignmentId != null) {
+    context.assignment_id = String(submission.assignmentId);
+  }
   const { data: problemData } = useQuery({
-    queryKey: ["problemTitle", submission?.pid],
-    queryFn: () => getProblemDetail(submission!.pid, {}),
+    queryKey: ["problemTitle", submission?.pid, context],
+    queryFn: () => getProblemDetail(submission!.pid, context),
     enabled: !!submission?.pid,
     staleTime: 5 * 60 * 1000,
   });
   const title = problemData?.data?.title ?? null;
 
   useEffect(() => {
+    setSubmission(null);
+    setLoading(true);
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
 
@@ -66,10 +74,10 @@ export default function SubmissionPage() {
       try {
         const result = await getSubmissionDetail(submissionNo);
         const { data } = result;
-        if (data) {
-          if (cancelled) return;
+        if (cancelled) return;
+        setLoading(false);
+        if (result.code === 0 && data) {
           setSubmission(data);
-          setLoading(false);
           const shouldContinuePolling = !(
             data.status === SubmissionStatus.Finished ||
             data.status === SubmissionStatus.Failed
@@ -115,69 +123,12 @@ export default function SubmissionPage() {
       </div>
     );
   }
-  if (submission.status === SubmissionStatus.Pending) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6 w-full max-w-4xl mx-auto p-8">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-full p-8 animate-pulse">
-          <Clock className="w-16 h-16 text-yellow-600" />
-        </div>
-        <h2 className="text-3xl font-bold text-yellow-700">排队中</h2>
-        <p className="text-gray-500 text-lg">您的提交正在等待评测...</p>
-        <div className="w-full max-w-md bg-yellow-100 h-2 rounded-full overflow-hidden">
-          <div className="bg-yellow-500 h-full w-1/2 animate-indeterminate-progress"></div>
-        </div>
-      </div>
-    );
-  }
-  if (submission.status === SubmissionStatus.Running) {
-    return (
-      <div className="flex flex-col pb-6 p-2 mx-auto w-4/5">
-        <div className="flex justify-end mb-4 space-x-4">
-          <Button
-            variant="outline"
-            onClick={() => nav(`/problemsLibrary/${submission.pid}?from=${from}`)}
-          >
-            返回题目
-          </Button>
-          <Button variant="default" onClick={() => nav(`/evaluation`)}>
-            返回评测
-          </Button>
-        </div>
-        <SubmissionRecord submission={submission} title={title} />
-        {submission.code && (
-          <CodeShow language={submission.language}>{submission.code}</CodeShow>
-        )}
-      </div>
-    );
-  }
-  if (
-    submission.status === SubmissionStatus.Failed &&
-    submission.verdict === SubmissionVerdict.SystemError
-  ) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6 w-full max-w-4xl mx-auto p-8">
-        <div className="bg-red-50 border border-red-200 rounded-full p-8">
-          <AlertCircle className="w-16 h-16 text-red-600" />
-        </div>
-        <h2 className="text-3xl font-bold text-red-700">系统错误</h2>
-        <p className="text-gray-500 text-lg">评测系统发生错误。</p>
-        <Alert variant="destructive" className="max-w-lg">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>错误详情</AlertTitle>
-          <AlertDescription>
-            {submission.message || "发生了未知错误。"}
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-  // Finished 状态
   return (
     <div className="flex flex-col pb-6 p-2 mx-auto w-4/5">
       <div className="flex justify-end mb-4 space-x-4">
         <Button
           variant="outline"
-          onClick={() => nav(`/problemsLibrary/${submission.pid}?from=${from}`)}
+          onClick={() => nav(problemPath(submission.pid, context, from))}
         >
           返回题目
         </Button>
@@ -185,12 +136,11 @@ export default function SubmissionPage() {
           返回评测
         </Button>
       </div>
-      <SubmissionRecord submission={submission} title={title} />
+      <SubmissionRecord submission={submission} title={title} problemUrl={problemPath(submission.pid, context, from)} />
       {submission.code && (
         <CodeShow language={submission.language}>{submission.code}</CodeShow>
       )}
-      {(submission.verdict === "CompileError" ||
-        submission.verdict === "JudgeError") && (
+      {submission.errorDetail && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
           <h3 className="text-lg font-bold text-red-700 mb-2">
             {submission.verdict === "CompileError"
@@ -205,6 +155,7 @@ export default function SubmissionPage() {
           <TestPoints
             resultDetail={submission.resultDetail}
             subtasks={submission.subtasks}
+            showData={submission.testDataVisible !== false}
           />
         )}
     </div>

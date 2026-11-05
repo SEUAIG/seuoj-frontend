@@ -15,6 +15,7 @@ import { getProblemDetail } from "@/services/Problem/getProblemDetail";
 import { submitSolution } from "@/services/Submission/submitSolution";
 import type { CreateSubmissionRequest } from "@/models/submission";
 import ProblemAccessState from "@/components/common/ProblemAccessState";
+import { isAxiosError } from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 export default function ProblemDetailPage() {
   const { isAuthenticated } = useSelector((store: RootState) => store.auth);
@@ -24,6 +25,7 @@ export default function ProblemDetailPage() {
   const [loadingProblem, setLoadingProblem] = useState(true);
   const [problemErrorCode, setProblemErrorCode] = useState<number | null>(null);
   const [hide, setHide] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const promptedNoTestcasePidRef = useRef<string | null>(null);
   const prevPid = problem?.prev_pid ?? null;
   const nextPid = problem?.next_pid ?? null;
@@ -58,6 +60,7 @@ export default function ProblemDetailPage() {
         }
         setProblemErrorCode(code);
       } catch (error) {
+        setProblemErrorCode(isAxiosError(error) ? error.response?.status ?? null : null);
       } finally {
         setLoadingProblem(false);
       }
@@ -75,13 +78,7 @@ export default function ProblemDetailPage() {
 
   const navigateToProblem = useCallback((targetPid: string | null) => {
     if (!targetPid) return;
-    const params = new URLSearchParams();
-    const contestId = searchParams.get("contest_id");
-    const problemSetId = searchParams.get("problem_set_id");
-    const assignmentId = searchParams.get("assignment_id");
-    if (contestId) params.set("contest_id", contestId);
-    if (problemSetId) params.set("problem_set_id", problemSetId);
-    if (assignmentId) params.set("assignment_id", assignmentId);
+    const params = new URLSearchParams(searchParams);
     const qs = params.toString();
     nav(`/problemsLibrary/${targetPid}${qs ? `?${qs}` : ""}`);
   }, [nav, searchParams]);
@@ -140,11 +137,12 @@ export default function ProblemDetailPage() {
       toast.error('当前题目没有测试点，请先在左侧点击"评测配置"完善测试数据');
       return;
     }
-    const index = codeFileObjectArray.findIndex(
-      (i: { pid: string }) => i.pid === pid
-    );
-    if (index === -1) return;
-    const code = codeFileObjectArray[index].codeFile;
+    const draft = codeFileObjectArray.find((item: { pid: string }) => item.pid === pid);
+    if (!draft || !draft.codeFile.trim()) {
+      toast.error("提交代码不能为空");
+      return;
+    }
+    const code = draft.codeFile;
     const data: CreateSubmissionRequest = { pid, language, code };
     if (assignmentId) {
       data.assignment_id = Number(assignmentId);
@@ -153,11 +151,17 @@ export default function ProblemDetailPage() {
     if (problemSetId) {
       data.problem_set_id = Number(problemSetId);
     }
-    const result = await submitSolution(data);
-    const submissionNo =
-      result.data?.submissionNo || result.data?.submission_no;
-    if (submissionNo) {
-      nav(`/submission/${submissionNo}`);
+    setSubmitting(true);
+    try {
+      const result = await submitSolution(data);
+      if (result.code !== 0) throw new Error(result.message);
+      const submissionNo = result.data.submissionNo || result.data.submission_no;
+      if (!submissionNo) throw new Error("提交响应缺少编号");
+      nav(`/submission/${submissionNo}?${searchParams}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "提交失败，请重试");
+    } finally {
+      setSubmitting(false);
     }
   };
   return (
@@ -220,7 +224,7 @@ export default function ProblemDetailPage() {
               <ProblemCoding
                 pid={pid}
                 handleCodeSubmit={handleCodeSubmit}
-                submitDisabled={!hasTestCases || isAssignmentClosed}
+                submitDisabled={submitting || !hasTestCases || isAssignmentClosed}
                 submitDisabledReason={
                   isAssignmentClosed ? "作业已关闭，仅供查看" : undefined
                 }
