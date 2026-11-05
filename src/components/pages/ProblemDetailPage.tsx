@@ -1,14 +1,13 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../app/store";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import ProblemDetailInfo from "@/components/bussiness/ProblemDetailInfo";
-import ProblemCoding from "@/components/bussiness/ProblemCoding";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import SubmitPanel from "@/components/bussiness/SubmitPanel";
+import { setCodeFile, setLanguage } from "@/features/Code/codeSlice";
 import { toast } from "sonner";
 import type { ProblemData } from "@/models/problem";
 import { getProblemDetail } from "@/services/Problem/getProblemDetail";
@@ -24,7 +23,6 @@ export default function ProblemDetailPage() {
   const [problem, setProblem] = useState<ProblemData | null>(null);
   const [loadingProblem, setLoadingProblem] = useState(true);
   const [problemErrorCode, setProblemErrorCode] = useState<number | null>(null);
-  const [hide, setHide] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const promptedNoTestcasePidRef = useRef<string | null>(null);
   const prevPid = problem?.prev_pid ?? null;
@@ -33,6 +31,8 @@ export default function ProblemDetailPage() {
     (store: RootState) => store.code
   );
   const nav = useNavigate();
+  const dispatch = useDispatch();
+  const changeLanguage = useCallback((value: string) => dispatch(setLanguage(value)), [dispatch]);
   const hasTestCases = useMemo(() => {
     if (!problem) return true;
     const n = Number(problem.content?.info?.test_case_number ?? 0);
@@ -164,98 +164,51 @@ export default function ProblemDetailPage() {
       setSubmitting(false);
     }
   };
+  const draftCode = codeFileObjectArray.find((item: { pid: string }) => item.pid === pid)?.codeFile ?? "";
   return (
     <>
       <Helmet>
         <title>{`#${id}. ${title} - SEUOJ`}</title>
       </Helmet>
-      <div className="h-[calc(100vh-5.5rem)] w-full max-w-full overflow-x-hidden overflow-y-hidden flex flex-col lg:flex-row bg-white border-t border-gray-200 relative">
-        {hide ? (
-          <div className="absolute right-4 top-3 z-20 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-2 py-1.5 rounded-md border border-gray-200 shadow-sm">
-            <Switch
-              id="sethide-practice"
-              checked={hide}
-              onCheckedChange={setHide}
-            />
-            <Label
-              htmlFor="sethide-practice"
-              className="cursor-pointer text-sm"
-            >
-              隐藏编辑器
-            </Label>
-          </div>
-        ) : null}
-        <div
-          className={`${
-            hide ? "w-full" : "w-full lg:w-1/2"
-          } h-full w-full max-w-full min-w-0 flex-shrink overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent border-r border-gray-200`}
-        >
-          <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-white/95 backdrop-blur-sm border-b border-gray-200">
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={!prevPid}
-              onClick={() => navigateToProblem(prevPid)}
-              className="text-gray-600 hover:text-gray-900 disabled:opacity-30"
-            >
-              <ChevronLeft className="mr-1 h-4 w-4" />
-              上一题
-            </Button>
-            <span className="text-xs text-muted-foreground">{pid}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={!nextPid}
-              onClick={() => navigateToProblem(nextPid)}
-              className="text-gray-600 hover:text-gray-900 disabled:opacity-30"
-            >
-              下一题
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
-          <ProblemDetailInfo
-            problem={problem}
+      <div className="w-full border-t border-gray-200 bg-white">
+        <div className="sticky top-14 z-10 flex items-center justify-between border-b border-gray-200 bg-white/95 px-4 py-2 backdrop-blur-sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!prevPid}
+            onClick={() => navigateToProblem(prevPid)}
+            className="text-gray-600 hover:text-gray-900 disabled:opacity-30"
+          >
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            上一题
+          </Button>
+          <span className="text-xs text-muted-foreground">{pid}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!nextPid}
+            onClick={() => navigateToProblem(nextPid)}
+            className="text-gray-600 hover:text-gray-900 disabled:opacity-30"
+          >
+            下一题
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
+        <ProblemDetailInfo problem={problem} isAuthenticated={isAuthenticated} />
+        <div className="mx-auto max-w-[58rem] px-5 pb-16 md:px-8">
+          <SubmitPanel
+            code={draftCode}
+            onCodeChange={(codeFile) => dispatch(setCodeFile({ pid, codeFile }))}
+            language={language}
+            onLanguageChange={changeLanguage}
+            onSubmit={handleCodeSubmit}
             isAuthenticated={isAuthenticated}
+            submitting={submitting}
+            disabledReason={
+              isAssignmentClosed ? "作业已关闭，仅供查看" : !hasTestCases ? "这道题还没有测试数据" : undefined
+            }
           />
         </div>
-        {hide ? null : (
-          <div className="w-full lg:w-1/2 h-full max-w-full min-w-0 flex-shrink overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent bg-gray-50 relative">
-            {isAuthenticated ? (
-              <ProblemCoding
-                pid={pid}
-                handleCodeSubmit={handleCodeSubmit}
-                submitDisabled={submitting || !hasTestCases || isAssignmentClosed}
-                submitDisabledReason={
-                  isAssignmentClosed ? "作业已关闭，仅供查看" : undefined
-                }
-                headerExtra={
-                  <div className="flex items-center gap-2 rounded-md border border-gray-200 px-2 py-1 bg-white">
-                    <Switch
-                      id="sethide-practice"
-                      checked={hide}
-                      onCheckedChange={setHide}
-                    />
-                    <Label
-                      htmlFor="sethide-practice"
-                      className="cursor-pointer text-sm whitespace-nowrap"
-                    >
-                      隐藏编辑器
-                    </Label>
-                  </div>
-                }
-              />
-            ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-gray-50">
-                <div className="p-8 text-center space-y-4">
-                  <h3 className="text-xl font-semibold text-gray-700">
-                    需要登录
-                  </h3>
-                  <p>请登录后查看代码编辑器并提交代码。</p>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </>
   );

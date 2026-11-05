@@ -1,13 +1,12 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../app/store";
 import { useNavigate, useParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import ContestProblemCoding from "@/components/bussiness/ContestProblemCoding";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import SubmitPanel from "@/components/bussiness/SubmitPanel";
+import { setContestCodeFile, setContestLanguage } from "@/features/Code/contestCodeSlice";
 import useQueryToGetContestProblemDetail from "@/hooks/useQueryToGetContestProblemDetail";
 import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
 import type { ProblemData } from "@/models/problem";
@@ -20,12 +19,14 @@ export default function ContestProblemDetailPage() {
   const { isAuthenticated } = useSelector((store: RootState) => store.auth);
   const { id, pid: pidParam } = useParams();
   const contestId = Number(id);
-  const [hide, setHide] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [problemErrorCode, setProblemErrorCode] = useState<number | null>(null);
   const { language, codeFileObjectArray } = useSelector(
     (store: RootState) => store.contestCode
   );
   const nav = useNavigate();
+  const dispatch = useDispatch();
+  const changeLanguage = useCallback((value: string) => dispatch(setContestLanguage(value)), [dispatch]);
   const { data, isLoading, isError, error } = useQueryToGetContestProblemDetail(
     contestId || 0,
     pidParam || ""
@@ -131,6 +132,7 @@ export default function ContestProblemDetailPage() {
       return;
     }
     const data = { pid, language, code };
+    setSubmitting(true);
     try {
       const result = await submitContestSolution(contestId, data);
       if (result.code === 0 || result.code === "0") {
@@ -148,94 +150,55 @@ export default function ContestProblemDetailPage() {
       toast.error(
         error instanceof Error ? error.message : "提交失败，请稍后重试"
       );
+    } finally {
+      setSubmitting(false);
     }
   };
+  const draftCode =
+    codeFileObjectArray.find(
+      (item: { contest_id: number; pid: string }) => item.contest_id === contestId && item.pid === pid
+    )?.codeFile ?? "";
   return (
     <>
       <Helmet>
         <title>{`${pid}. ${title} - SEUOJ`}</title>
       </Helmet>
-      <div className="h-[calc(100vh-5.5rem)] w-full max-w-full overflow-x-hidden overflow-y-hidden flex flex-col lg:flex-row bg-white border-t border-gray-200 relative">
-        {hide ? (
-          <div className="absolute right-4 top-3 z-20 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-2 py-1.5 rounded-md border border-gray-200 shadow-sm">
-            <Switch
-              id="sethide-contest"
-              checked={hide}
-              onCheckedChange={setHide}
-            />
-            <Label htmlFor="sethide-contest" className="cursor-pointer text-sm">
-              隐藏编辑器
-            </Label>
-          </div>
-        ) : null}
-        <div
-          className={`${
-            hide ? "w-full" : "w-full lg:w-1/2"
-          } h-full w-full max-w-full min-w-0 flex-shrink overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent border-r border-gray-200`}
-        >
-          <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-white/95 backdrop-blur-sm border-b border-gray-200">
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={!prevPid}
-              onClick={() => prevPid && nav(`/contest/${contestId}/${prevPid}`)}
-              className="text-gray-600 hover:text-gray-900 disabled:opacity-30"
-            >
-              <ChevronLeft className="mr-1 h-4 w-4" />
-              上一题
-            </Button>
-            <span className="text-xs text-muted-foreground">{pid}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={!nextPid}
-              onClick={() => nextPid && nav(`/contest/${contestId}/${nextPid}`)}
-              className="text-gray-600 hover:text-gray-900 disabled:opacity-30"
-            >
-              下一题
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
-          <ContestProblemDetailInfo
-            problem={problemData}
+      <div className="w-full border-t border-gray-200 bg-white">
+        <div className="sticky top-14 z-10 flex items-center justify-between border-b border-gray-200 bg-white/95 px-4 py-2 backdrop-blur-sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!prevPid}
+            onClick={() => prevPid && nav(`/contest/${contestId}/${prevPid}`)}
+            className="text-gray-600 hover:text-gray-900 disabled:opacity-30"
+          >
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            上一题
+          </Button>
+          <span className="text-xs text-muted-foreground">{pid}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!nextPid}
+            onClick={() => nextPid && nav(`/contest/${contestId}/${nextPid}`)}
+            className="text-gray-600 hover:text-gray-900 disabled:opacity-30"
+          >
+            下一题
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
+        <ContestProblemDetailInfo problem={problemData} isAuthenticated={isAuthenticated} />
+        <div className="mx-auto max-w-[58rem] px-5 pb-16 md:px-8">
+          <SubmitPanel
+            code={draftCode}
+            onCodeChange={(codeFile) => dispatch(setContestCodeFile({ contest_id: contestId, pid, codeFile }))}
+            language={language}
+            onLanguageChange={changeLanguage}
+            onSubmit={handleContestCodeSubmit}
             isAuthenticated={isAuthenticated}
+            submitting={submitting}
           />
         </div>
-        {hide ? null : (
-          <div className="w-full lg:w-1/2 h-full max-w-full min-w-0 flex-shrink overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent bg-gray-50 relative">
-            {isAuthenticated ? (
-              <ContestProblemCoding
-                pid={pid}
-                contest_id={contestId || 0}
-                handleCodeSubmit={handleContestCodeSubmit}
-                headerExtra={
-                  <div className="flex items-center gap-2 rounded-md border border-gray-200 px-2 py-1 bg-white">
-                    <Switch
-                      id="sethide-contest"
-                      checked={hide}
-                      onCheckedChange={setHide}
-                    />
-                    <Label
-                      htmlFor="sethide-contest"
-                      className="cursor-pointer text-sm whitespace-nowrap"
-                    >
-                      隐藏编辑器
-                    </Label>
-                  </div>
-                }
-              />
-            ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-gray-50">
-                <div className="p-8 text-center space-y-4">
-                  <h3 className="text-xl font-semibold text-gray-700">
-                    需要登录
-                  </h3>
-                  <p>请登录后查看代码编辑器并提交代码。</p>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </>
   );
