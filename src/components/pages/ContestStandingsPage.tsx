@@ -114,6 +114,7 @@ export default function ContestStandingsPage() {
     queryKey: ["contestStandings", contestId],
     queryFn: () => getContestStandings(contestId!, {}),
     enabled: !!contestId,
+    retry: false,
   });
 
   const loading = isLoading || isFetching;
@@ -194,7 +195,7 @@ export default function ContestStandingsPage() {
                       colSpan={3 + problems.length + (ruleType === "ACM" ? 2 : 1)}
                       className="h-32 text-center text-muted-foreground"
                     >
-                      暂无排名数据
+                      {isError ? (error instanceof Error ? error.message : "排名暂不可见") : "暂无排名数据"}
                     </TableCell>
                   </TableRow>
                 ) : (
