@@ -1,20 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { useParams, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { format, isSameDay } from "date-fns";
+import { Check, Loader2, X } from "lucide-react";
+import { toast } from "sonner";
 import type { RootState } from "@/app/store";
-import { format, isValid, parseISO } from "date-fns";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,394 +15,359 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  ArrowLeft,
-  ExternalLink,
-  Settings,
-  UserPlus,
-  UserMinus,
-  Trash2,
-  Loader2,
-} from "lucide-react";
-import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
-import { ContestStatus } from "@/services/Contest/getContestDetail";
+import ContestShell from "@/components/contest/ContestShell";
 import {
-  registerContest,
-  unregisterContest,
-} from "@/services/Contest/registerContest";
+  STATE_TEXT,
+  STATUS_LABEL,
+  cellStateOf,
+  contestStatusOf,
+  hm,
+  isAcm,
+  isMine,
+  letterOf,
+  parseTime,
+  problemStats,
+  scoreColor,
+  sortProblems,
+  useContestStandings,
+  useCurrentUser,
+} from "@/components/contest/contestKit";
+import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
+import { registerContest, unregisterContest } from "@/services/Contest/registerContest";
 import { deleteContest } from "@/services/Contest/deleteContest";
-import { toast } from "sonner";
-import { useState } from "react";
+import type { ContestRuleType, ContestStandingsScoreDetail, ContestStatus } from "@/models/contest";
+import { cn } from "@/lib/utils";
+
+const DOT: Record<ContestStatus, string> = {
+  NOT_STARTED: "bg-blue-600",
+  IN_PROGRESS: "bg-green-700",
+  FINISHED: "bg-slate-300",
+};
+
+function SecHead({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between border-b border-slate-900 pb-2.5 text-[13px] font-bold tracking-wide">
+      {children}
+    </div>
+  );
+}
+
+function Stat({ value, sub, label }: { value: React.ReactNode; sub?: React.ReactNode; label: string }) {
+  return (
+    <div>
+      <b className="block font-display text-[34px] font-medium leading-none">
+        {value}
+        {sub != null && <small className="text-xl font-normal text-slate-400"> / {sub}</small>}
+      </b>
+      <span className="text-xs text-slate-500">{label}</span>
+    </div>
+  );
+}
+
+/** 概览题目行里「我」这一格 */
+function MyCell({ d, rule }: { d?: ContestStandingsScoreDetail; rule?: ContestRuleType }) {
+  const state = cellStateOf(d, rule);
+  if (!d || !state) return null;
+  if (!isAcm(rule)) {
+    return (
+      <span className="font-mono text-[13px] font-semibold" style={{ color: scoreColor(d.score ?? 0) }}>
+        {d.score}
+      </span>
+    );
+  }
+  if (state === "ok") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-green-700" title={`${hm(d.acceptedTime ?? 0)} 通过`}>
+        <Check className="h-3.5 w-3.5" strokeWidth={3} />
+        <span className="font-mono text-[13px] text-slate-500">{hm(d.acceptedTime ?? 0)}</span>
+      </span>
+    );
+  }
+  return (
+    <span
+      className={cn("inline-flex items-center gap-1 font-mono text-[13px] font-semibold", STATE_TEXT[state])}
+      title={d.unacceptedCount ? `${d.unacceptedCount} 次未通过` : "未通过"}
+    >
+      <X className="h-3.5 w-3.5" strokeWidth={3} />
+      {d.unacceptedCount || ""}
+    </span>
+  );
+}
+
+function timeRange(start: Date | null, end: Date | null) {
+  if (!start || !end) return "";
+  const day = format(start, "yyyy 年 M 月 d 日");
+  return isSameDay(start, end)
+    ? `${day}\u3000${format(start, "HH:mm")} — ${format(end, "HH:mm")}`
+    : `${day} ${format(start, "HH:mm")} — ${format(end, "yyyy 年 M 月 d 日 HH:mm")}`;
+}
 
 export default function ContestListDetailPage() {
   const { id } = useParams();
   const contestId = Number(id);
   const nav = useNavigate();
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
-  const [isRegistering, setIsRegistering] = useState(false);
+  const user = useCurrentUser();
+  const [busy, setBusy] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
-  const { data, isLoading, isError, error, refetch } =
-    useQueryToGetContestDetail(contestId || 0);
-  const canEdit = data?.can_write ?? false;
+  const { data, isLoading, isError, error, refetch } = useQueryToGetContestDetail(contestId || 0);
+  const status = contestStatusOf(data);
+  const { data: standings } = useContestStandings(contestId, status === "IN_PROGRESS");
 
-  const handleRegister = async () => {
+  const toggleRegister = async (register: boolean) => {
     if (!contestId) return;
-    setIsRegistering(true);
+    setBusy(true);
     try {
-      const res = await registerContest(contestId);
+      const res = register ? await registerContest(contestId) : await unregisterContest(contestId);
       if (res.code === 0) {
-        toast.success("报名成功");
+        toast.success(register ? "报名成功" : "已取消报名");
         refetch();
       } else {
-        toast.error(res.message || "报名失败");
+        toast.error(res.message || (register ? "报名失败" : "取消报名失败"));
       }
     } catch {
-      toast.error("报名请求出错");
+      toast.error("请求出错");
     } finally {
-      setIsRegistering(false);
+      setBusy(false);
     }
   };
-  const handleUnregister = async () => {
-    if (!contestId) return;
-    setIsRegistering(true);
-    try {
-      const res = await unregisterContest(contestId);
-      if (res.code === 0) {
-        toast.success("取消报名成功");
-        refetch();
-      } else {
-        toast.error(res.message || "取消报名失败");
-      }
-    } catch {
-      toast.error("取消报名请求出错");
-    } finally {
-      setIsRegistering(false);
+
+  const body = () => {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center py-24">
+          <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        </div>
+      );
     }
-  };
-  const formatContestTime = (start?: string, end?: string) => {
-    const formatOne = (value?: string) => {
-      if (!value) return "";
-      const parsed = parseISO(value);
-      if (!isValid(parsed)) return value;
-      return format(parsed, "yyyy年MM月dd日 HH:mm");
-    };
-    const startText = formatOne(start);
-    const endText = formatOne(end);
-    if (startText && endText) {
-      return `${startText} ~ ${endText}`;
+    if (isError || !data) {
+      return (
+        <div className="py-24 text-center text-slate-500">
+          <p className="mb-2 text-lg font-semibold text-slate-700">加载比赛信息失败</p>
+          <p>{error instanceof Error ? error.message : "未知错误"}</p>
+        </div>
+      );
     }
-    return startText || endText || "-";
-  };
-  const getStatus = (start?: string, end?: string): ContestStatus => {
-    if (!start || !end) return "NOT_STARTED";
-    const now = new Date();
-    const startDate = parseISO(start);
-    const endDate = parseISO(end);
-    if (!isValid(startDate) || !isValid(endDate)) return "NOT_STARTED";
-    if (now < startDate) return "NOT_STARTED";
-    if (now > endDate) return "FINISHED";
-    return "IN_PROGRESS";
-  };
-  const statusLabelMap: Record<ContestStatus, string> = {
-    NOT_STARTED: "未开始",
-    IN_PROGRESS: "进行中",
-    FINISHED: "已结束",
-  };
-  const statusColorMap: Record<ContestStatus, string> = {
-    NOT_STARTED: "bg-blue-50 text-blue-700 border-blue-200",
-    IN_PROGRESS: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    FINISHED: "bg-slate-50 text-slate-700 border-slate-200",
-  };
-  const ruleTypeClassMap: Record<string, string> = {
-    NOI: "bg-blue-500 hover:bg-blue-600 text-white border-transparent shadow-sm",
-    IOI: "bg-amber-500 hover:bg-amber-600 text-white border-transparent shadow-sm",
-    ACM: "bg-emerald-500 hover:bg-emerald-600 text-white border-transparent shadow-sm",
-  };
-  if (isLoading) {
+
+    const rule = data.rule_type;
+    const problems = sortProblems(data.problem_list);
+    const stats = problemStats(standings);
+    const participants = standings?.records.length ?? 0;
+    const me = standings?.records.find((r) => isMine(r, user));
+    const start = parseTime(data.start_time);
+    const end = parseTime(data.end_time);
+    const isRegistered = data.is_registered ?? false;
+    const fullScore = problems.length * 100;
+    const hasAside = !!data.description || !!data.can_write;
+
     return (
-      <div className="w-4/5 mx-auto py-6 space-y-6">
-        <Skeleton className="h-12 w-1/3" />
-        <Skeleton className="h-4 w-1/4" />
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-2/3" />
-        </div>
-      </div>
-    );
-  }
-  if (isError || !data) {
-    return (
-      <div className="w-4/5 mx-auto py-6 text-center text-muted-foreground">
-        <div className="text-xl font-semibold mb-2">加载比赛信息失败</div>
-        <p>{error instanceof Error ? error.message : "未知错误"}</p>
-        <Button variant="outline" className="mt-4" onClick={() => nav(-1)}>
-          返回上一页
-        </Button>
-      </div>
-    );
-  }
-  const status = data.status ?? getStatus(data.start_time, data.end_time);
-  const isRegistered = data.is_registered ?? false;
-  return (
-    <div className="w-4/5 mx-auto py-6 space-y-6 min-h-screen">
-      <Helmet>
-        <title>
-          {data.title ? `${data.title} - 比赛详情` : "比赛详情"} - SEUOJ
-        </title>
-      </Helmet>
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => nav(-1)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">{data.title}</h1>
-          {data.subtitle && (
-            <p className="text-muted-foreground mt-1">{data.subtitle}</p>
-          )}
-        </div>
-        {canEdit && (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => nav(`/contest/${contestId}/edit`)}
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              编辑比赛
-            </Button>
-            <Button variant="outline" onClick={() => nav(`/contest/${contestId}/members`)}>
-              成员与权限
-            </Button>
-            <Button
-              variant="outline"
-              className="text-red-500 hover:text-red-700 hover:bg-red-50"
-              onClick={() => setIsDeleteDialogOpen(true)}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              删除比赛
-            </Button>
+      <>
+        <div className="flex flex-col gap-6 border-b pb-9 md:flex-row md:items-end md:gap-10">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[13px] text-slate-500">
+              <span className={cn("inline-block h-[7px] w-[7px] rounded-full", DOT[status])} />
+              {STATUS_LABEL[status]} · {rule}
+              {data.is_public === false && " · 私有"}
+              {isRegistered && data.can_unregister && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => toggleRegister(false)}
+                  className="ml-3 text-slate-400 underline-offset-2 hover:text-slate-900 hover:underline"
+                >
+                  取消报名
+                </button>
+              )}
+            </div>
+            <h1 className="mb-2 mt-2.5 font-display text-[28px] font-semibold leading-tight tracking-wide md:text-4xl">
+              {data.title}
+            </h1>
+            {data.subtitle && <p className="mb-1 text-slate-600">{data.subtitle}</p>}
+            <div className="text-[13px] text-slate-500">{timeRange(start, end)}</div>
           </div>
-        )}
-        {isAuthenticated && (
-        <div className="flex gap-2">
-          {isRegistered ? (
-            <Button
-              variant="outline"
-              className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
-              onClick={handleUnregister}
-              disabled={isRegistering || !data.can_unregister}
-            >
-              <UserMinus className="mr-2 h-4 w-4" />
-              {data.can_unregister ? "取消报名" : "已报名"}
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              className="bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100"
-              onClick={handleRegister}
-              disabled={isRegistering}
-            >
-              <UserPlus className="mr-2 h-4 w-4" />
-              报名比赛
-            </Button>
-          )}
-        </div>
-        )}
-        <Button
-          variant="outline"
-          onClick={() => nav(`/contest/${contestId}/submissions`)}
-        >
-          提交记录
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => nav(`/contest/${contestId}/standings`)}
-        >
-          排名
-        </Button>
-      </div>
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-wrap gap-4 items-center justify-between mb-6 border-b pb-4">
-            <div className="space-y-1">
-              <div className="text-sm text-muted-foreground">比赛时间</div>
-              <div className="font-medium flex items-center gap-2">
-                {formatContestTime(data.start_time, data.end_time)}
-                <Badge
-                  variant="outline"
-                  className={`${statusColorMap[status]} text-base px-3 py-1`}
-                >
-                  {statusLabelMap[status]}
-                </Badge>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-sm text-muted-foreground">赛制</div>
-              <div className="font-medium">
-                <Badge
-                  className={`text-base px-3 py-1 ${
-                    data.rule_type ? ruleTypeClassMap[data.rule_type] : ""
-                  }`}
-                >
-                  {data.rule_type}
-                </Badge>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-sm text-muted-foreground">公开性</div>
-              <div className="font-medium">
-                <Badge
-                  variant={data.is_public ? "outline" : "secondary"}
-                  className="text-base px-3 py-1"
-                >
-                  {data.is_public ? "公开赛" : "私有赛"}
-                </Badge>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-sm text-muted-foreground">统计</div>
-              <div className="font-medium">
-                <Badge
-                  variant={data.hide_statistics ? "destructive" : "outline"}
-                  className="text-base px-3 py-1"
-                >
-                  {data.hide_statistics ? "隐藏统计" : "公开统计"}
-                </Badge>
-              </div>
-            </div>
+          <div className="flex shrink-0 items-end gap-9 md:ml-auto">
+            {me ? (
+              isAcm(rule) ? (
+                <>
+                  <Stat value={me.rank ?? "*"} label="名" />
+                  <Stat value={me.score} sub={problems.length} label="通过" />
+                  <Stat value={me.penalty ?? 0} label="罚时" />
+                </>
+              ) : (
+                <>
+                  <Stat value={me.rank ?? "*"} label="名" />
+                  <Stat value={me.score} sub={fullScore} label="总分" />
+                </>
+              )
+            ) : isAuthenticated && !isRegistered && status !== "FINISHED" ? (
+              <Button onClick={() => toggleRegister(true)} disabled={busy}>
+                {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                报名
+              </Button>
+            ) : null}
           </div>
-          {data.description && (
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold mb-3">比赛说明</h3>
-              <div className="prose prose-sm dark:prose-invert max-w-none bg-muted/30 p-4 rounded-lg">
-                <MarkdownRenderer>{data.description}</MarkdownRenderer>
-              </div>
-            </div>
-          )}
-          {data.rule_type === "ACM" && data.scoring_config && (
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold mb-3">评分配置</h3>
-              <pre className="text-sm bg-muted/30 p-4 rounded-lg overflow-x-auto font-mono">
-                {data.scoring_config}
-              </pre>
-            </div>
-          )}
-          {data.rule_type === "CUSTOM" && data.scoring_script && (
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold mb-3">自定义评分脚本</h3>
-              <pre className="text-sm bg-muted/30 p-4 rounded-lg overflow-x-auto font-mono">
-                {data.scoring_script}
-              </pre>
-            </div>
-          )}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">题目列表</h3>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px]">序号</TableHead>
-                    <TableHead className="w-[120px]">题号</TableHead>
-                    <TableHead>标题</TableHead>
-                    <TableHead className="w-[100px] text-right">操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.problem_list && data.problem_list.length > 0 ? (
-                    data.problem_list.map((problem) => (
-                      <TableRow key={problem.pid}>
-                        <TableCell className="font-medium">
-                          {String.fromCharCode(64 + (problem.sort_order ?? 1))}
-                        </TableCell>
-                        <TableCell>{problem.pid}</TableCell>
-                        <TableCell>
+        </div>
+
+        <div className={cn("mt-10 grid gap-9 lg:gap-14", hasAside && "lg:grid-cols-[minmax(0,1fr)_300px]")}>
+          <section>
+            <SecHead>题目</SecHead>
+            <table className="w-full border-collapse text-sm">
+              <tbody>
+                {problems.map((p) => {
+                  const d = me?.score_details?.[p.pid];
+                  const state = cellStateOf(d, rule);
+                  const st = stats[p.pid];
+                  return (
+                    <tr
+                      key={p.pid}
+                      className="cursor-pointer hover:bg-white"
+                      onClick={() => nav(`/contest/${contestId}/${p.pid}`)}
+                    >
+                      <td
+                        className={cn(
+                          "w-7 border-t border-slate-100 px-2.5 py-3 font-display text-[17px] font-semibold",
+                          state && STATE_TEXT[state]
+                        )}
+                      >
+                        {letterOf(p.sort_order)}
+                      </td>
+                      <td className="w-full border-t border-slate-100 px-2.5 py-3">
+                        <Link
+                          to={`/contest/${contestId}/${p.pid}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="hover:text-primary"
+                        >
+                          {p.title}
+                        </Link>
+                      </td>
+                      <td className="whitespace-nowrap border-t border-slate-100 px-2.5 py-3">
+                        <MyCell d={d} rule={rule} />
+                      </td>
+                      <td className="whitespace-nowrap border-t border-slate-100 px-2.5 py-3 text-right">
+                        {st && participants > 0 && (
                           <span
-                            className="font-medium cursor-pointer hover:text-blue-600 hover:underline transition-colors"
-                            onClick={() =>
-                              nav(
-                                `/contest/${contestId}/${problem.pid}?from=${from}`
-                              )
-                            }
+                            className="inline-flex items-center gap-2.5"
+                            title={`${st.solvers} 人通过 · ${st.tried} 人尝试 · 共 ${participants} 人`}
                           >
-                            {problem.title}
+                            <span className="relative h-[3px] w-[72px] bg-slate-200">
+                              <i
+                                className="absolute inset-y-0 left-0 bg-green-700"
+                                style={{ width: `${(100 * st.solvers) / participants}%` }}
+                              />
+                            </span>
+                            <span className="min-w-[2.5rem] text-right font-mono text-[13px] text-slate-700">
+                              {st.solvers}
+                            </span>
                           </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              nav(
-                                `/contest/${contestId}/${problem.pid}?from=${from}`
-                              )
-                            }
-                          >
-                            <ExternalLink className="h-4 w-4 mr-1" />
-                            查看
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center">
-                        暂无题目
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {problems.length === 0 && (
+                  <tr>
+                    <td className="border-t border-slate-100 py-10 text-center text-slate-400">—</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </section>
 
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>确认删除比赛？</DialogTitle>
-            <DialogDescription>
-              此操作将删除比赛 "{data.title}"，包括其所有关联的题目数据。此操作不可撤销。
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-              disabled={isDeleting}
-            >
-              取消
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={isDeleting}
-              onClick={async () => {
-                setIsDeleting(true);
-                try {
-                  const res = await deleteContest(contestId);
-                  if (res.code === 0) {
-                    toast.success("比赛已删除");
-                    nav("/competition");
-                  } else {
-                    toast.error(res.message || "删除失败");
+          {hasAside && (
+            <aside className="space-y-11 lg:border-l lg:pl-10">
+              {data.description && (
+                <section>
+                  <SecHead>说明</SecHead>
+                  <div className="prose prose-sm prose-slate mt-4 max-w-none">
+                    <MarkdownRenderer>{data.description}</MarkdownRenderer>
+                  </div>
+                </section>
+              )}
+              {data.can_write && (
+                <section>
+                  <SecHead>管理</SecHead>
+                  <div className="mt-2 flex flex-col text-sm">
+                    <Link to={`/contest/${contestId}/edit`} className="border-b border-slate-100 py-2.5 hover:text-primary">
+                      编辑比赛
+                    </Link>
+                    <Link to={`/contest/${contestId}/members`} className="border-b border-slate-100 py-2.5 hover:text-primary">
+                      成员与权限
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                      className="border-b border-slate-100 py-2.5 text-left text-red-600 hover:text-red-700"
+                    >
+                      删除比赛
+                    </button>
+                  </div>
+                  {rule === "ACM" && data.scoring_config && (
+                    <pre className="mt-4 overflow-x-auto font-mono text-xs text-slate-500" title="计分配置">
+                      {data.scoring_config}
+                    </pre>
+                  )}
+                  {rule === "CUSTOM" && data.scoring_script && (
+                    <pre className="mt-4 max-h-60 overflow-auto font-mono text-xs text-slate-500" title="自定义评分脚本">
+                      {data.scoring_script}
+                    </pre>
+                  )}
+                </section>
+              )}
+            </aside>
+          )}
+        </div>
+
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>确认删除比赛？</DialogTitle>
+              <DialogDescription>
+                此操作将删除比赛 "{data.title}"，包括其所有关联的题目数据。此操作不可撤销。
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={isDeleting}>
+                取消
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={isDeleting}
+                onClick={async () => {
+                  setIsDeleting(true);
+                  try {
+                    const res = await deleteContest(contestId);
+                    if (res.code === 0) {
+                      toast.success("比赛已删除");
+                      nav("/contest");
+                    } else {
+                      toast.error(res.message || "删除失败");
+                    }
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : "删除请求发生错误");
+                  } finally {
+                    setIsDeleting(false);
+                    setIsDeleteDialogOpen(false);
                   }
-                } catch (error: any) {
-                  toast.error(error.message || "删除请求发生错误");
-                } finally {
-                  setIsDeleting(false);
-                  setIsDeleteDialogOpen(false);
-                }
-              }}
-            >
-              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              确认删除
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+                }}
+              >
+                {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                确认删除
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  };
+
+  return (
+    <ContestShell contestId={contestId} tab="overview">
+      <Helmet>
+        <title>{data?.title ? `${data.title} - SEUOJ` : "比赛 - SEUOJ"}</title>
+      </Helmet>
+      {body()}
+    </ContestShell>
   );
 }

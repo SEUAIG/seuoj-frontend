@@ -1,23 +1,35 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { RootState } from "../../app/store";
-import { useNavigate, useParams } from "react-router-dom";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import ContestProblemCoding from "@/components/bussiness/ContestProblemCoding";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import useQueryToGetContestProblemDetail from "@/hooks/useQueryToGetContestProblemDetail";
 import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
 import type { ProblemData } from "@/models/problem";
-import { toast } from "sonner";
 import ContestProblemDetailInfo from "@/components/bussiness/ContestProblemDetailInfo";
 import { submitContestSolution } from "@/services/Contest/submitContestSolution";
 import ProblemAccessState from "@/components/common/ProblemAccessState";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import ContestShell, { rememberProblem } from "@/components/contest/ContestShell";
+import {
+  STATE_TEXT,
+  cellStateOf,
+  contestStatusOf,
+  isMine,
+  letterOf,
+  sortProblems,
+  useContestStandings,
+  useCurrentUser,
+} from "@/components/contest/contestKit";
+import { cn } from "@/lib/utils";
+
 export default function ContestProblemDetailPage() {
   const { isAuthenticated } = useSelector((store: RootState) => store.auth);
+  const user = useCurrentUser();
   const { id, pid: pidParam } = useParams();
   const contestId = Number(id);
   const [hide, setHide] = useState(false);
@@ -30,20 +42,18 @@ export default function ContestProblemDetailPage() {
     contestId || 0,
     pidParam || ""
   );
-
   const { data: contestDetail } = useQueryToGetContestDetail(contestId || 0);
+  const { data: standings } = useContestStandings(
+    contestId,
+    contestStatusOf(contestDetail) === "IN_PROGRESS"
+  );
+  const problems = sortProblems(contestDetail?.problem_list);
+  const me = standings?.records.find((r) => isMine(r, user));
+  const current = problems.find((p) => p.pid === pidParam);
 
-  const { prevPid, nextPid } = useMemo(() => {
-    const problemList = contestDetail?.problem_list;
-    if (!problemList || !pidParam) return { prevPid: null, nextPid: null };
-    const sorted = [...problemList].sort((a, b) => a.sort_order - b.sort_order);
-    const idx = sorted.findIndex((p) => p.pid === pidParam);
-    if (idx === -1) return { prevPid: null, nextPid: null };
-    return {
-      prevPid: idx > 0 ? sorted[idx - 1].pid : null,
-      nextPid: idx < sorted.length - 1 ? sorted[idx + 1].pid : null,
-    };
-  }, [contestDetail, pidParam]);
+  useEffect(() => {
+    if (contestId && pidParam) rememberProblem(contestId, pidParam);
+  }, [contestId, pidParam]);
 
   useEffect(() => {
     if (!isError || !error) {
@@ -55,54 +65,57 @@ export default function ContestProblemDetailPage() {
       setProblemErrorCode(maybeCode);
     }
   }, [isError, error]);
+
+  /** 题号导航：字母按我的结果着色，当前题加下划线 */
+  const problemNav = (
+    <nav className="sticky top-0 z-10 flex items-center gap-0.5 overflow-x-auto border-b bg-white/95 px-3 backdrop-blur-sm md:px-6">
+      {problems.map((p) => {
+        const state = cellStateOf(me?.score_details?.[p.pid], standings?.rule_type);
+        const on = p.pid === pidParam;
+        return (
+          <Link
+            key={p.pid}
+            to={`/contest/${contestId}/${p.pid}`}
+            title={p.title}
+            className={cn(
+              "-mb-px border-b-2 border-transparent px-3 pb-2.5 pt-2 font-display text-base font-semibold",
+              state ? STATE_TEXT[state] : "text-slate-400 hover:text-slate-900",
+              on && "border-current",
+              on && !state && "text-slate-900"
+            )}
+          >
+            {letterOf(p.sort_order)}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+
+  const shell = (children: React.ReactNode) => (
+    <ContestShell contestId={contestId} tab="problem" fill>
+      {children}
+    </ContestShell>
+  );
+
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-4 pb-10">
-        <div className="max-w-4xl mx-auto px-6 space-y-8">
-          <div className="space-y-4">
-            <Skeleton className="h-10 w-1/3" />
-            <div className="flex gap-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-8 w-20 rounded-lg" />
-              ))}
-            </div>
-          </div>
-          <div className="flex gap-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-10 w-24" />
-            ))}
-          </div>
-          <div className="space-y-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="h-6 w-32" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-5/6" />
-                <Skeleton className="h-4 w-4/6" />
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center justify-center mt-10 text-gray-400 font-mono text-sm">
-            <span className="mr-2">&gt;</span>
-            <span>Fetching problem data...</span>
-            <span className="animate-ping ml-1 h-2 w-2 bg-indigo-500 rounded-full inline-block"></span>
-          </div>
-        </div>
+    return shell(
+      <div className="flex h-full justify-center pt-24">
+        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
       </div>
     );
   }
   if (isError || !data) {
     const isKnown404 = problemErrorCode === 40401 || problemErrorCode === 40402;
     if (isKnown404) {
-      return (
-        <div className="h-[calc(100vh-5.5rem)] w-full border-t border-gray-200 bg-gray-50">
+      return shell(
+        <div className="h-full w-full border-t bg-gray-50">
           <ProblemAccessState code={problemErrorCode} />
         </div>
       );
     }
-    return (
-      <div className="w-4/5 mx-auto py-6 text-center text-muted-foreground">
-        <div className="text-xl font-semibold mb-2">加载题目失败</div>
+    return shell(
+      <div className="pt-24 text-center text-slate-500">
+        <div className="mb-2 text-lg font-semibold text-slate-700">加载题目失败</div>
         <p>{error instanceof Error ? error.message : "未知错误"}</p>
       </div>
     );
@@ -116,6 +129,7 @@ export default function ContestProblemDetailPage() {
     totalAccept: 0,
   };
   const { title, pid } = problemData;
+  const letter = current ? letterOf(current.sort_order) : pid;
   const handleContestCodeSubmit = async () => {
     const index = codeFileObjectArray.findIndex(
       (i: { contest_id: number; pid: string }) =>
@@ -130,9 +144,9 @@ export default function ContestProblemDetailPage() {
       toast.error("代码不能为空");
       return;
     }
-    const data = { pid, language, code };
+    const payload = { pid, language, code };
     try {
-      const result = await submitContestSolution(contestId, data);
+      const result = await submitContestSolution(contestId, payload);
       if (result.code === 0 || result.code === "0") {
         toast.success("提交成功");
         const submission_no = result.data?.submission_no;
@@ -144,92 +158,52 @@ export default function ContestProblemDetailPage() {
       } else {
         toast.error(result.message || "提交失败");
       }
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "提交失败，请稍后重试"
-      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "提交失败，请稍后重试");
     }
   };
-  return (
+  const hideToggle = (
+    <div className="flex items-center gap-2">
+      <Switch id="sethide-contest" checked={hide} onCheckedChange={setHide} />
+      <Label htmlFor="sethide-contest" className="cursor-pointer whitespace-nowrap text-sm text-slate-500">
+        隐藏编辑器
+      </Label>
+    </div>
+  );
+  return shell(
     <>
       <Helmet>
-        <title>{`${pid}. ${title} - SEUOJ`}</title>
+        <title>{`${letter}. ${title} - SEUOJ`}</title>
       </Helmet>
-      <div className="h-[calc(100vh-5.5rem)] w-full max-w-full overflow-x-hidden overflow-y-hidden flex flex-col lg:flex-row bg-white border-t border-gray-200 relative">
+      <div className="relative flex h-full w-full max-w-full flex-col overflow-hidden border-t bg-white lg:flex-row">
         {hide ? (
-          <div className="absolute right-4 top-3 z-20 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-2 py-1.5 rounded-md border border-gray-200 shadow-sm">
-            <Switch
-              id="sethide-contest"
-              checked={hide}
-              onCheckedChange={setHide}
-            />
-            <Label htmlFor="sethide-contest" className="cursor-pointer text-sm">
-              隐藏编辑器
-            </Label>
-          </div>
+          <div className="absolute right-4 top-2 z-20 bg-white/90 px-2 py-1.5 backdrop-blur-sm">{hideToggle}</div>
         ) : null}
         <div
-          className={`${
-            hide ? "w-full" : "w-full lg:w-1/2"
-          } h-full w-full max-w-full min-w-0 flex-shrink overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent border-r border-gray-200`}
+          className={cn(
+            hide ? "w-full" : "w-full lg:w-1/2",
+            "h-full min-w-0 max-w-full flex-shrink overflow-y-auto overflow-x-hidden border-r"
+          )}
         >
-          <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-white/95 backdrop-blur-sm border-b border-gray-200">
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={!prevPid}
-              onClick={() => prevPid && nav(`/contest/${contestId}/${prevPid}`)}
-              className="text-gray-600 hover:text-gray-900 disabled:opacity-30"
-            >
-              <ChevronLeft className="mr-1 h-4 w-4" />
-              上一题
-            </Button>
-            <span className="text-xs text-muted-foreground">{pid}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={!nextPid}
-              onClick={() => nextPid && nav(`/contest/${contestId}/${nextPid}`)}
-              className="text-gray-600 hover:text-gray-900 disabled:opacity-30"
-            >
-              下一题
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
+          {problemNav}
           <ContestProblemDetailInfo
-            problem={problemData}
+            problem={{ ...problemData, pid: letter }}
             isAuthenticated={isAuthenticated}
           />
         </div>
         {hide ? null : (
-          <div className="w-full lg:w-1/2 h-full max-w-full min-w-0 flex-shrink overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent bg-gray-50 relative">
+          <div className="relative h-full w-full min-w-0 max-w-full flex-shrink overflow-y-auto overflow-x-hidden bg-gray-50 lg:w-1/2">
             {isAuthenticated ? (
               <ContestProblemCoding
                 pid={pid}
                 contest_id={contestId || 0}
                 handleCodeSubmit={handleContestCodeSubmit}
-                headerExtra={
-                  <div className="flex items-center gap-2 rounded-md border border-gray-200 px-2 py-1 bg-white">
-                    <Switch
-                      id="sethide-contest"
-                      checked={hide}
-                      onCheckedChange={setHide}
-                    />
-                    <Label
-                      htmlFor="sethide-contest"
-                      className="cursor-pointer text-sm whitespace-nowrap"
-                    >
-                      隐藏编辑器
-                    </Label>
-                  </div>
-                }
+                headerExtra={hideToggle}
               />
             ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-gray-50">
-                <div className="p-8 text-center space-y-4">
-                  <h3 className="text-xl font-semibold text-gray-700">
-                    需要登录
-                  </h3>
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 text-gray-500">
+                <div className="space-y-4 p-8 text-center">
+                  <h3 className="text-xl font-semibold text-gray-700">需要登录</h3>
                   <p>请登录后查看代码编辑器并提交代码。</p>
                 </div>
               </div>

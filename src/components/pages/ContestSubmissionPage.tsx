@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import ContestSubmissionRecord from "../bussiness/ContestSubmissionRecord";
 import CodeShow from "../common/CodeShow";
 import TestPoints from "../bussiness/TestPoints";
-import { useParams, useNavigate } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
+import ContestShell from "@/components/contest/ContestShell";
 import { getContestSubmissionDetail } from "@/services/Contest/getContestSubmissionDetail";
 import type {
   SubmissionData,
@@ -20,8 +20,6 @@ const BACKGROUND_POLL_INTERVAL = 5000;
 export default function ContestSubmissionPage() {
   const { id, submission_no } = useParams();
   const contestId = Number(id);
-  const nav = useNavigate();
-  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
   const [submission, setSubmission] = useState<SubmissionData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -93,38 +91,34 @@ export default function ContestSubmissionPage() {
 
   if (loading && !submission) {
     return (
-      <div className="flex flex-col pb-6 p-2 mx-auto w-4/5 space-y-4">
-        <Skeleton className="h-[200px] w-full rounded-xl" />
-        <Skeleton className="h-[300px] w-full rounded-xl" />
-      </div>
+      <ContestShell contestId={contestId} tab="submissions">
+        <div className="space-y-4">
+          <Skeleton className="h-[120px] w-full" />
+          <Skeleton className="h-[300px] w-full" />
+        </div>
+      </ContestShell>
     );
   }
   if (!submission) {
     return (
-      <div className="flex flex-col pb-6 p-2 mx-auto w-4/5">
+      <ContestShell contestId={contestId} tab="submissions">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>错误</AlertTitle>
           <AlertDescription>加载提交数据失败。</AlertDescription>
         </Alert>
-      </div>
+      </ContestShell>
     );
   }
   return (
-    <div className="flex flex-col pb-6 p-2 mx-auto w-4/5">
-      <div className="flex justify-end mb-4 space-x-4">
-        <Button
-          variant="outline"
-          onClick={() => nav(`/contest/${contestId}/${submission.pid}?from=${from}`)}
-        >
-          返回题目
-        </Button>
-        <Button
-          variant="default"
-          onClick={() => nav(`/contest/${contestId}`)}
-        >
-          返回比赛
-        </Button>
+    <ContestShell contestId={contestId} tab="submissions">
+      <div className="mb-4 flex justify-end gap-5 text-sm text-slate-500">
+        <Link to={`/contest/${contestId}/${submission.pid}`} className="hover:text-slate-900">
+          ← 回到题目
+        </Link>
+        <Link to={`/contest/${contestId}/submissions`} className="hover:text-slate-900">
+          全部提交
+        </Link>
       </div>
       <ContestSubmissionRecord submission={submission} />
       {submission.code && (
@@ -144,6 +138,6 @@ export default function ContestSubmissionPage() {
         submission.verdict !== "JudgeError" && (
           <TestPoints resultDetail={submission.resultDetail} subtasks={submission.subtasks} showData={submission.testDataVisible === true} />
         )}
-    </div>
+    </ContestShell>
   );
 }

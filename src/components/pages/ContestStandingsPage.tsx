@@ -1,255 +1,230 @@
 import SubmitterLink from "@/components/common/SubmitterLink";
 import React from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, Trophy } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
+import ContestShell from "@/components/contest/ContestShell";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { getContestStandings } from "@/services/Contest/getContestStandings";
-import type {
-  ContestStandingsRecord,
-  ContestStandingsScoreDetail,
-  ContestProblemOverview,
-} from "@/models/contest";
+  contestStatusOf,
+  displayName,
+  hm,
+  isAcm,
+  isMine,
+  letterOf,
+  problemStats,
+  scoreColor,
+  sortProblems,
+  useContestStandings,
+  useCurrentUser,
+  type ProblemStat,
+} from "@/components/contest/contestKit";
+import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
+import type { ContestRuleType, ContestStandingsScoreDetail } from "@/models/contest";
 import { cn } from "@/lib/utils";
 
-function RankBadge({ rank }: { rank: number }) {
-  if (rank === 1)
-    return (
-      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-100 text-amber-700 font-bold text-sm">
-        1
-      </span>
-    );
-  if (rank === 2)
-    return (
-      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-200 text-slate-600 font-bold text-sm">
-        2
-      </span>
-    );
-  if (rank === 3)
-    return (
-      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-orange-100 text-orange-600 font-bold text-sm">
-        3
-      </span>
-    );
-  return <span className="text-sm text-muted-foreground">{rank}</span>;
-}
+const TD = "whitespace-nowrap border-b border-slate-100 px-2 py-[9px] text-center font-mono";
 
-function AcmProblemCell({
-  detail,
-}: {
-  detail?: ContestStandingsScoreDetail;
-}) {
-  if (!detail || detail.accepted === null || detail.accepted === undefined)
+function AcmCell({ d, st }: { d?: ContestStandingsScoreDetail; st?: ProblemStat }) {
+  if (!d) return <td className={TD} />;
+  const n = d.unacceptedCount ?? 0;
+  if (d.accepted) {
+    const t = d.acceptedTime ?? 0;
+    const first = st?.firstAc != null && d.acceptedTime === st.firstAc;
     return (
-      <TableCell className="text-center text-muted-foreground text-xs">-</TableCell>
+      <td className={TD}>
+        <div
+          className="leading-tight"
+          title={`${first ? "本题第一个通过\n" : ""}${hm(t)} 通过${n ? `，此前错 ${n} 次` : ""}`}
+        >
+          <b className={cn("block text-sm", first ? "font-extrabold text-green-900" : "font-semibold text-green-700")}>
+            +{n || ""}
+          </b>
+          <i className="block text-[11px] not-italic text-slate-400">{hm(t)}</i>
+        </div>
+      </td>
     );
-
+  }
+  if (n) {
+    return (
+      <td className={TD}>
+        <b className="text-sm font-semibold text-red-600" title={`错 ${n} 次`}>
+          −{n}
+        </b>
+      </td>
+    );
+  }
   return (
-    <TableCell className="text-center">
-      {detail.accepted ? (
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-emerald-600 font-bold text-sm">
-            {detail.unacceptedCount ? `+${detail.unacceptedCount}` : "+"}
-          </span>
-          {detail.penaltyTime != null && (
-            <span className="text-xs text-muted-foreground">
-              {detail.penaltyTime}
-            </span>
-          )}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-red-500 font-bold text-sm">
-            {detail.unacceptedCount ? `-${detail.unacceptedCount}` : "-"}
-          </span>
-        </div>
-      )}
-    </TableCell>
+    <td className={TD}>
+      <b className="text-sm font-normal text-slate-400" title="没有计罚时的提交">
+        −
+      </b>
+    </td>
   );
 }
 
-function ScoreProblemCell({
-  detail,
-}: {
-  detail?: ContestStandingsScoreDetail;
-}) {
-  if (!detail || detail.score == null)
-    return (
-      <TableCell className="text-center text-muted-foreground text-xs">-</TableCell>
-    );
-
+function ScoreCell({ d }: { d?: ContestStandingsScoreDetail }) {
+  if (!d || d.score == null) return <td className={TD} />;
   return (
-    <TableCell className="text-center">
-      <span
-        className={cn(
-          "font-mono text-sm font-medium",
-          detail.score === 100 || detail.accepted
-            ? "text-emerald-600"
-            : detail.score > 0
-              ? "text-amber-600"
-              : "text-red-500"
-        )}
-      >
-        {detail.score}
+    <td className={TD}>
+      <span className="font-semibold" style={{ color: scoreColor(d.score) }}>
+        {d.score}
       </span>
-    </TableCell>
+    </td>
   );
+}
+
+function Cell({ d, st, rule }: { d?: ContestStandingsScoreDetail; st?: ProblemStat; rule?: ContestRuleType }) {
+  return isAcm(rule) ? <AcmCell d={d} st={st} /> : <ScoreCell d={d} />;
 }
 
 export default function ContestStandingsPage() {
   const { id } = useParams();
   const contestId = Number(id);
-  const nav = useNavigate();
+  const user = useCurrentUser();
+  const { data: detail } = useQueryToGetContestDetail(contestId || 0);
+  const live = contestStatusOf(detail) === "IN_PROGRESS";
+  const { data, isLoading, isError, error } = useContestStandings(contestId, live);
 
-  const { data, isLoading, isFetching, isError, error } = useQuery({
-    queryKey: ["contestStandings", contestId],
-    queryFn: () => getContestStandings(contestId!, {}),
-    enabled: !!contestId,
-  });
-
-  const loading = isLoading || isFetching;
-  const ruleType = data?.rule_type ?? "ACM";
-  const problems: ContestProblemOverview[] = data?.problems ?? [];
-  const records: ContestStandingsRecord[] = data?.records ?? [];
+  const rule = data?.rule_type ?? detail?.rule_type;
+  const acm = isAcm(rule);
+  const problems = sortProblems(data?.problems?.length ? data.problems : detail?.problem_list);
+  const records = data?.records ?? [];
+  const stats = problemStats(data);
+  const statCols = acm ? 2 : 1;
 
   return (
-    <div className="w-4/5 mx-auto py-6 space-y-6 min-h-screen">
+    <ContestShell contestId={contestId} tab="standings">
       <Helmet>
-        <title>比赛排名 - SEUOJ</title>
+        <title>{detail?.title ? `排名 - ${detail.title} - SEUOJ` : "排名 - SEUOJ"}</title>
       </Helmet>
-
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => nav(`/contest/${contestId}`)}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Trophy className="h-6 w-6 text-amber-500" />
-            比赛排名
-          </h1>
-        </div>
-        <div className="text-sm text-muted-foreground">
-          赛制：<span className="font-semibold text-foreground">{ruleType}</span>
-        </div>
+      <div className="mb-4 flex items-baseline gap-3.5">
+        <h2 className="m-0 font-display text-[26px] font-semibold">排名</h2>
+        <span className="text-[13px] text-slate-500">
+          {rule} · {records.length} 人
+        </span>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <div className="rounded-md border-0 overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="w-[80px] text-center">排名</TableHead>
-                  <TableHead className="min-w-[120px]">用户</TableHead>
-                  {ruleType === "ACM" ? (
-                    <>
-                      <TableHead className="text-center w-[80px]">解题数</TableHead>
-                      <TableHead className="text-center w-[80px]">罚时</TableHead>
-                    </>
-                  ) : (
-                    <TableHead className="text-center w-[80px]">总分</TableHead>
-                  )}
-                  {problems.map((p) => (
-                    <TableHead key={p.pid} className="text-center min-w-[70px]">
-                      <span
-                        className="cursor-pointer hover:text-blue-600 hover:underline"
-                        onClick={() =>
-                          nav(
-                            `/contest/${contestId}/${p.pid}?from=${encodeURIComponent(window.location.pathname)}`
-                          )
-                        }
-                      >
-                        {p.title ?? p.pid}
-                      </span>
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={3 + problems.length + (ruleType === "ACM" ? 2 : 1)}
-                      className="h-32 text-center"
-                    >
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                    </TableCell>
-                  </TableRow>
-                ) : records.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={3 + problems.length + (ruleType === "ACM" ? 2 : 1)}
-                      className="h-32 text-center text-muted-foreground"
-                    >
-                      暂无排名数据
-                    </TableCell>
-                  </TableRow>
+      {isLoading ? (
+        <div className="flex justify-center py-24">
+          <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        </div>
+      ) : isError ? (
+        <p className="py-24 text-center text-slate-500">
+          {error instanceof Error ? error.message : "排名暂不可见"}
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="text-xs font-medium text-slate-500">
+                <th className="whitespace-nowrap border-b border-slate-900 px-2 py-2.5 text-right font-medium">#</th>
+                <th className="whitespace-nowrap border-b border-slate-900 px-2 py-2.5 text-left font-medium">选手</th>
+                {acm ? (
+                  <>
+                    <th className="whitespace-nowrap border-b border-slate-900 px-2 py-2.5 font-medium">通过</th>
+                    <th className="whitespace-nowrap border-b border-slate-900 px-2 py-2.5 font-medium">罚时</th>
+                  </>
                 ) : (
-                  records.map((record) => (
-                    <TableRow
-                      key={record.user_id ?? record.username}
-                      className="hover:bg-muted/50"
-                    >
-                      <TableCell className="text-center">
-                        {record.is_starred ? <span title="打星，不占正式名次" aria-label="打星" className="text-lg text-muted-foreground">*</span> : record.rank != null ? <RankBadge rank={record.rank} /> : "—"}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <SubmitterLink username={record.username} nickname={record.display_name || record.nickname} userId={record.user_id} />
-                        {(record.display_name || record.nickname) && (
-                          <span className="text-xs text-muted-foreground ml-1">
-                            @{record.username}
-                          </span>
-                        )}
-                      </TableCell>
-                      {ruleType === "ACM" ? (
-                        <>
-                          <TableCell className="text-center font-mono font-bold text-emerald-600">
-                            {record.score}
-                          </TableCell>
-                          <TableCell className="text-center font-mono text-muted-foreground text-sm">
-                            {record.penalty ?? "-"}
-                          </TableCell>
-                        </>
-                      ) : (
-                        <TableCell className="text-center font-mono font-bold">
-                          {record.score}
-                        </TableCell>
-                      )}
-                      {problems.map((p) =>
-                        ruleType === "ACM" ? (
-                          <AcmProblemCell
-                            key={p.pid}
-                            detail={record.score_details?.[p.pid]}
-                          />
-                        ) : (
-                          <ScoreProblemCell
-                            key={p.pid}
-                            detail={record.score_details?.[p.pid]}
-                          />
-                        )
-                      )}
-                    </TableRow>
-                  ))
+                  <th className="whitespace-nowrap border-b border-slate-900 px-2 py-2.5 font-medium">总分</th>
                 )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+                {problems.map((p) => (
+                  <th key={p.pid} className="min-w-[60px] whitespace-nowrap border-b border-slate-900 px-2 py-2.5 text-center">
+                    <Link
+                      to={`/contest/${contestId}/${p.pid}`}
+                      title={`${letterOf(p.sort_order)}. ${p.title}`}
+                      className="block font-display text-[15px] font-semibold text-slate-900 hover:text-primary"
+                    >
+                      {letterOf(p.sort_order)}
+                    </Link>
+                    <span className="font-mono text-[11px] font-normal text-slate-400">{stats[p.pid]?.solvers ?? 0}</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {records.map((r) => {
+                const mine = isMine(r, user);
+                const name = displayName(r);
+                return (
+                  <tr
+                    key={r.user_id ?? r.username}
+                    className={cn("group", mine ? "bg-primary/[0.07]" : "hover:bg-white")}
+                  >
+                    <td className={cn(TD, "w-10 text-right text-slate-500")}>
+                      {r.is_starred || r.rank == null ? <span title="打星，不占正式名次">*</span> : r.rank}
+                    </td>
+                    <td
+                      className={cn(
+                        TD,
+                        "w-full text-left font-sans",
+                        mine && "font-semibold text-primary shadow-[inset_3px_0_hsl(var(--primary))]",
+                        r.is_starred && !mine && "text-slate-500"
+                      )}
+                    >
+                      <SubmitterLink
+                        username={r.username}
+                        nickname={name}
+                        userId={r.user_id}
+                        className="text-inherit hover:underline"
+                      />
+                      {name !== r.username && (
+                        <small className="ml-2 hidden font-mono text-[11px] font-normal text-slate-400 sm:inline">{r.username}</small>
+                      )}
+                    </td>
+                    {acm ? (
+                      <>
+                        <td className={cn(TD, "font-semibold")}>{r.score}</td>
+                        <td className={cn(TD, "text-slate-500")}>{r.penalty ?? 0}</td>
+                      </>
+                    ) : (
+                      <td className={cn(TD, "font-semibold")}>{r.score}</td>
+                    )}
+                    {problems.map((p) => (
+                      <Cell key={p.pid} d={r.score_details?.[p.pid]} st={stats[p.pid]} rule={rule} />
+                    ))}
+                  </tr>
+                );
+              })}
+              {records.length === 0 && (
+                <tr>
+                  <td colSpan={2 + statCols + problems.length} className="py-16 text-center text-slate-400">
+                    —
+                  </td>
+                </tr>
+              )}
+            </tbody>
+            {records.length > 0 && (
+              <tfoot className="text-xs text-slate-500">
+                <tr>
+                  <td />
+                  <td className="px-2 pt-3 text-right">通过 / 尝试</td>
+                  <td colSpan={statCols} />
+                  {problems.map((p) => (
+                    <td key={p.pid} className="whitespace-nowrap px-2 pt-3 text-center font-mono">
+                      {stats[p.pid]?.solvers ?? 0} / {stats[p.pid]?.tried ?? 0}
+                    </td>
+                  ))}
+                </tr>
+                {acm && (
+                  <tr>
+                    <td />
+                    <td className="px-2 pt-1.5 text-right">第一个通过</td>
+                    <td colSpan={statCols} />
+                    {problems.map((p) => {
+                      const t = stats[p.pid]?.firstAc;
+                      return (
+                        <td key={p.pid} className="whitespace-nowrap px-2 pt-1.5 text-center font-mono">
+                          {t != null ? hm(t) : "—"}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                )}
+              </tfoot>
+            )}
+          </table>
+        </div>
+      )}
+    </ContestShell>
   );
 }

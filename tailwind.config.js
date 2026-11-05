@@ -4,6 +4,9 @@ export default {
   content: ["./src/**/*.{html,js,jsx,ts,tsx,vue}", "./public/**/*.html"],
   theme: {
   	extend: {
+  		fontFamily: {
+  			display: ['"Noto Serif SC"', '"Source Han Serif SC"', '"Songti SC"', 'SimSun', 'serif']
+  		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',

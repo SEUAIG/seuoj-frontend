@@ -1,178 +1,163 @@
 import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { format, isSameDay } from "date-fns";
+import { Loader2 } from "lucide-react";
 import { getContestSubmissionPage } from "@/services/Contest/getContestSubmissionPage";
-import { AnswerStateNew } from "@/components/common/AnswerState";
-import ProblemListPageChoose from "@/components/bussiness/ProblemListPageChoose";
+import ContestShell from "@/components/contest/ContestShell";
+import Verdict from "@/components/contest/Verdict";
+import SubmitterLink from "@/components/common/SubmitterLink";
+import { isAcm, isMine, letterOf, parseTime, scoreColor, useCurrentUser } from "@/components/contest/contestKit";
+import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
+import { cn } from "@/lib/utils";
+
+const SIZE = 30;
+const TH = "whitespace-nowrap px-2.5 pb-2 pt-3 text-left text-xs font-medium text-slate-500";
+const TD = "whitespace-nowrap border-t border-slate-100 px-2.5 py-3 align-middle";
+
+function when(value: string) {
+  const d = parseTime(value);
+  if (!d) return value;
+  return isSameDay(d, new Date()) ? format(d, "HH:mm:ss") : format(d, "MM-dd HH:mm");
+}
 
 export default function ContestSubmissionListPage() {
   const { id } = useParams();
   const contestId = Number(id);
   const nav = useNavigate();
-  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
+  const user = useCurrentUser();
   const [page, setPage] = useState(1);
-  const size = 20;
+  const { data: detail } = useQueryToGetContestDetail(contestId || 0);
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["contestSubmissions", contestId, page],
-    queryFn: () =>
-      getContestSubmissionPage(contestId!, { current: page, size }),
+    queryFn: () => getContestSubmissionPage(contestId, { current: page, size: SIZE }),
     enabled: !!contestId,
+    placeholderData: keepPreviousData,
+    // 有评测中的提交时自动刷新
+    refetchInterval: (q) =>
+      q.state.data?.records?.some((r) => r.status === "Pending" || r.status === "Running") ? 3000 : false,
   });
 
-  const records = data?.records || [];
-  const total = data?.total || 0;
-  const pages = Math.ceil(total / size);
+  const records = data?.records ?? [];
+  const pages = Math.max(1, Math.ceil((data?.total ?? 0) / SIZE));
+  const showScore = !!detail?.rule_type && !isAcm(detail.rule_type);
+  const letters = Object.fromEntries((detail?.problem_list ?? []).map((p) => [p.pid, letterOf(p.sort_order)]));
+  const cols = showScore ? 7 : 6;
 
   return (
-    <div className="w-4/5 mx-auto py-6 space-y-6">
+    <ContestShell contestId={contestId} tab="submissions">
       <Helmet>
-        <title>提交记录 - 比赛 - SEUOJ</title>
+        <title>{detail?.title ? `提交 - ${detail.title} - SEUOJ` : "提交 - SEUOJ"}</title>
       </Helmet>
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => nav(`/contest/${contestId}`)}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-2xl font-bold">提交记录</h1>
-        </div>
-      </div>
-
-      <Card>
-        <CardContent className="p-0">
-          <div className="rounded-md border-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="w-[200px] pl-6">运行ID</TableHead>
-                  <TableHead>题目</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>分数</TableHead>
-                  <TableHead>语言</TableHead>
-                  <TableHead>用户</TableHead>
-                  <TableHead className="pr-6">提交时间</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading || isFetching ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                    </TableCell>
-                  </TableRow>
-                ) : records.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="h-24 text-center text-muted-foreground"
+      <table className="w-full border-collapse text-sm">
+        <thead>
+          <tr>
+            <th className={cn(TH, "hidden sm:table-cell")}>#</th>
+            <th className={TH}>时间</th>
+            <th className={cn(TH, "w-full")}>选手</th>
+            <th className={TH}>题目</th>
+            <th className={TH}>结果</th>
+            {showScore && <th className={cn(TH, "text-right")}>分数</th>}
+            <th className={cn(TH, "hidden sm:table-cell")}>语言</th>
+          </tr>
+        </thead>
+        <tbody>
+          {isLoading ? (
+            <tr>
+              <td colSpan={cols} className="py-20 text-center">
+                <Loader2 className="mx-auto h-6 w-6 animate-spin text-slate-400" />
+              </td>
+            </tr>
+          ) : isError ? (
+            <tr>
+              <td colSpan={cols} className="py-20 text-center text-slate-500">
+                {error instanceof Error ? error.message : "加载失败"}
+              </td>
+            </tr>
+          ) : records.length === 0 ? (
+            <tr>
+              <td colSpan={cols} className="py-20 text-center text-slate-400">
+                —
+              </td>
+            </tr>
+          ) : (
+            records.map((r) => {
+              const mine = isMine(r, user);
+              const detailPath = `/contest/${contestId}/submission/${r.submission_no}`;
+              return (
+                <tr
+                  key={r.submission_no}
+                  className={cn("cursor-pointer", mine ? "bg-primary/[0.07]" : "hover:bg-white")}
+                  onClick={() => nav(detailPath)}
+                >
+                  <td className={cn(TD, "hidden font-mono text-slate-400 sm:table-cell")} title={r.submission_no}>
+                    {r.submission_no.slice(0, 8)}
+                  </td>
+                  <td className={cn(TD, "font-mono text-slate-500")}>{when(r.submit_time)}</td>
+                  <td className={cn(TD, mine && "font-semibold")}>
+                    <SubmitterLink
+                      username={r.username}
+                      nickname={r.nickname}
+                      userId={r.user_id}
+                      className="text-inherit hover:underline"
+                    />
+                  </td>
+                  <td className={TD}>
+                    <Link
+                      to={`/contest/${contestId}/${r.problem.pid}`}
+                      title={r.problem.title}
+                      onClick={(e) => e.stopPropagation()}
+                      className="font-display font-semibold hover:text-primary"
                     >
-                      暂无提交记录
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  records.map((record) => (
-                    <TableRow
-                      key={record.submission_no}
-                      className="hover:bg-muted/50"
+                      {letters[r.problem.pid] ?? r.problem.pid}
+                    </Link>
+                  </td>
+                  <td className={TD}>
+                    <Verdict status={r.status} verdict={r.verdict} />
+                  </td>
+                  {showScore && (
+                    <td
+                      className={cn(TD, "text-right font-mono")}
+                      style={r.score != null ? { color: scoreColor(r.score) } : undefined}
                     >
-                      <TableCell className="font-mono text-sm pl-6">
-                        <span
-                          className="text-blue-600 hover:underline cursor-pointer"
-                          onClick={() =>
-                            nav(
-                              `/contest/${contestId}/submission/${record.submission_no}`
-                            )
-                          }
-                        >
-                          {record.submission_no}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className="hover:underline cursor-pointer text-blue-600"
-                          onClick={() =>
-                            nav(
-                              `/contest/${contestId}/${record.problem.pid}?from=${from}`
-                            )
-                          }
-                        >
-                          {record.problem.title}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <AnswerStateNew
-                          status={record.status}
-                          verdict={record.verdict || undefined}
-                        />
-                      </TableCell>
-                      <TableCell className="font-mono">
-                        {record.score !== null ? record.score : "-"}
-                      </TableCell>
-                      <TableCell>{record.language || "Unknown"}</TableCell>
-                      <TableCell>
-                        {record.user_id ? (
-                          <span
-                            className="cursor-pointer text-primary hover:underline"
-                            onClick={() => nav(`/user/${record.user_id}`)}
-                          >
-                            {record.nickname || record.username}
-                          </span>
-                        ) : (
-                          record.nickname || record.username
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm pr-6">
-                        {new Date(record.submit_time).toLocaleString()}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                      {r.score ?? ""}
+                    </td>
+                  )}
+                  <td className={cn(TD, "hidden text-slate-500 sm:table-cell")}>{r.language ?? ""}</td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
 
       {pages > 1 && (
-        <div className="flex justify-center mt-6">
-          <ProblemListPageChoose
-            pages={pages}
-            current={page}
-            dispatch={((action: any) => {
-              if (typeof action === "function") {
-                action((newPage: number) => setPage(newPage));
-              } else if (action?.payload) {
-                setPage(action.payload);
-              }
-              return { type: "", payload: 0 };
-            }) as any}
-            refetch={() => {}}
-            setCurrentAction={((val: number) => ({
-              type: "SET_CURRENT",
-              payload: val,
-              match: (action: any) => action.type === "SET_CURRENT",
-            })) as any}
-          />
+        <div className="mt-6 flex items-center justify-center gap-5 font-mono text-sm text-slate-500">
+          <button
+            type="button"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="hover:text-slate-900 disabled:text-slate-300"
+            aria-label="上一页"
+          >
+            ←
+          </button>
+          <span className="tabular-nums">
+            {page} / {pages}
+          </span>
+          <button
+            type="button"
+            disabled={page >= pages}
+            onClick={() => setPage((p) => p + 1)}
+            className="hover:text-slate-900 disabled:text-slate-300"
+            aria-label="下一页"
+          >
+            →
+          </button>
         </div>
       )}
-    </div>
+    </ContestShell>
   );
 }

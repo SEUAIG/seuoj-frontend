@@ -7,9 +7,10 @@ interface SubmitterLinkProps {
   username: string;
   nickname?: string;
   userId?: number;
+  className?: string;
 }
 
-export default function SubmitterLink({ username, nickname, userId }: SubmitterLinkProps) {
+export default function SubmitterLink({ username, nickname, userId, className = "text-primary hover:underline" }: SubmitterLinkProps) {
   const user = useSelector((state: RootState) => state.auth.user);
   const canViewOthers = hasCapability(user, "TEACHER") || hasCapability(user, "USER_MANAGE");
   const path = user?.username === username
@@ -18,7 +19,7 @@ export default function SubmitterLink({ username, nickname, userId }: SubmitterL
   const name = nickname || username;
 
   return path ? (
-    <Link to={path} onClick={(event) => event.stopPropagation()} className="text-primary hover:underline">
+    <Link to={path} onClick={(event) => event.stopPropagation()} className={className}>
       {name}
     </Link>
   ) : <>{name}</>;
