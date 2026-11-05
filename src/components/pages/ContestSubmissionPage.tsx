@@ -10,6 +10,8 @@ import ContestShell from "@/components/contest/ContestShell";
 import { getContestSubmissionDetail } from "@/services/Contest/getContestSubmissionDetail";
 import { skipContestSubmissions } from "@/services/Submission/skipSubmissions";
 import SkipNotice from "@/components/bussiness/SkipNotice";
+import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
+import { letterOf } from "@/components/contest/contestKit";
 import type {
   SubmissionData,
   SubmissionStatus,
@@ -25,6 +27,7 @@ export default function ContestSubmissionPage() {
   const [submission, setSubmission] = useState<SubmissionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
+  const { data: contest } = useQueryToGetContestDetail(contestId || 0);
 
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -124,9 +127,6 @@ export default function ContestSubmissionPage() {
   return (
     <ContestShell contestId={contestId} tab="submissions">
       <div className="mb-4 flex justify-end gap-5 text-sm text-slate-500">
-        <Link to={`/contest/${contestId}/${submission.pid}`} className="hover:text-slate-900">
-          ← 回到题目
-        </Link>
         <Link to={`/contest/${contestId}/submissions`} className="hover:text-slate-900">
           全部提交
         </Link>
@@ -141,7 +141,15 @@ export default function ContestSubmissionPage() {
         }
         onDone={() => setReloadKey((k) => k + 1)}
       />
-      <ContestSubmissionRecord submission={submission} />
+      <ContestSubmissionRecord
+        submission={submission}
+        problemHref={`/contest/${contestId}/${submission.pid}`}
+        problemLabel={(() => {
+          const p = contest?.problem_list?.find((x) => x.pid === submission.pid);
+          return p ? letterOf(p.sort_order) : undefined;
+        })()}
+        problemTitle={contest?.problem_list?.find((x) => x.pid === submission.pid)?.title}
+      />
       {submission.code && (
         <CodeShow language={submission.language}>{submission.code}</CodeShow>
       )}

@@ -78,7 +78,7 @@ export default function SubmissionRecord({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="text-center">编号</TableHead>
+          <TableHead className="text-center">题号</TableHead>
           <TableHead className="text-center">题目</TableHead>
           <TableHead className="text-center">状态</TableHead>
           {showScore && <TableHead className="text-center">分数</TableHead>}
@@ -91,7 +91,14 @@ export default function SubmissionRecord({
       </TableHeader>
       <TableBody>
         <TableRow>
-          <TableCell className="text-center">{pid}</TableCell>
+          <TableCell className="text-center">
+            <span
+              className="cursor-pointer font-medium text-primary hover:underline"
+              onClick={() => nav(problemUrl)}
+            >
+              {pid}
+            </span>
+          </TableCell>
           <TableCell className="text-center">
             <span
               className="cursor-pointer text-primary hover:underline"

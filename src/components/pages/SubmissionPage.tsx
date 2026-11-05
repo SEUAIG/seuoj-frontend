@@ -129,15 +129,14 @@ export default function SubmissionPage() {
       </div>
     );
   }
+  // 比赛提交回到比赛里的题目；题库、题单、作业提交回到题库题目并保留来源
+  const problemUrl =
+    submission.contestId != null
+      ? `/contest/${submission.contestId}/${submission.pid}`
+      : problemPath(submission.pid, context, from);
   return (
     <div className="flex flex-col pb-6 p-2 mx-auto w-4/5">
       <div className="flex justify-end mb-4 space-x-4">
-        <Button
-          variant="outline"
-          onClick={() => nav(problemPath(submission.pid, context, from))}
-        >
-          返回题目
-        </Button>
         <Button variant="default" onClick={() => nav(`/evaluation`)}>
           返回评测
         </Button>
@@ -150,7 +149,7 @@ export default function SubmissionPage() {
         run={(skipped, reason) => skipSubmissions({ submissionNos: [submission.submissionNo], skipped, reason })}
         onDone={() => setReloadKey((k) => k + 1)}
       />
-      <SubmissionRecord submission={submission} title={title} problemUrl={problemPath(submission.pid, context, from)} />
+      <SubmissionRecord submission={submission} title={title} problemUrl={problemUrl} />
       {submission.code && (
         <CodeShow language={submission.language}>{submission.code}</CodeShow>
       )}

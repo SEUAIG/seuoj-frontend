@@ -11,12 +11,21 @@ import AnswerState, { AnswerStateNew } from "../common/AnswerState";
 import ScoreBadge from "../common/ScoreBadage";
 import type { SubmissionData } from "@/models/submission";
 import { format } from "date-fns";
+import { Link } from "react-router-dom";
 
 interface ContestSubmissionRecordProps {
   submission: SubmissionData;
+  /** 比赛内题目页，点题号直接跳过去 */
+  problemHref?: string;
+  /** 比赛里的题目字母，例如 A */
+  problemLabel?: string;
+  problemTitle?: string;
 }
 export default function ContestSubmissionRecord({
   submission,
+  problemHref,
+  problemLabel,
+  problemTitle,
 }: ContestSubmissionRecordProps) {
   const {
     submissionNo,
@@ -49,7 +58,15 @@ export default function ContestSubmissionRecord({
       <TableBody>
         <TableRow>
           <TableCell className="text-center">{submissionNo}</TableCell>
-          <TableCell className="text-center">{pid}</TableCell>
+          <TableCell className="text-center">
+            {problemHref ? (
+              <Link to={problemHref} title={problemTitle ?? pid} className="font-medium text-primary hover:underline">
+                {problemLabel ? `${problemLabel} · ${pid}` : pid}
+              </Link>
+            ) : (
+              pid
+            )}
+          </TableCell>
           <TableCell className="text-center">{nickname || username}</TableCell>
           <TableCell className="text-center">
             {verdict ? <AnswerState state={verdict} /> : <AnswerStateNew status={submission.status} />}
