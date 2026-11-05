@@ -15,6 +15,7 @@ import {
   BookOpen,
   Ellipsis,
   Users,
+  Cpu,
 } from "lucide-react";
 import React from "react";
 import NavItem from "./NavItem";
@@ -35,6 +36,7 @@ const PRACTICE_ROUTES = ["/problemsLibrary", "/evaluation", "/problemset"];
 export default function LinkLists() {
   const user = useSelector((state: RootState) => state.auth.user);
   const isAdmin = hasCapability(user, "USER_MANAGE");
+  const isSiteAdmin = user?.role === "admin" || user?.role === "superadmin";
   const location = useLocation();
   const navigate = useNavigate();
   const aiActive = AI_ROUTES.some((r) => location.pathname.startsWith(r));
@@ -194,6 +196,15 @@ export default function LinkLists() {
               >
                 <Shield className="h-4 w-4" />
                 <span>管理</span>
+              </DropdownMenuItem>
+            )}
+            {isSiteAdmin && (
+              <DropdownMenuItem
+                className="flex items-center gap-2 cursor-pointer"
+                onClick={() => navigate("/admin/judge")}
+              >
+                <Cpu className="h-4 w-4" />
+                <span>评测机</span>
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>

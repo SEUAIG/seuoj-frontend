@@ -111,6 +111,7 @@ const ClassDetailPage = React.lazy(
 const AssignmentDetailPage = React.lazy(
   () => import("./components/pages/AssignmentDetailPage")
 );
+const AdminJudgePage = React.lazy(() => import("./components/pages/AdminJudgePage"));
 const AdminUserManagementPage = React.lazy(
   () => import("./components/pages/AdminUserManagementPage")
 );
@@ -236,6 +237,9 @@ function App() {
           <Route element={<ProtectedRoute capability="USER_MANAGE" />}>
             <Route path="/admin/users" element={<AdminUserManagementPage />} />
             <Route path="/user/:userId/edit" element={<ProfileEditPage key="admin" />} />
+          </Route>
+          <Route element={<ProtectedRoute allowRole="admin" />}>
+            <Route path="/admin/judge" element={<AdminJudgePage />} />
           </Route>
         </Route>
         <Route path="*" element={<NotFoundPage />}></Route>
