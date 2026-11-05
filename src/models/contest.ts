@@ -257,3 +257,38 @@ export interface ContestUnregisterQuery {
 }
 
 export type ContestUnregisterResponse = ApiResponseBase;
+
+export interface ContestAnnouncement {
+  announcement_id: number;
+  title: string;
+  content?: string | null;
+  is_pinned: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface ContestClarification {
+  clarification_id: number;
+  problem_pid?: string;
+  question: string;
+  answer?: string;
+  is_public: boolean;
+  mine: boolean;
+  created_at: string;
+  answered_at?: string;
+  /** 仅比赛管理者可见 */
+  asker_name?: string;
+  asker_username?: string;
+}
+
+export interface ContestNoticesData {
+  announcements: ContestAnnouncement[];
+  clarifications: ContestClarification[];
+  can_manage: boolean;
+}
+
+export interface ContestAnnouncementRequest {
+  title: string;
+  content?: string;
+  is_pinned?: boolean;
+}

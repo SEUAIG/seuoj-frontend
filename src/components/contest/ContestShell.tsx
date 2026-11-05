@@ -1,12 +1,21 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { Settings, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
-import { hms, parseTime, sortProblems } from "./contestKit";
+import { hms, letterOf, parseTime, sortProblems } from "./contestKit";
+import {
+  announcementKey,
+  answeredEvents,
+  answeredKey,
+  pendingQuestions,
+  useContestNotices,
+  useSeen,
+} from "./noticeKit";
 
-export type ContestTab = "overview" | "problem" | "submissions" | "standings";
+export type ContestTab = "overview" | "problem" | "submissions" | "standings" | "clarifications";
 
 const lastProblemKey = (contestId: number) => `contest:${contestId}:lastProblem`;
 
@@ -56,6 +65,60 @@ function useClock(start: Date | null, end: Date | null) {
   };
 }
 
+/**
+ * 公告与答疑提醒：轮询结果里出现了上一轮没有的条目就弹提示。
+ * 第一次拿到数据时只记下现状、不弹，避免一进页面就弹一串。
+ */
+function useNoticeAlerts(contestId: number) {
+  const nav = useNavigate();
+  const { data } = useContestNotices(contestId);
+  const { data: detail } = useQueryToGetContestDetail(contestId || 0);
+  const prev = useRef<Set<string> | null>(null);
+
+  useEffect(() => {
+    if (!data) return;
+    const letters = Object.fromEntries((detail?.problem_list ?? []).map((p) => [p.pid, letterOf(p.sort_order)]));
+    const where = (pid?: string) => (pid ? `${letters[pid] ?? pid} 题` : "全场");
+    const items: { key: string; show: () => void }[] = [
+      ...data.announcements.map((a) => ({
+        key: `a:${announcementKey(a)}`,
+        show: () =>
+          toast(`公告：${a.title}`, {
+            description: a.content?.slice(0, 80) || undefined,
+            duration: 15_000,
+            action: { label: "查看", onClick: () => nav(`/contest/${contestId}`) },
+          }),
+      })),
+      ...(data.can_manage
+        ? pendingQuestions(data).map((c) => ({
+            key: `q:${c.clarification_id}`,
+            show: () =>
+              toast(`新提问 · ${where(c.problem_pid)}`, {
+                description: c.question.slice(0, 80),
+                duration: 15_000,
+                action: { label: "回复", onClick: () => nav(`/contest/${contestId}/clarifications`) },
+              }),
+          }))
+        : answeredEvents(data).map((c) => ({
+            key: `c:${answeredKey(c)}`,
+            show: () =>
+              toast(c.mine ? `你的提问有了回复 · ${where(c.problem_pid)}` : `答疑 · ${where(c.problem_pid)}`, {
+                description: c.answer?.slice(0, 80),
+                duration: 15_000,
+                action: { label: "查看", onClick: () => nav(`/contest/${contestId}/clarifications`) },
+              }),
+          }))),
+    ];
+    const keys = new Set(items.map((i) => i.key));
+    if (prev.current) {
+      for (const i of items) if (!prev.current.has(i.key)) i.show();
+    }
+    prev.current = keys;
+  }, [data, detail, contestId, nav]);
+
+  return data;
+}
+
 export default function ContestShell({
   contestId,
   tab,
@@ -72,6 +135,12 @@ export default function ContestShell({
   const start = parseTime(data?.start_time);
   const end = parseTime(data?.end_time);
   const clock = useClock(start, end);
+  const notices = useNoticeAlerts(contestId);
+  const { seen } = useSeen(contestId);
+  const unseenAnnouncements = (notices?.announcements ?? []).filter((a) => !seen.a.includes(announcementKey(a))).length;
+  const clarBadge = notices?.can_manage
+    ? pendingQuestions(notices).length
+    : answeredEvents(notices).filter((c) => !seen.c.includes(answeredKey(c))).length;
 
   let problemPid: string | null = null;
   try {
@@ -84,11 +153,17 @@ export default function ContestShell({
     problemPid = problems[0]?.pid ?? null;
   }
 
-  const tabs: { key: ContestTab; label: string; to: string | null }[] = [
-    { key: "overview", label: "概览", to: `/contest/${contestId}` },
+  const tabs: { key: ContestTab; label: string; to: string | null; dot?: number }[] = [
+    { key: "overview", label: "概览", to: `/contest/${contestId}`, dot: tab === "overview" ? 0 : unseenAnnouncements },
     { key: "problem", label: "题目", to: problemPid ? `/contest/${contestId}/${problemPid}` : null },
     { key: "submissions", label: "提交", to: `/contest/${contestId}/submissions` },
     { key: "standings", label: "排名", to: `/contest/${contestId}/standings` },
+    {
+      key: "clarifications",
+      label: "答疑",
+      to: `/contest/${contestId}/clarifications`,
+      dot: notices?.can_manage || tab !== "clarifications" ? clarBadge : 0,
+    },
   ];
 
   return (
@@ -114,6 +189,12 @@ export default function ContestShell({
                   )}
                 >
                   {t.label}
+                  {!!t.dot && (
+                    <span
+                      className="ml-1 inline-block h-1.5 w-1.5 -translate-y-1.5 rounded-full bg-red-600"
+                      title={t.key === "clarifications" && notices?.can_manage ? `${t.dot} 条提问待回复` : `${t.dot} 条新消息`}
+                    />
+                  )}
                 </Link>
               ) : (
                 <span key={t.key} className="flex items-center text-sm text-slate-300">

@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/dialog";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import ContestShell from "@/components/contest/ContestShell";
+import ContestAnnouncements from "@/components/contest/ContestAnnouncements";
+import { useContestNotices } from "@/components/contest/noticeKit";
 import {
   STATE_TEXT,
   STATUS_LABEL,
@@ -115,6 +117,7 @@ export default function ContestListDetailPage() {
   const { data, isLoading, isError, error, refetch } = useQueryToGetContestDetail(contestId || 0);
   const status = contestStatusOf(data);
   const { data: standings } = useContestStandings(contestId, status === "IN_PROGRESS");
+  const { data: notices } = useContestNotices(contestId);
 
   const toggleRegister = async (register: boolean) => {
     if (!contestId) return;
@@ -160,7 +163,7 @@ export default function ContestListDetailPage() {
     const end = parseTime(data.end_time);
     const isRegistered = data.is_registered ?? false;
     const fullScore = problems.length * 100;
-    const hasAside = !!data.description || !!data.can_write;
+    const hasAside = !!data.description || !!data.can_write || !!notices?.announcements.length;
 
     return (
       <>
@@ -277,6 +280,7 @@ export default function ContestListDetailPage() {
 
           {hasAside && (
             <aside className="space-y-11 lg:border-l lg:pl-10">
+              <ContestAnnouncements contestId={contestId} />
               {data.description && (
                 <section>
                   <SecHead>说明</SecHead>

@@ -45,6 +45,14 @@ export default function ContestSubmissionListPage() {
   const showScore = !!detail?.rule_type && !isAcm(detail.rule_type);
   const letters = Object.fromEntries((detail?.problem_list ?? []).map((p) => [p.pid, letterOf(p.sort_order)]));
   const cols = showScore ? 7 : 6;
+  const start = parseTime(detail?.start_time);
+  const end = parseTime(detail?.end_time);
+  /** 比赛时间外的提交（管理者赛前验题、赛后补题）不计入榜单 */
+  const outside = (value: string) => {
+    const d = parseTime(value);
+    if (!d || !start || !end) return null;
+    return d < start ? "赛前" : d > end ? "赛后" : null;
+  };
 
   return (
     <ContestShell contestId={contestId} tab="submissions">
@@ -95,7 +103,14 @@ export default function ContestSubmissionListPage() {
                   <td className={cn(TD, "hidden font-mono text-slate-400 sm:table-cell")} title={r.submission_no}>
                     {r.submission_no.slice(0, 8)}
                   </td>
-                  <td className={cn(TD, "font-mono text-slate-500")}>{when(r.submit_time)}</td>
+                  <td className={cn(TD, "font-mono text-slate-500")}>
+                    {when(r.submit_time)}
+                    {outside(r.submit_time) && (
+                      <span className="ml-2 font-sans text-xs text-slate-400" title="不计入榜单">
+                        {outside(r.submit_time)}
+                      </span>
+                    )}
+                  </td>
                   <td className={cn(TD, mine && "font-semibold")}>
                     <SubmitterLink
                       username={r.username}
