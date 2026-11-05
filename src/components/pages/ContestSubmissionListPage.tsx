@@ -1,14 +1,15 @@
-import React, { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { format, isSameDay } from "date-fns";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { getContestSubmissionPage } from "@/services/Contest/getContestSubmissionPage";
 import ContestShell from "@/components/contest/ContestShell";
 import Verdict from "@/components/contest/Verdict";
+import Segmented from "@/components/contest/Segmented";
 import SubmitterLink from "@/components/common/SubmitterLink";
-import { isAcm, isMine, letterOf, parseTime, scoreColor, useCurrentUser } from "@/components/contest/contestKit";
+import { isAcm, isMine, letterOf, parseTime, scoreColor, sortProblems, useCurrentUser } from "@/components/contest/contestKit";
 import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
 import { cn } from "@/lib/utils";
 
@@ -29,10 +30,31 @@ export default function ContestSubmissionListPage() {
   const user = useCurrentUser();
   const [page, setPage] = useState(1);
   const { data: detail } = useQueryToGetContestDetail(contestId || 0);
+  // 筛选条件放在地址栏里：榜单可以直接链接到“某人某题的提交”，刷新也不丢
+  const [params, setParams] = useSearchParams();
+  const pid = params.get("pid") ?? "";
+  const result = (params.get("result") ?? "") as "" | "accepted" | "rejected";
+  const username = params.get("user") ?? "";
+  const [userInput, setUserInput] = useState(username);
+  useEffect(() => setUserInput(username), [username]);
+  const setFilter = (key: string, value: string) => {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    setParams(next, { replace: true });
+    setPage(1);
+  };
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["contestSubmissions", contestId, page],
-    queryFn: () => getContestSubmissionPage(contestId, { current: page, size: SIZE }),
+    queryKey: ["contestSubmissions", contestId, page, pid, result, username],
+    queryFn: () =>
+      getContestSubmissionPage(contestId, {
+        current: page,
+        size: SIZE,
+        pid: pid || undefined,
+        result: result || undefined,
+        username: username || undefined,
+      }),
     enabled: !!contestId,
     placeholderData: keepPreviousData,
     // 有评测中的提交时自动刷新
@@ -61,6 +83,60 @@ export default function ContestSubmissionListPage() {
       <Helmet>
         <title>{detail?.title ? `提交 - ${detail.title} - SEUOJ` : "提交 - SEUOJ"}</title>
       </Helmet>
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <Segmented
+          label="题目"
+          value={pid}
+          onChange={(v) => setFilter("pid", v)}
+          options={[
+            { value: "", label: "全部题目" },
+            ...sortProblems(detail?.problem_list).map((p) => ({
+              value: p.pid,
+              label: letterOf(p.sort_order),
+              title: p.title,
+            })),
+          ]}
+        />
+        <Segmented
+          label="结果"
+          value={result}
+          onChange={(v) => setFilter("result", v)}
+          options={[
+            { value: "", label: "全部结果" },
+            { value: "accepted", label: "通过" },
+            { value: "rejected", label: "未通过" },
+          ]}
+        />
+        {showWho &&
+          (username ? (
+            <span className="inline-flex items-center gap-1.5 text-[13px] text-slate-700">
+              选手 <b className="font-mono font-medium">{username}</b>
+              <button
+                type="button"
+                aria-label="清除选手筛选"
+                onClick={() => setFilter("user", "")}
+                className="text-slate-400 hover:text-slate-900"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </span>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setFilter("user", userInput.trim());
+              }}
+            >
+              <input
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                placeholder="按账号名筛选"
+                aria-label="按账号名筛选"
+                className="w-40 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[13px] outline-none focus:border-primary"
+              />
+            </form>
+          ))}
+      </div>
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr>

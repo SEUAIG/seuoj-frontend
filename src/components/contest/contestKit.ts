@@ -115,14 +115,16 @@ export interface ProblemStat {
   tried: number;
   /** ACM：本题最早通过的分钟数 */
   firstAc: number | null;
+  /** 最早通过的人（同一分钟可能有多人） */
+  firstBy: string[];
 }
 
 export function problemStats(data?: ContestStandingsData): Record<string, ProblemStat> {
   const out: Record<string, ProblemStat> = {};
-  for (const p of data?.problems ?? []) out[p.pid] = { solvers: 0, tried: 0, firstAc: null };
+  for (const p of data?.problems ?? []) out[p.pid] = { solvers: 0, tried: 0, firstAc: null, firstBy: [] };
   for (const r of data?.records ?? []) {
     for (const [pid, d] of Object.entries(r.score_details ?? {})) {
-      const st = (out[pid] ??= { solvers: 0, tried: 0, firstAc: null });
+      const st = (out[pid] ??= { solvers: 0, tried: 0, firstAc: null, firstBy: [] });
       const state = cellStateOf(d, data?.rule_type);
       if (!state) continue;
       st.tried++;
@@ -130,6 +132,9 @@ export function problemStats(data?: ContestStandingsData): Record<string, Proble
         st.solvers++;
         if (d.acceptedTime != null && (st.firstAc == null || d.acceptedTime < st.firstAc)) {
           st.firstAc = d.acceptedTime;
+          st.firstBy = [displayName(r)];
+        } else if (d.acceptedTime != null && d.acceptedTime === st.firstAc) {
+          st.firstBy.push(displayName(r));
         }
       }
     }

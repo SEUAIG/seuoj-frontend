@@ -1,6 +1,6 @@
 import SubmitterLink from "@/components/common/SubmitterLink";
 import React from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Loader2 } from "lucide-react";
 import ContestShell from "@/components/contest/ContestShell";
@@ -23,49 +23,54 @@ import type { ContestRuleType, ContestStandingsScoreDetail } from "@/models/cont
 import { cn } from "@/lib/utils";
 
 const TD = "whitespace-nowrap border-b border-slate-100 px-2 py-[9px] text-center font-mono";
+const TH = "whitespace-nowrap px-2 py-2.5 font-medium";
+/** 能点进提交记录的格子 */
+const GO = "cursor-pointer hover:bg-slate-100";
 
-function AcmCell({ d, st }: { d?: ContestStandingsScoreDetail; st?: ProblemStat }) {
+interface CellProps {
+  d?: ContestStandingsScoreDetail;
+  st?: ProblemStat;
+  rule?: ContestRuleType;
+  /** 点击进入这个人这道题的提交；不能点时为空 */
+  go?: () => void;
+}
+
+function AcmCell({ d, st, go }: CellProps) {
   if (!d) return <td className={TD} />;
   const n = d.unacceptedCount ?? 0;
   if (d.accepted) {
     const t = d.acceptedTime ?? 0;
     const first = st?.firstAc != null && d.acceptedTime === st.firstAc;
     return (
-      <td className={TD}>
-        <div
-          className="leading-tight"
-          title={`${first ? "本题第一个通过\n" : ""}${hm(t)} 通过${n ? `，此前错 ${n} 次` : ""}`}
-        >
-          <b className={cn("block text-sm", first ? "font-extrabold text-green-900" : "font-semibold text-green-700")}>
-            +{n || ""}
-          </b>
-          <i className="block text-[11px] not-italic text-slate-400">{hm(t)}</i>
-        </div>
-      </td>
-    );
-  }
-  if (n) {
-    return (
-      <td className={TD}>
-        <b className="text-sm font-semibold text-red-600" title={`错 ${n} 次`}>
-          −{n}
+      <td
+        onClick={go}
+        className={cn(TD, first && "bg-green-700 text-white", go && (first ? "cursor-pointer hover:bg-green-800" : GO))}
+        title={`${first ? "本题第一个通过\n" : ""}${hm(t)} 通过${n ? `，此前错 ${n} 次` : ""}`}
+      >
+        <b className={cn("block text-sm leading-tight", first ? "font-bold" : "font-semibold text-green-700")}>
+          +{n || ""}
         </b>
+        <i className={cn("block text-[11px] not-italic leading-tight", first ? "text-green-100" : "text-slate-400")}>
+          {hm(t)}
+        </i>
       </td>
     );
   }
   return (
-    <td className={TD}>
-      <b className="text-sm font-normal text-slate-400" title="没有计罚时的提交">
-        −
-      </b>
+    <td onClick={go} className={cn(TD, go && GO)} title={n ? `错 ${n} 次` : "没有计罚时的提交"}>
+      {n ? (
+        <b className="text-sm font-semibold text-red-600">−{n}</b>
+      ) : (
+        <b className="text-sm font-normal text-slate-400">−</b>
+      )}
     </td>
   );
 }
 
-function ScoreCell({ d }: { d?: ContestStandingsScoreDetail }) {
+function ScoreCell({ d, go }: CellProps) {
   if (!d || d.score == null) return <td className={TD} />;
   return (
-    <td className={TD}>
+    <td onClick={go} className={cn(TD, go && GO)}>
       <span className="font-semibold" style={{ color: scoreColor(d.score) }}>
         {d.score}
       </span>
@@ -73,13 +78,14 @@ function ScoreCell({ d }: { d?: ContestStandingsScoreDetail }) {
   );
 }
 
-function Cell({ d, st, rule }: { d?: ContestStandingsScoreDetail; st?: ProblemStat; rule?: ContestRuleType }) {
-  return isAcm(rule) ? <AcmCell d={d} st={st} /> : <ScoreCell d={d} />;
+function Cell(props: CellProps) {
+  return isAcm(props.rule) ? <AcmCell {...props} /> : <ScoreCell {...props} />;
 }
 
 export default function ContestStandingsPage() {
   const { id } = useParams();
   const contestId = Number(id);
+  const nav = useNavigate();
   const user = useCurrentUser();
   const { data: detail } = useQueryToGetContestDetail(contestId || 0);
   const live = contestStatusOf(detail) === "IN_PROGRESS";
@@ -91,18 +97,23 @@ export default function ContestStandingsPage() {
   const records = data?.records ?? [];
   const stats = problemStats(data);
   const statCols = acm ? 2 : 1;
+  const canManage = !!detail?.can_write;
+
+  /** 进入某人的提交记录：管理者可以看任何人，选手只能看自己 */
+  const submissionsOf = (username: string, mine: boolean, pid?: string) => {
+    if (!canManage && !mine) return undefined;
+    const q = new URLSearchParams();
+    if (canManage) q.set("user", username);
+    if (pid) q.set("pid", pid);
+    return () => nav(`/contest/${contestId}/submissions${q.toString() ? `?${q}` : ""}`);
+  };
 
   return (
     <ContestShell contestId={contestId} tab="standings">
       <Helmet>
         <title>{detail?.title ? `排名 - ${detail.title} - SEUOJ` : "排名 - SEUOJ"}</title>
       </Helmet>
-      <div className="mb-4 flex items-baseline gap-3.5">
-        <h2 className="m-0 font-display text-[26px] font-semibold">排名</h2>
-        <span className="text-[13px] text-slate-500">
-          {rule} · {records.length} 人
-        </span>
-      </div>
+      <h2 className="mb-4 font-display text-[26px] font-semibold">排名</h2>
 
       {isLoading ? (
         <div className="flex justify-center py-24">
@@ -116,40 +127,71 @@ export default function ContestStandingsPage() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="text-xs font-medium text-slate-500">
-                <th className="whitespace-nowrap border-b border-slate-900 px-2 py-2.5 text-right font-medium">#</th>
-                <th className="whitespace-nowrap border-b border-slate-900 px-2 py-2.5 text-left font-medium">选手</th>
+              <tr className="border-b border-slate-200 text-xs text-slate-500">
+                <th className={cn(TH, "text-right")}>#</th>
+                <th className={cn(TH, "text-left")}>选手</th>
                 {acm ? (
                   <>
-                    <th className="whitespace-nowrap border-b border-slate-900 px-2 py-2.5 font-medium">通过</th>
-                    <th className="whitespace-nowrap border-b border-slate-900 px-2 py-2.5 font-medium">罚时</th>
+                    <th className={TH}>通过</th>
+                    <th className={TH}>罚时</th>
                   </>
                 ) : (
-                  <th className="whitespace-nowrap border-b border-slate-900 px-2 py-2.5 font-medium">总分</th>
+                  <th className={TH}>总分</th>
                 )}
                 {problems.map((p) => (
-                  <th key={p.pid} className="min-w-[60px] whitespace-nowrap border-b border-slate-900 px-2 py-2.5 text-center">
+                  <th key={p.pid} className={cn(TH, "min-w-[64px] text-center")}>
                     <Link
                       to={`/contest/${contestId}/${p.pid}`}
                       title={`${letterOf(p.sort_order)}. ${p.title}`}
-                      className="block font-display text-[15px] font-semibold text-slate-900 hover:text-primary"
+                      className="font-display text-[15px] font-semibold text-slate-900 hover:text-primary"
                     >
                       {letterOf(p.sort_order)}
                     </Link>
-                    <span className="font-mono text-[11px] font-normal text-slate-400">{stats[p.pid]?.solvers ?? 0}</span>
                   </th>
                 ))}
               </tr>
+              {/* 每题统计放在所有人上面 */}
+              <tr className={cn("text-xs text-slate-500", !acm && "border-b border-slate-900")}>
+                <td />
+                <td className="px-2 py-2 text-left">通过 / 尝试</td>
+                <td colSpan={statCols} />
+                {problems.map((p) => (
+                  <td key={p.pid} className="whitespace-nowrap px-2 py-2 text-center font-mono">
+                    {stats[p.pid]?.solvers ?? 0} / {stats[p.pid]?.tried ?? 0}
+                  </td>
+                ))}
+              </tr>
+              {acm && (
+                <tr className="border-b border-slate-900 text-xs text-slate-500">
+                  <td />
+                  <td className="px-2 pb-2.5 text-left align-top">第一个通过</td>
+                  <td colSpan={statCols} />
+                  {problems.map((p) => {
+                    const st = stats[p.pid];
+                    const who = st?.firstBy.join("、");
+                    return (
+                      <td key={p.pid} className="px-2 pb-2.5 text-center align-top" title={who}>
+                        {st?.firstAc != null ? (
+                          <>
+                            <span className="block font-mono">{hm(st.firstAc)}</span>
+                            <span className="mx-auto block max-w-[6rem] truncate text-[11px] text-green-800">{who}</span>
+                          </>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              )}
             </thead>
             <tbody>
               {records.map((r) => {
                 const mine = isMine(r, user);
                 const name = displayName(r);
+                const goAll = submissionsOf(r.username, mine);
                 return (
-                  <tr
-                    key={r.user_id ?? r.username}
-                    className={cn("group", mine ? "bg-primary/[0.07]" : "hover:bg-white")}
-                  >
+                  <tr key={r.user_id ?? r.username} className={cn(mine ? "bg-primary/[0.07]" : "hover:bg-white")}>
                     <td className={cn(TD, "w-10 text-right text-slate-500")}>
                       {r.is_starred || r.rank == null ? <span title="打星，不占正式名次">*</span> : r.rank}
                     </td>
@@ -168,20 +210,37 @@ export default function ContestStandingsPage() {
                         className="text-inherit hover:underline"
                       />
                       {name !== r.username && (
-                        <small className="ml-2 hidden font-mono text-[11px] font-normal text-slate-400 sm:inline">{r.username}</small>
+                        <small className="ml-2 hidden font-mono text-[11px] font-normal text-slate-400 sm:inline">
+                          {r.username}
+                        </small>
                       )}
                     </td>
                     {acm ? (
                       <>
-                        <td className={cn(TD, "font-semibold")}>{r.score}</td>
-                        <td className={cn(TD, "text-slate-500")}>{r.penalty ?? 0}</td>
+                        <td onClick={goAll} className={cn(TD, "font-semibold", goAll && GO)} title={goAll && "查看提交"}>
+                          {r.score}
+                        </td>
+                        <td onClick={goAll} className={cn(TD, "text-slate-500", goAll && GO)} title={goAll && "查看提交"}>
+                          {r.penalty ?? 0}
+                        </td>
                       </>
                     ) : (
-                      <td className={cn(TD, "font-semibold")}>{r.score}</td>
+                      <td onClick={goAll} className={cn(TD, "font-semibold", goAll && GO)} title={goAll && "查看提交"}>
+                        {r.score}
+                      </td>
                     )}
-                    {problems.map((p) => (
-                      <Cell key={p.pid} d={r.score_details?.[p.pid]} st={stats[p.pid]} rule={rule} />
-                    ))}
+                    {problems.map((p) => {
+                      const d = r.score_details?.[p.pid];
+                      return (
+                        <Cell
+                          key={p.pid}
+                          d={d}
+                          st={stats[p.pid]}
+                          rule={rule}
+                          go={d ? submissionsOf(r.username, mine, p.pid) : undefined}
+                        />
+                      );
+                    })}
                   </tr>
                 );
               })}
@@ -193,35 +252,6 @@ export default function ContestStandingsPage() {
                 </tr>
               )}
             </tbody>
-            {records.length > 0 && (
-              <tfoot className="text-xs text-slate-500">
-                <tr>
-                  <td />
-                  <td className="px-2 pt-3 text-right">通过 / 尝试</td>
-                  <td colSpan={statCols} />
-                  {problems.map((p) => (
-                    <td key={p.pid} className="whitespace-nowrap px-2 pt-3 text-center font-mono">
-                      {stats[p.pid]?.solvers ?? 0} / {stats[p.pid]?.tried ?? 0}
-                    </td>
-                  ))}
-                </tr>
-                {acm && (
-                  <tr>
-                    <td />
-                    <td className="px-2 pt-1.5 text-right">第一个通过</td>
-                    <td colSpan={statCols} />
-                    {problems.map((p) => {
-                      const t = stats[p.pid]?.firstAc;
-                      return (
-                        <td key={p.pid} className="whitespace-nowrap px-2 pt-1.5 text-center font-mono">
-                          {t != null ? hm(t) : "—"}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                )}
-              </tfoot>
-            )}
           </table>
         </div>
       )}

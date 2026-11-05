@@ -184,6 +184,11 @@ export type ContestSubmissionDetailResponse = ApiResponse<ContestSubmissionDetai
 export interface ContestSubmissionPageQuery {
   current?: number;
   size?: number;
+  pid?: string;
+  /** accepted 只看通过；rejected 只看已评完未通过 */
+  result?: "accepted" | "rejected";
+  /** 按账号名筛选，只对比赛管理者生效 */
+  username?: string;
 }
 
 export interface ContestSubmissionRecord {
