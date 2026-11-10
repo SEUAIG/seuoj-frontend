@@ -4,7 +4,7 @@ import { ProblemSection } from "./ProblemSection";
 import { ExampleSection } from "./ExampleSection";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import type { ProblemData, ProblemInfo as Info } from "@/models/problem";
-import { Clock, Database } from "lucide-react";
+import { Code, Clock, Database } from "lucide-react";
 interface ContestProblemDetailInfoProps {
   problem: ProblemData;
   isAuthenticated: boolean;
@@ -20,11 +20,9 @@ export default function ContestProblemDetailInfo({
     max_real_time_ms,
     max_memory_kb,
     max_memory_byte,
-    max_output_size = "10000",
     min_cpu_time_ms,
     min_memory_kb,
     min_memory_byte,
-    test_case_number = "1",
     problem_type = "Standard",
     checker_type = "Standard",
   } = info as Info;
@@ -65,12 +63,6 @@ export default function ContestProblemDetailInfo({
     if (min === "∞" || max === "∞") return "∞";
     return min === max ? min : `${min}-${max}`;
   };
-  const formatSize = (val: string | number) => {
-    if (String(val) === "-1") return "∞";
-    const bytes = Number(val);
-    if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KiB`;
-    return `${bytes} B`;
-  };
   const maxMemoryValue =
     max_memory_kb ??
     (max_memory_byte !== undefined
@@ -96,15 +88,15 @@ export default function ContestProblemDetailInfo({
         ? "交互"
         : "传统";
   return (
-    <div className="space-y-8 p-4 md:p-6">
+    <div className="problem-statement space-y-8 p-5 md:p-8">
       {/* === 1. 头部标题与标签 === */}
-      <div className="space-y-4">
+      <div className="problem-statement-header space-y-4">
         <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
           {pid}. {title}
         </h1>
         <div className="flex flex-wrap gap-3">
           <Badge variant="outline" className="bg-emerald-600 text-white flex items-center gap-2 px-3 py-1 rounded-lg">
-            {problemTypeLabel}
+            <Code size={16} /> {problemTypeLabel}
           </Badge>
           <Badge variant="outline" className="bg-pink-600 text-white flex items-center gap-2 px-3 py-1 rounded-lg">
             <Clock size={16} /> {timeLimitText}
@@ -112,16 +104,10 @@ export default function ContestProblemDetailInfo({
           <Badge variant="outline" className="bg-blue-600 text-white flex items-center gap-2 px-3 py-1 rounded-lg">
             <Database size={16} /> {memoryLimitText}
           </Badge>
-          <Badge variant="outline" className="bg-cyan-600 text-white flex items-center gap-2 px-3 py-1 rounded-lg">
-            输出限制 {formatSize(max_output_size)}
-          </Badge>
-          <Badge variant="outline" className="bg-teal-600 text-white flex items-center gap-2 px-3 py-1 rounded-lg">
-            测试点 {test_case_number}
-          </Badge>
         </div>
       </div>
       {/* === 2. 题目内容 === */}
-      <div className="space-y-8">
+      <div className="space-y-6">
         <ProblemSection title="题目描述">
           <MarkdownRenderer>{description}</MarkdownRenderer>
         </ProblemSection>
@@ -135,23 +121,19 @@ export default function ContestProblemDetailInfo({
             <MarkdownRenderer>{output}</MarkdownRenderer>
           </ProblemSection>
         )}
-        {example && example.length > 0 && (
-          <div className="space-y-6">
-            {example.map((ex, idx) => (
-              <ExampleSection
-                key={idx}
-                index={idx + 1}
-                input={ex.in}
-                output={ex.ans}
-                explain={ex.description}
-                isAuthenticated={isAuthenticated}
-              />
-            ))}
-          </div>
-        )}
+        {example?.map((ex, index) => (
+          <ExampleSection
+            key={index}
+            index={index}
+            input={ex.in}
+            output={ex.ans}
+            explain={ex.description}
+            isAuthenticated={isAuthenticated}
+          />
+        ))}
         {hint && (
-          <ProblemSection title="数据范围与提示">
-            <MarkdownRenderer>{hint}</MarkdownRenderer>
+          <ProblemSection title={hint.startsWith("### 样例解释\n") ? "样例解释" : "数据范围与提示"}>
+            <MarkdownRenderer previewImages>{hint.replace(/^### 样例解释\n+/, "")}</MarkdownRenderer>
           </ProblemSection>
         )}
       </div>

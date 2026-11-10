@@ -20,7 +20,6 @@ import {
   ListChecks,
   Database,
   Edit,
-  MessageCircle,
   Rocket,
   Trash2,
   Loader2,
@@ -130,9 +129,9 @@ export default function ProblemDetailInfo({
         ? "交互"
         : "传统";
   return (
-    <div className="space-y-8 p-4 md:p-6">
+    <div className="problem-statement space-y-8 p-5 md:p-8">
       {/* === 1. 头部标题与标签 === */}
-      <div className="space-y-4">
+      <div className="problem-statement-header space-y-4">
         <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
           {pid}. {title}
         </h1>
@@ -145,9 +144,6 @@ export default function ProblemDetailInfo({
           </Badge>
           <Badge variant="outline" className="bg-blue-600 text-white flex items-center gap-2 px-3 py-1 rounded-lg">
             <Database size={16} /> {memoryLimitText}
-          </Badge>
-          <Badge variant="outline" className="bg-cyan-600 text-white flex items-center gap-2 px-3 py-1 rounded-lg">
-            <ListChecks size={16} /> {test_case_number} 测试点
           </Badge>
           <Badge
             variant="outline"
@@ -171,7 +167,7 @@ export default function ProblemDetailInfo({
           </div>
         )}
       </div>
-      <div className="flex flex-wrap gap-4 justify-start">
+      <div className="problem-statement-actions flex flex-wrap gap-4 justify-start">
         <Button
           onClick={() => nav(`/evaluation?pid=${pid}`)}
           className="bg-green-600 hover:bg-green-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
@@ -179,7 +175,7 @@ export default function ProblemDetailInfo({
           <ListChecks className="mr-2 h-4 w-4" />
           提交记录
         </Button>
-        {isTeacherOrAbove && (
+        {problem.can_write && (
           <Button
             onClick={() => nav(`/problemsLibrary/${pid}/statistics`)}
             className="bg-orange-600 hover:bg-orange-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
@@ -188,10 +184,6 @@ export default function ProblemDetailInfo({
             统计
           </Button>
         )}
-        <Button className="bg-amber-600 hover:bg-amber-700 text-white transition duration-300 ease-in-out transform hover:scale-105">
-          <MessageCircle className="mr-2 h-4 w-4" />
-          讨论
-        </Button>
         {isAuthenticated && (
           <Button
             className="bg-teal-600 hover:bg-teal-700 text-white transition duration-300 ease-in-out transform hover:scale-105"
@@ -275,8 +267,8 @@ export default function ProblemDetailInfo({
           />
         ))}
         {hint && (
-          <ProblemSection title="数据范围与提示">
-            <MarkdownRenderer>{hint}</MarkdownRenderer>
+          <ProblemSection title={hint.startsWith("### 样例解释\n") ? "样例解释" : "数据范围与提示"}>
+            <MarkdownRenderer previewImages>{hint.replace(/^### 样例解释\n+/, "")}</MarkdownRenderer>
           </ProblemSection>
         )}
       </div>

@@ -209,6 +209,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
       description: dirty.description ? values.description : null,
       input: dirty.input ? values.input : null,
       output: dirty.output ? values.output : null,
+      hint: dirty.hint ? (values.hint ?? "") : null,
       example: values.example.map((item) => ({
         in: item.in,
         ans: item.ans || null,
