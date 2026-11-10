@@ -114,6 +114,7 @@ export default function ContestStandingsPage() {
     queryKey: ["contestStandings", contestId],
     queryFn: () => getContestStandings(contestId!, {}),
     enabled: !!contestId,
+    retry: false,
   });
 
   const loading = isLoading || isFetching;
@@ -194,7 +195,7 @@ export default function ContestStandingsPage() {
                       colSpan={3 + problems.length + (ruleType === "ACM" ? 2 : 1)}
                       className="h-32 text-center text-muted-foreground"
                     >
-                      暂无排名数据
+                      {isError ? (error instanceof Error ? error.message : "排名暂不可见") : "暂无排名数据"}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -204,11 +205,11 @@ export default function ContestStandingsPage() {
                       className="hover:bg-muted/50"
                     >
                       <TableCell className="text-center">
-                        <RankBadge rank={record.rank} />
+                        {record.is_starred ? <span title="打星，不占正式名次" aria-label="打星" className="text-lg text-muted-foreground">*</span> : record.rank != null ? <RankBadge rank={record.rank} /> : "—"}
                       </TableCell>
                       <TableCell className="font-medium">
-                        {record.nickname || record.username}
-                        {record.nickname && (
+                        {record.display_name || record.nickname || record.username}
+                        {(record.display_name || record.nickname) && (
                           <span className="text-xs text-muted-foreground ml-1">
                             @{record.username}
                           </span>

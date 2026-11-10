@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import ts from 'typescript';
+
+const source = readFileSync(new URL('../src/lib/contestMemberImport.ts', import.meta.url), 'utf8');
+const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 } }).outputText;
+const { parseMemberText, parseMappedRows, readMemberText, guessColumns } = await import('data:text/javascript;base64,' + Buffer.from(js).toString('base64'));
+const normal = parseMemberText('姓名\t学号\t是否打星\t已有账号\n张三\t00123\t是\tacc');
+assert.deepEqual(normal.errors, []); assert.deepEqual(normal.cellErrors, []);
+assert.equal(normal.participants[0].student_no, '00123');
+assert.equal(normal.participants[0].is_starred, true);
+assert.equal(normal.participants[0].username, 'acc');
+assert.equal(parseMemberText('姓名,打星\n张三,').participants[0].is_starred, undefined);
+assert.equal(parseMemberText('姓名,邮箱\n张三,').participants[0].contact_email, undefined);
+assert.equal(parseMemberText('姓名\n"Last, First"').participants[0].display_name, 'Last, First');
+assert.equal(parseMemberText('姓名,学号\n张三,001\n李四,001').cellErrors[0].field, 'student_no');
+assert.equal(parseMemberText('姓名,账号\n张三,abc\n李四,ABC').cellErrors[0].field, 'username');
+assert.equal(parseMemberText('姓名,打星\n张三,maybe').cellErrors[0].field, 'is_starred');
+assert.equal(parseMemberText('姓名,邮箱\n张三,invalid').cellErrors[0].field, 'contact_email');
+assert.equal(parseMappedRows([['a','']], ['student_no','display_name'], false).cellErrors[0].field, 'display_name');
+assert.match(parseMappedRows([['a','b']], ['display_name','display_name'], false).errors[0], /一列/);
+assert.throws(() => readMemberText('姓名\n"未闭合'), /引号/);
+assert.equal(parseMappedRows([['001','张三']], ['student_no','display_name'], false).participants[0].student_no,'001');
+assert.match(parseMappedRows(Array.from({length:1001},() => ['姓名']), ['display_name'], false).errors[0], /1000/);
+assert.deepEqual(guessColumns(['忽略我','姓名','打星']), ['', 'display_name', 'is_starred']);
+console.log('Roster parser: 18 checks passed');

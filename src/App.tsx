@@ -93,6 +93,8 @@ const ContestSubmissionListPage = React.lazy(
 const ContestStandingsPage = React.lazy(
   () => import("./components/pages/ContestStandingsPage")
 );
+const ContestMemberImportPage = React.lazy(() => import("./components/pages/ContestMemberImportPage"));
+const ContestMembersPage = React.lazy(() => import("./components/pages/ContestMembersPage"));
 const ContestEditPage = React.lazy(
   () => import("./components/pages/ContestEditPage")
 );
@@ -192,6 +194,8 @@ function App() {
             />
           </Route>
           <Route element={<ProtectedRoute allowRole="student" />}>
+            <Route path="/contest/:id/members/import" element={<ContestMemberImportPage />} />
+            <Route path="/contest/:id/members" element={<ContestMembersPage />} />
             <Route element={<ProtectedRoute capability="CONTEST_CREATE" />}><Route path="/contest/create" element={<CreateContestPage />} /></Route>
             <Route
               path="/contest/:id/edit"
