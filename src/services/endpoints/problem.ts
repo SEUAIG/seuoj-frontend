@@ -1,5 +1,6 @@
 export const problemEndpoints = {
   create: "/api/problem",
+  import: "/api/problem/import",
   page: "/api/problem/page",
   byPid: (pid: string) => `/api/problem/${pid}`,
   nextId: "/api/problem/next_id",
