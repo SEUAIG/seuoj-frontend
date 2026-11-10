@@ -27,6 +27,9 @@ import { Loader2, ExternalLink, Search, RefreshCw, X } from "lucide-react";
 import ClassPagination from "./ClassPagination";
 import { Button } from "../ui/button";
 
+import SubmitterLink from "../common/SubmitterLink";
+import { problemPath } from "@/lib/problemNavigation";
+
 const verdictDisplayMap: Record<string, { label: string; color: string }> = {
   Accepted: {
     label: "AC",
@@ -87,15 +90,20 @@ const verdictOptions = [
 ];
 
 const languageOptions = [
+  { value: "Rust", label: "Rust" },
   { value: "C", label: "C" },
   { value: "Cpp", label: "C++" },
   { value: "Cpp11", label: "C++11" },
   { value: "Cpp17", label: "C++17" },
   { value: "Cpp20", label: "C++20" },
+  { value: "Java", label: "Java" },
   { value: "Java17", label: "Java 17" },
-  { value: "Python3_12", label: "Python 3" },
-  { value: "Nodejs22", label: "Node.js" },
-  { value: "Go1_22", label: "Go" },
+  { value: "Python", label: "Python" },
+  { value: "Python3_12", label: "Python 3.12（旧记录）" },
+  { value: "Nodejs", label: "Node.js" },
+  { value: "Nodejs22", label: "Node.js 22（旧记录）" },
+  { value: "Go", label: "Go" },
+  { value: "Go1_22", label: "Go 1.22（旧记录）" },
 ];
 
 const statusDisplayMap: Record<string, { label: string; color: string }> = {
@@ -123,9 +131,13 @@ const languageLabel: Record<string, string> = {
   Cpp11: "C++11",
   Cpp17: "C++17",
   Cpp20: "C++20",
+  Java: "Java",
   Java17: "Java 17",
+  Python: "Python",
   Python3_12: "Python 3",
+  Nodejs: "Node.js",
   Nodejs22: "Node.js",
+  Go: "Go",
   Go1_22: "Go",
 };
 
@@ -152,7 +164,7 @@ export default function SubmissionListPanel({
   pid: initialPid = "",
 }: SubmissionListPanelProps) {
   const navigate = useNavigate();
-  const from = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
+  const from = `${window.location.pathname}${window.location.search}`;
   const { user } = useSelector((state: RootState) => state.auth);
   const isPrivileged =
     user?.role === "teacher" ||
@@ -401,7 +413,7 @@ export default function SubmissionListPanel({
                           key={item.submission_no}
                           className="hover:bg-muted/50 cursor-pointer transition-colors h-12"
                           onClick={() =>
-                            navigate(`/submission/${item.submission_no}`)
+                            navigate(`/submission/${item.submission_no}?${new URLSearchParams({ from, ...(assignmentId !== undefined ? { assignment_id: String(assignmentId) } : {}) })}`)
                           }
                         >
                           <TableCell className="text-muted-foreground text-xs text-center py-2">
@@ -412,7 +424,7 @@ export default function SubmissionListPanel({
                               className="text-primary font-medium hover:underline hover:text-primary/80 transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/problemsLibrary/${item.pid}?from=${from}`);
+                                navigate(problemPath(item.pid, { assignment_id: (assignmentId ?? item.assignment_id)?.toString() }, from));
                               }}
                             >
                               {item.pid}
@@ -447,19 +459,7 @@ export default function SubmissionListPanel({
                             {languageLabel[item.language] ?? item.language}
                           </TableCell>
                           <TableCell className="text-sm text-center py-2">
-                            {item.user_id ? (
-                              <span
-                                className="cursor-pointer text-primary hover:underline"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/user/${item.user_id}`);
-                                }}
-                              >
-                                {item.nickname || item.username || "-"}
-                              </span>
-                            ) : (
-                              item.nickname || item.username || "-"
-                            )}
+                            <SubmitterLink username={item.username} nickname={item.nickname} userId={item.user_id} />
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground font-mono text-center py-2">
                             {formatTime(item.submit_time)}
