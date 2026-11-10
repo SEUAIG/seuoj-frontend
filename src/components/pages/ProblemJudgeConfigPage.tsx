@@ -28,7 +28,7 @@ import {
   type ProblemConfigPayload,
   type ProblemConfigData,
 } from "@/services/getProblemConfig";
-import { uploadProblemTestcases } from "@/services/problemEdit";
+import { uploadProblemTestcases, type TestcaseUploadProgress } from "@/services/problemEdit";
 import TestcaseUploadCard from "@/components/bussiness/TestcaseUploadCard";
 import { ArrowLeft, Plus, Trash2, FolderTree, AlertCircle } from "lucide-react";
 
@@ -507,6 +507,9 @@ export default function ProblemJudgeConfigPage() {
   const [loading, setLoading] = useState(true);
   const [loadedConfig, setLoadedConfig] = useState<ProblemConfigData | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const uploadBusy = React.useRef(false);
+  const [uploadProgress, setUploadProgress] = useState<TestcaseUploadProgress | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<{ kind: "success" | "error"; message: string } | null>(null);
   const [testcases, setTestcases] = useState<TestcaseRow[]>([]);
   const [subtasks, setSubtasks] = useState<SubtaskRow[]>([]);
   const [availableFiles, setAvailableFiles] = useState<string[]>([]);
@@ -529,6 +532,8 @@ export default function ProblemJudgeConfigPage() {
   }, [pid]);
 
   const handleTestcaseFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUploadStatus(null);
+    setUploadProgress(null);
     const file = e.target.files?.[0];
     if (file) {
       setTestcaseFile(file);
@@ -546,17 +551,26 @@ export default function ProblemJudgeConfigPage() {
   };
 
   const handleConfirmUpload = async () => {
+    if (uploadBusy.current) return;
     if (!testcaseFile || !testcaseFormat) {
       toast.error("请先选择测试用例文件及格式", { position: "top-center" });
       return;
     }
+    uploadBusy.current = true;
     setConfirmLoading(true);
+    setUploadStatus(null);
+    setUploadProgress({ loaded: 0, percent: 0, stage: "uploading" });
+    let uploaded = false;
     try {
-      const uploadRes = await uploadProblemTestcases(pid, testcaseFile, testcaseFormat);
+      const uploadRes = await uploadProblemTestcases(pid, testcaseFile, testcaseFormat, setUploadProgress);
       if (uploadRes?.code !== undefined && uploadRes.code !== 0 && uploadRes.code !== 200) {
         throw new Error(uploadRes.message || "测试用例上传失败");
       }
-      toast.success("测试用例上传成功，正在解析...", { position: "top-center" });
+      uploaded = true;
+      setTestcaseFile(null);
+      setTestcaseFormat("");
+      setUploadProgress({ loaded: testcaseFile.size, percent: 100, stage: "processing" });
+      setUploadStatus({ kind: "success", message: "测试数据已上传，正在刷新测试点列表。" });
 
       // 上传只解压文件到 data/ 目录，不会自动更新 info.toml，
       // 因此通过文件树接口获取 data/ 下的 .in 文件生成测试点（答案文件由用户显式选择）
@@ -587,11 +601,13 @@ export default function ProblemJudgeConfigPage() {
           pre_subtasks: [], score: 100, type: "min",
         }] : []);
         setDirty(true);
+        setUploadStatus({ kind: "success", message: `测试数据已上传，识别出 ${generatedRows.length} 个测试点，请检查后保存配置。` });
         toast.success(`已从上传文件中识别出 ${generatedRows.length} 个测试点，请检查后保存配置`, {
           position: "top-center",
           duration: 5000,
         });
       } else {
+        setUploadStatus({ kind: "success", message: "测试数据已上传，未找到 .in 文件，请手动添加测试点。" });
         toast.warning("未在上传文件中找到 .in 文件，请手动添加测试点", {
           position: "top-center",
           duration: 5000,
@@ -600,8 +616,13 @@ export default function ProblemJudgeConfigPage() {
       setTestcaseFile(null);
       setTestcaseFormat("");
     } catch (error: any) {
-      toast.error(error.message || "上传失败", { position: "top-center" });
+      const message = uploaded
+        ? "测试数据已上传，但刷新测试点列表失败。请点击刷新文件树检查，无需重复上传。"
+        : error.message || "测试数据上传失败，请稍后重试。";
+      setUploadStatus({ kind: "error", message });
+      toast.error(message, { position: "top-center", duration: 7000 });
     } finally {
+      uploadBusy.current = false;
       setConfirmLoading(false);
     }
   };
@@ -736,6 +757,11 @@ export default function ProblemJudgeConfigPage() {
   const selectedProblemType = form.watch("problem_type");
 
   const onSubmit = async (values: JudgeConfigValues) => {
+    if (uploadBusy.current) return;
+    if (testcaseFile && !testcaseFormat) {
+      toast.error("请先选择正确的测试用例文件格式", { position: "top-center" });
+      return;
+    }
     if (errors.length > 0) {
       toast.error(`存在 ${errors.length} 个错误，请先修复后再提交`, { position: "top-center" });
       return;
@@ -794,7 +820,21 @@ export default function ProblemJudgeConfigPage() {
 
       // 若有待上传文件，一并上传
       if (testcaseFile) {
-        await uploadProblemTestcases(pid, testcaseFile, testcaseFormat);
+        uploadBusy.current = true;
+        setConfirmLoading(true);
+        setUploadStatus(null);
+        setUploadProgress({ loaded: 0, percent: 0, stage: "uploading" });
+        try {
+          await uploadProblemTestcases(pid, testcaseFile, testcaseFormat, setUploadProgress);
+          setTestcaseFile(null);
+          setTestcaseFormat("");
+        } catch (error) {
+          setUploadStatus({ kind: "error", message: error instanceof Error ? error.message : "测试数据上传失败，请稍后重试。" });
+          throw error;
+        } finally {
+          uploadBusy.current = false;
+          setConfirmLoading(false);
+        }
         toast.success("配置与测试用例已保存", { position: "top-center" });
       } else {
         toast.success("配置已保存", { position: "top-center" });
@@ -872,6 +912,9 @@ export default function ProblemJudgeConfigPage() {
             onFormatChange={setTestcaseFormat}
             onConfirm={handleConfirmUpload}
             confirmLoading={confirmLoading}
+            disabled={formState.isSubmitting}
+            uploadProgress={uploadProgress}
+            uploadStatus={uploadStatus}
           />
 
           {/* 测试点编辑 */}
@@ -1310,7 +1353,7 @@ export default function ProblemJudgeConfigPage() {
             </Button>
             <Button
               type="submit"
-              disabled={formState.isSubmitting || errors.length > 0}
+              disabled={confirmLoading || formState.isSubmitting || errors.length > 0}
               className={`min-w-[120px] shadow-sm ${
                 errors.length > 0 ? "bg-destructive hover:bg-destructive" : "bg-blue-600 hover:bg-blue-700"
               }`}
