@@ -1,6 +1,8 @@
+import type { Capability } from "@/lib/capabilities";
 export type UserRole = "guest" | "student" | "teacher" | "admin" | "superadmin";
 
 export type User = {
+    capabilities?: Capability[];
     id:string;
     username:string;
     nickname?:string;

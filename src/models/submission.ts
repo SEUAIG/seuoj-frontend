@@ -27,6 +27,7 @@ export interface SubmissionPageRequest {
 }
 
 export interface SubmissionListItem {
+  assignment_id: number | null;
   pid: string;
   language: string;
   status: SubmissionStatus;
@@ -62,21 +63,26 @@ export interface SubtaskItem {
 }
 
 export interface SubmissionData {
+  assignmentId: number | null;
+  contestId?: number;
+  maxTime?: number | null;
+  maxMemory?: number | null;
+  testDataVisible?: boolean;
   submissionNo: string;
   pid: string;
   language: string;
   status: SubmissionStatus;
   verdict: SubmissionVerdict;
-  resultDetail: ResultDetailItem[] | null;
-  errorDetail: string | null;
+  resultDetail?: ResultDetailItem[] | null;
+  errorDetail?: string | null;
   submitTime: string;
-  finishTime: string;
+  finishTime?: string | null;
   message?: string;
   code: string;
   username: string;
   nickname?: string;
   userId?: number;
-  score?: number;
+  score?: number | null;
   subtasks?: SubtaskItem[];
 }
 

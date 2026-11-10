@@ -1,3 +1,4 @@
+import type { ResultDetailItem, SubtaskItem } from "./submission";
 import type { ApiResponse, ApiResponseBase } from "@/models/common";
 import type { ProblemContent } from "@/models/problem";
 
@@ -63,6 +64,7 @@ export interface ContestDetailData {
   end_time?: string;
   status?: ContestStatus;
   is_registered?: boolean;
+  can_unregister?: boolean;
   rule_type?: ContestRuleType;
   is_public?: boolean;
   hide_statistics?: boolean;
@@ -112,7 +114,9 @@ export interface ContestStandingsScoreDetail {
 }
 
 export interface ContestStandingsRecord {
-  rank: number;
+  rank: number | null;
+  display_name?: string;
+  is_starred?: boolean;
   username: string;
   nickname?: string;
   score: number;
@@ -162,8 +166,12 @@ export interface ContestSubmissionDetailData {
   status: ContestSubmissionStatus;
   verdict: ContestSubmissionVerdict | null;
   score: number | null;
-  result_detail: ContestSubmissionResultItem[] | null;
-  error_detail: string | null;
+  result_detail?: ResultDetailItem[] | null;
+  max_time?: number | null;
+  max_memory?: number | null;
+  test_data_visible?: boolean;
+  subtasks?: SubtaskItem[];
+  error_detail?: string | null;
   submit_time: string;
   code: string | null;
   username: string;
