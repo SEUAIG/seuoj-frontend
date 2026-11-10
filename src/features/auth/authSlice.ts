@@ -1,7 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { User, AuthState } from "./types";
 import { loginRequest, signupRequest } from "@/services/auth";
-import axios from "axios";
 
 let onLoginSuccess: (() => void) | null = null;
 export const setOnLoginSuccess = (cb: () => void) => { onLoginSuccess = cb; };
@@ -24,6 +23,14 @@ const initialState: AuthState = {
   jwt: undefined,
 };
 const isSuccessCode = (code: number) => code === 0;
+// axios 拦截器会把后端返回的 message 写进 error.message
+const requestErrorMessage = (error: unknown) =>
+  typeof error === "object" &&
+  error !== null &&
+  "message" in error &&
+  typeof (error as { message?: unknown }).message === "string"
+    ? (error as { message: string }).message
+    : "http 请求失败";
 export const login = createAsyncThunk(
   "auth/login",
   async ({ identifier, password }: LoginPayload, thunkAPI) => {
@@ -37,14 +44,7 @@ export const login = createAsyncThunk(
       }
       return result;
     } catch (error: unknown) {
-      const message =
-        typeof error === "object" &&
-        error !== null &&
-        "message" in error &&
-        typeof (error as { message?: unknown }).message === "string"
-          ? (error as { message: string }).message
-          : "http 请求失败";
-      return thunkAPI.rejectWithValue(message);
+      return thunkAPI.rejectWithValue(requestErrorMessage(error));
     }
     // 异步函数的返回值fulfilled会作为action payload  rejected的error。message 会是reject with value
   }
@@ -64,14 +64,14 @@ export const signup = createAsyncThunk(
         code,
       });
       if (!isSuccessCode(result.code)) {
-        return thunkAPI.rejectWithValue(result.message || "注册失败，请稍后重试");
+        if (result.code === 409) {
+          return thunkAPI.rejectWithValue("注册时用户名重复");
+        }
+        return thunkAPI.rejectWithValue("注册失败");
       }
       return result;
     } catch (error: unknown) {
-      const message = axios.isAxiosError<{ message?: string }>(error)
-        ? error.response?.data?.message
-        : error instanceof Error ? error.message : undefined;
-      return thunkAPI.rejectWithValue(message || "网络连接失败，请稍后重试");
+      return thunkAPI.rejectWithValue(requestErrorMessage(error));
     }
   }
 );
@@ -89,6 +89,15 @@ const authSlice = createSlice({
     setError(state, action) {
       state.error = action.payload;
     },
+    setCurrentProfile(state, action) {
+      if (state.user) {
+        state.user.id = String(action.payload.id);
+        state.user.username = action.payload.username;
+        state.user.nickname = action.payload.nickname || undefined;
+        if (action.payload.role) state.user.role = action.payload.role;
+        if (action.payload.capabilities) state.user.capabilities = action.payload.capabilities;
+      }
+    },
     setNickname(state, action) {
       if (state.user) {
         state.user.nickname = action.payload;
@@ -98,14 +107,15 @@ const authSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(login.fulfilled, (state, action) => {
-        const { jwt, username, nickname, role } = action.payload.data;
+        const { jwt, username, nickname, role, id, capabilities } = action.payload.data;
         const normalizedRole: User["role"] =
           role === "admin" || role === "superadmin" || role === "teacher" || role === "student" || role === "guest"
             ? role
             : "student";
         state.jwt = jwt;
         state.user = {
-          id: "1",
+          id: String(id),
+          capabilities,
           username: username || "user",
           nickname: nickname || undefined,
           avatarUrl: "",
@@ -120,5 +130,5 @@ const authSlice = createSlice({
       });
   },
 });
-export const { resetAuth, setError, setNickname } = authSlice.actions;
+export const { resetAuth, setError, setNickname, setCurrentProfile } = authSlice.actions;
 export const authReducer = authSlice.reducer;

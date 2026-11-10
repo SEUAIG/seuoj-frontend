@@ -1,14 +1,17 @@
 import React from 'react'
 import { Button } from '../ui/button'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+import { loginPath } from "@/lib/loginRedirect";
 
 export default function AuthButton() {
     const nav = useNavigate()
+    const location = useLocation();
   return (
     <>
       <Button
         className="bg-zinc-900 text-white hover:bg-zinc-600"
-        onClick={() => nav("/login")}
+        onClick={() => nav(loginPath(location.pathname + location.search + location.hash))}
       >
         登录
       </Button>

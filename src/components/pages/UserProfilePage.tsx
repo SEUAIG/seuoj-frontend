@@ -1,35 +1,15 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { RootState } from "@/app/store";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Loader2, Pencil } from "lucide-react";
-import { toast } from "sonner";
 import { getUserProfile, UserProfile } from "@/services/user/getUserProfile";
-import { adminUpdateProfile } from "@/services/user/adminUpdateProfile";
-import { updateUserRole } from "@/services/user/updateUserRole";
-import {
-  getAssignableRoles,
-  canEditUserRole,
-  roleToUpper,
-  roleToLower,
-} from "@/lib/rolePermissions";
-import RoleSelect from "@/components/bussiness/RoleSelect";
-import type { CommonUserRole } from "@/models/user";
 import seu from "@/assets/seu.png";
 const roleLabelMap: Record<string, string> = {
   student: "学生",
@@ -52,10 +32,6 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [roleUpdating, setRoleUpdating] = useState(false);
-  const [editProfileOpen, setEditProfileOpen] = useState(false);
-  const [editNickname, setEditNickname] = useState("");
-  const [editProfileLoading, setEditProfileLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("practice");
 
   useEffect(() => {
@@ -88,44 +64,9 @@ export default function UserProfilePage() {
 
   const displayName = profile.nickname || profile.username;
   const initials = displayName.slice(0, 2).toUpperCase();
-  const upperRole = roleToUpper(profile.role);
-  const editable = canEditUserRole(
-    currentUser?.role,
-    currentUser?.username ?? "",
-    profile.username,
-    upperRole
-  );
+  const editable = profile.canManageProfile;
 
-  const openEditProfile = () => {
-    setEditNickname(profile.nickname || "");
-    setEditProfileOpen(true);
-  };
-
-  const handleUpdateProfile = async () => {
-    setEditProfileLoading(true);
-    try {
-      const res = await adminUpdateProfile(profile.id, {
-        nickname: editNickname,
-      });
-      if (res.code === 0) {
-        toast.success("资料更新成功");
-        setProfile((prev) =>
-          prev
-            ? { ...prev, nickname: editNickname.trim() || null }
-            : prev
-        );
-        setEditProfileOpen(false);
-      } else {
-        toast.error(res.message || "更新失败");
-      }
-    } catch (err: unknown) {
-      toast.error(
-        "更新失败: " + (err instanceof Error ? err.message : String(err))
-      );
-    } finally {
-      setEditProfileLoading(false);
-    }
-  };
+  const isSelf = currentUser?.username === profile.username;
 
   return (
     <>
@@ -140,67 +81,43 @@ export default function UserProfilePage() {
           />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%)]" />
           <div className="relative z-10 px-8 py-10 text-white">
-            <div className="text-2xl font-semibold">{displayName} 的主页</div>
-            <div className="text-sm text-white/70 mt-2">@{profile.username}</div>
+            <div className="text-2xl font-semibold [overflow-wrap:anywhere]">{displayName} 的主页</div>
+            <div className="text-sm text-white/70 mt-2 [overflow-wrap:anywhere]">@{profile.username}</div>
           </div>
         </section>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[300px,1fr]">
-          <aside className="space-y-6">
+          <aside className="min-w-0 space-y-6">
             <Card className="overflow-hidden">
               <CardContent className="space-y-4 p-6">
-                <div className="flex items-center gap-4">
+                <div className="flex items-start gap-4">
                   <Avatar className="h-16 w-16">
                     <AvatarFallback className="bg-primary/10 font-semibold text-primary">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold">{displayName}</span>
-                      {editable ? (
-                        <RoleSelect
-                          currentRole={upperRole as CommonUserRole}
-                          assignableRoles={getAssignableRoles(currentUser?.role)}
-                          loading={roleUpdating}
-                          onRoleChange={async (newRole) => {
-                            setRoleUpdating(true);
-                            try {
-                              const res = await updateUserRole(profile.id, newRole);
-                              if (res.code === 0) {
-                                toast.success(`角色已更改为 ${newRole}`);
-                                setProfile((prev) =>
-                                  prev ? { ...prev, role: roleToLower(newRole) } : prev
-                                );
-                              } else {
-                                toast.error(res.message || "角色修改失败");
-                              }
-                            } catch (err: unknown) {
-                              toast.error(
-                                "角色修改失败: " +
-                                  (err instanceof Error ? err.message : String(err))
-                              );
-                            } finally {
-                              setRoleUpdating(false);
-                            }
-                          }}
-                        />
-                      ) : (
-                        <Badge variant={roleVariantMap[profile.role] || "secondary"}>
-                          {roleLabelMap[profile.role] || profile.role}
-                        </Badge>
-                      )}
+                  <div className="min-w-0 flex-1">
+                    <div className="text-lg font-semibold [overflow-wrap:anywhere]">
+                      {displayName}
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
                       @{profile.username}
                     </div>
                   </div>
                 </div>
-                {editable && (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm text-muted-foreground">用户角色</span>
+                  <Badge className="shrink-0 whitespace-nowrap" variant={roleVariantMap[profile.role] || "secondary"}>
+                    {roleLabelMap[profile.role] || profile.role}
+                  </Badge>
+                </div>
+                {(editable || isSelf) && (
                   <div className="flex flex-wrap gap-2">
-                    <Button size="sm" onClick={openEditProfile}>
-                      <Pencil className="h-4 w-4 mr-1" />
-                      编辑资料
+                    <Button size="sm" asChild>
+                      <Link to={isSelf ? "/personal/edit" : `/user/${profile.id}/edit`}>
+                        <Pencil className="h-4 w-4" />
+                        编辑资料
+                      </Link>
                     </Button>
                   </div>
                 )}
@@ -232,7 +149,7 @@ export default function UserProfilePage() {
             </Card>
           </aside>
 
-          <section className="space-y-4">
+          <section className="min-w-0 space-y-4">
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
@@ -294,43 +211,7 @@ export default function UserProfilePage() {
           </section>
         </div>
 
-        {/* Admin Edit Profile Dialog */}
-        <Dialog open={editProfileOpen} onOpenChange={setEditProfileOpen}>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle>编辑资料</DialogTitle>
-              <DialogDescription>
-                修改 @{profile.username} 的昵称。
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3 py-2">
-              <div className="space-y-1">
-                <label className="text-sm font-medium">昵称</label>
-                <Input
-                  placeholder="输入昵称（留空则显示用户名）"
-                  value={editNickname}
-                  onChange={(e) => setEditNickname(e.target.value)}
-                  maxLength={64}
-                  onKeyDown={(e) => e.key === "Enter" && handleUpdateProfile()}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setEditProfileOpen(false)}
-              >
-                取消
-              </Button>
-              <Button
-                onClick={handleUpdateProfile}
-                disabled={editProfileLoading}
-              >
-                {editProfileLoading ? "保存中..." : "保存"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+
       </div>
     </>
   );

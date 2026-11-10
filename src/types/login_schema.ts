@@ -7,7 +7,6 @@ export const login_Schema = z.object({
   password: z
     .string()
     .min(6, "密码至少六位")
-    .max(20,"密码长度不能超过二十位")
-    .regex(PASSWORD_REGEX, "密码只能包含字母、数字和常见英文符号"),
+    .max(64, "密码长度不能超过六十四位"),
 });
 export type login_Values = z.infer<typeof login_Schema>

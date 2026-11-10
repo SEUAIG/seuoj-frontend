@@ -31,9 +31,11 @@ export default function AvatarNew({ user }: { user: User }) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
+            aria-label={`用户菜单：${displayName}`}
+            title={displayName}
             className="flex items-center space-x-1 text-lg font-medium hover:bg-gray-200 rounded-lg p-2"
           >
-            <span>{displayName}</span>
+            <span className="hidden max-w-40 truncate sm:block">{displayName}</span>
             <ChevronDown />
           </Button>
         </DropdownMenuTrigger>

@@ -8,8 +8,26 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import useQueryToGetLanguages from "@/hooks/useQueryToGetLanguages";
+import { languageLabel } from "@/lib/language";
+
+// Keep these commands aligned with judgend/src/judger/build_plan.rs.
+const languageCommands: Record<string, string> = {
+  Rust: "rustc --edition=2021 -O -C codegen-units=1 --cfg ONLINE_JUDGE --extern proconio=/opt/rust-libs/libproconio.rlib -L dependency=/opt/rust-libs/deps source.rs -o executable",
+  C: "gcc -O2 -DONLINE_JUDGE source.c -o executable",
+  Cpp: "g++ -O2 -DONLINE_JUDGE -ftemplate-depth=1024 source.cpp -o executable",
+  Cpp20: "g++ -O2 -DONLINE_JUDGE -ftemplate-depth=1024 -std=c++20 source.cpp -o executable",
+  Python: "python3 source.py",
+  Nodejs: "node source.js",
+  Go: "go build -p=1 -o executable source.go",
+  Java: "javac -J-Xms16m -J-Xmx256m -J-XX:CompressedClassSpaceSize=64m -J-XX:ReservedCodeCacheSize=64m -J-XX:MaxMetaspaceSize=128m -J-XX:ActiveProcessorCount=2 -J-XX:+UseSerialGC Main.java",
+};
 
 export default function HelpPage() {
+  const { data, isLoading, isError } = useQueryToGetLanguages();
+  const languages = Array.isArray(data?.data?.languages)
+    ? data.data.languages.filter((lang) => lang.available)
+    : [];
   const quickLinks = [
     {
       title: "题库",
@@ -65,6 +83,52 @@ export default function HelpPage() {
         </CardContent>
       </Card>
 
+      <Card className="border bg-card/60" id="languages">
+        <CardContent className="p-5 space-y-4">
+          <h2 className="text-base font-semibold">语言版本与编译命令</h2>
+          <p className="text-sm text-muted-foreground">
+            以下为当前评测环境。命令中的文件路径省略了临时目录；Python 和 Node.js 无需编译，列出的是运行命令。
+          </p>
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">加载中...</p>
+          ) : isError ? (
+            <p className="text-sm text-muted-foreground">语言信息加载失败，请刷新重试。</p>
+          ) : languages.length === 0 ? (
+            <p className="text-sm text-muted-foreground">暂无可用的语言信息。</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th scope="col" className="p-3 pl-0">语言</th>
+                    <th scope="col" className="p-3">编译器 / 解释器版本</th>
+                    <th scope="col" className="p-3 pr-0">编译 / 运行命令</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {languages.map((lang) => (
+                    <tr key={lang.name} className="border-b last:border-0 align-top">
+                      <td className="p-3 pl-0 whitespace-nowrap font-medium">{languageLabel(lang.name)}</td>
+                      <td className="p-3 min-w-[200px] break-words">{lang.version || "版本信息暂不可用"}</td>
+                      <td className="p-3 pr-0 min-w-[260px]">
+                        <code className="whitespace-pre-wrap break-words">{languageCommands[lang.name] || "命令信息暂不可用"}</code>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <p>C++ 使用编译器默认语言标准，C++20 显式启用 C++20。C / C++ 编译时均定义 ONLINE_JUDGE 宏。</p>
+            <p>Rust 使用 Edition 2021，预装 proconio 0.5.0（启用 derive，支持 input! 和 #[fastout]）。直接提交单个源文件即可使用，无需提交 Cargo.toml。Rust 与 C++ 使用相同的运行时间、内存限制。</p>
+            <p>Rust 交互题请使用逐行输入（如 proconio 的 LineSource），每次输出后 flush；不要使用 #[fastout] 缓存交互输出。</p>
+            <p>函数式题目会额外添加头文件搜索目录，并与题目提供的 grader 源文件一同编译，请按题面要求提交。</p>
+            <p>Go 编译时设置 GOMAXPROCS=2、GOGC=50，GOMEMLIMIT 为编译内存限制的四分之一（至少 1024 KiB）。Java 的主类名须为 Main。</p>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="border bg-card/60">
         <CardContent className="p-5">
           <Accordion type="multiple" className="w-full">
@@ -88,7 +152,7 @@ export default function HelpPage() {
                   在题库中可通过关键词和标签快速找题，适合按知识点或题目类型安排练习。
                 </p>
                 <p>
-                  进入题目详情后可查看题面、限制和样例，并选择语言进行提交。目前支持 C/C++/Java/Python/Go/Node.js。
+                  进入题目详情后可查看题面、限制和样例，并选择语言进行提交。目前支持 C/C++/Rust/Java/Python/Go/Node.js。
                 </p>
                 <div className="rounded-lg border bg-background/70 p-4 space-y-2">
                   <p className="font-medium text-foreground">代码编写格式</p>
@@ -102,7 +166,15 @@ export default function HelpPage() {
                   <div className="space-y-2 mt-3">
                     <p className="font-medium text-foreground text-xs">各语言模板示例</p>
                     <div className="rounded-md bg-muted/50 p-3 font-mono text-xs overflow-x-auto">
-                      <pre>{`// C++
+                      <pre>{`// Rust
+use proconio::input;
+
+fn main() {
+    input! { n: i64 }
+    println!("{}", n);
+}
+
+// C++
 #include <iostream>
 using namespace std;
 int main() {
