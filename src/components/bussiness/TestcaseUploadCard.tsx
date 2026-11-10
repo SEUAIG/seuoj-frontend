@@ -73,7 +73,7 @@ export default function TestcaseUploadCard({
           </div>
         </div>
         <div className="text-xs text-muted-foreground">
-          上传会覆盖已有测试点，仅支持 UTF-8。单次上传最长等待 5 分钟。
+          上传会覆盖已有测试点，仅支持 UTF-8。压缩包不超过 200 MiB，单次上传最长等待 10 分钟。
         </div>
         {confirmLoading && uploadProgress && (
           <div className="space-y-2" aria-busy="true">

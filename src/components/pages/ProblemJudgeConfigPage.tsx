@@ -28,7 +28,7 @@ import {
   type ProblemConfigPayload,
   type ProblemConfigData,
 } from "@/services/getProblemConfig";
-import { uploadProblemTestcases, type TestcaseUploadProgress } from "@/services/problemEdit";
+import { uploadProblemTestcases, MAX_TESTCASE_ARCHIVE_BYTES, TESTCASE_ARCHIVE_TOO_LARGE, type TestcaseUploadProgress } from "@/services/problemEdit";
 import TestcaseUploadCard from "@/components/bussiness/TestcaseUploadCard";
 import { ArrowLeft, Plus, Trash2, FolderTree, AlertCircle } from "lucide-react";
 
@@ -535,6 +535,14 @@ export default function ProblemJudgeConfigPage() {
     setUploadStatus(null);
     setUploadProgress(null);
     const file = e.target.files?.[0];
+    if (file && file.size > MAX_TESTCASE_ARCHIVE_BYTES) {
+      e.target.value = "";
+      setTestcaseFile(null);
+      setTestcaseFormat("");
+      setUploadStatus({ kind: "error", message: TESTCASE_ARCHIVE_TOO_LARGE });
+      toast.error(TESTCASE_ARCHIVE_TOO_LARGE, { position: "top-center" });
+      return;
+    }
     if (file) {
       setTestcaseFile(file);
       const lower = file.name.toLowerCase();

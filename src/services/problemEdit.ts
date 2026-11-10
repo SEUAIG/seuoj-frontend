@@ -2,7 +2,9 @@ import { isAxiosError } from "axios";
 import { api } from "./api/axios";
 import { problemEndpoints } from "@/services/endpoints";
 
-export const TESTCASE_UPLOAD_TIMEOUT_MS = 5 * 60 * 1000;
+export const TESTCASE_UPLOAD_TIMEOUT_MS = 10 * 60 * 1000;
+export const MAX_TESTCASE_ARCHIVE_BYTES = 200 * 1024 * 1024;
+export const TESTCASE_ARCHIVE_TOO_LARGE = "压缩包大小不得超过 200 MiB。请减小文件后重试。";
 
 export interface TestcaseUploadProgress {
   loaded: number;
@@ -14,12 +16,12 @@ export interface TestcaseUploadProgress {
 export function getTestcaseUploadError(error: unknown): string {
   if (isAxiosError(error)) {
     if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
-      return "上传等待已超过 5 分钟，结果尚未确认。请先刷新文件树检查，再决定是否重试。";
+      return "上传等待已超过 10 分钟，结果尚未确认。请先刷新文件树检查，再决定是否重试。";
     }
     if (!error.response) {
       return "网络连接中断，上传结果尚未确认。请检查网络，并刷新文件树后再决定是否重试。";
     }
-    if (error.response.status === 413) return "压缩包过大，超过服务器上传限制。请减小文件后重试。";
+    if (error.response.status === 413) return TESTCASE_ARCHIVE_TOO_LARGE;
     if (error.response.status === 401) return "登录已失效，请重新登录后上传。";
     if (error.response.status === 403) return "没有上传该题测试数据的权限，请联系题目管理员。";
     if ([502, 503, 504].includes(error.response.status)) {
@@ -44,6 +46,7 @@ export async function uploadProblemTestcases(
   format: string,
   onProgress?: (progress: TestcaseUploadProgress) => void,
 ) {
+  if (file.size > MAX_TESTCASE_ARCHIVE_BYTES) throw new Error(TESTCASE_ARCHIVE_TOO_LARGE);
   const formData = new FormData();
   formData.append("file", file);
   formData.append("format", format);

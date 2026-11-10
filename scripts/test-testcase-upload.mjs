@@ -30,7 +30,7 @@ api.defaults.adapter = async config => {
   return { status: 200, statusText: 'OK', headers: {}, config, data: { code: 0 } };
 };
 await uploadProblemTestcases('TEST', file, 'zip', e => events.push(e));
-assert.equal(request.timeout, 300000);
+assert.equal(request.timeout, 600000);
 assert.equal(api.defaults.timeout, 10000);
 assert.equal(request.url, '/api/problem/data/TEST');
 assert.equal(request.data.get('file').name, 'sample.zip');
@@ -44,8 +44,8 @@ api.defaults.adapter = async config => {
 };
 await uploadProblemTestcases('TEST', file, 'zip', p => assert.equal(p.percent, undefined));
 for (const [code, status, expected] of [
-  ['ECONNABORTED', undefined, /5 分钟/], ['ETIMEDOUT', undefined, /5 分钟/],
-  ['ERR_NETWORK', undefined, /网络连接中断/], ['ERR_BAD_REQUEST', 413, /压缩包过大/],
+  ['ECONNABORTED', undefined, /10 分钟/], ['ETIMEDOUT', undefined, /10 分钟/],
+  ['ERR_NETWORK', undefined, /网络连接中断/], ['ERR_BAD_REQUEST', 413, /200 MiB/],
   ['ERR_BAD_REQUEST', 401, /登录已失效/], ['ERR_BAD_REQUEST', 403, /权限/],
   ['ERR_BAD_RESPONSE', 504, /刷新文件树确认结果/],
 ]) {
@@ -58,5 +58,14 @@ for (const [code, status, expected] of [
 api.defaults.adapter = async config => ({ status: 200, headers: {}, config, data: { code: 40000, message: '压缩包包含非法路径' } });
 await assert.rejects(uploadProblemTestcases('TEST', file, 'zip'), /非法路径/);
 assert.match(getTestcaseUploadError(new Error('timeout of 10000ms exceeded')), /测试数据上传失败/);
+// File boundary is inclusive; oversized files are rejected before the adapter.
+const exact = new File([], 'exact.zip');
+Object.defineProperty(exact, 'size', { value: 200 * 1024 * 1024 });
+api.defaults.adapter = async config => ({ status: 200, headers: {}, config, data: { code: 0 } });
+await uploadProblemTestcases('TEST', exact, 'zip');
+const oversized = new File([], 'oversized.zip');
+Object.defineProperty(oversized, 'size', { value: 200 * 1024 * 1024 + 1 });
+api.defaults.adapter = async () => { throw Error('Oversized request must not be sent'); };
+await assert.rejects(uploadProblemTestcases('TEST', oversized, 'zip'), /200 MiB/);
 delete globalThis.__testcaseUploadApi;
 console.log('PASS: upload timeout, progress lifecycle, unknown sizes, seven transport failures and server validation (no network or data writes).');
