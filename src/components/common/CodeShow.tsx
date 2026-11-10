@@ -5,11 +5,14 @@ import cpp from "react-syntax-highlighter/dist/esm/languages/hljs/cpp";
 import python from "react-syntax-highlighter/dist/esm/languages/hljs/python";
 import java from "react-syntax-highlighter/dist/esm/languages/hljs/java";
 import c from "react-syntax-highlighter/dist/esm/languages/hljs/c";
+import rust from "react-syntax-highlighter/dist/esm/languages/hljs/rust";
 
 SyntaxHighlighter.registerLanguage("cpp", cpp);
 SyntaxHighlighter.registerLanguage("python", python);
 SyntaxHighlighter.registerLanguage("java", java);
 SyntaxHighlighter.registerLanguage("c", c);
+SyntaxHighlighter.registerLanguage("rust", rust);
+SyntaxHighlighter.registerLanguage("Rust", rust);
 
 interface CodeShowProps {
   children: string;

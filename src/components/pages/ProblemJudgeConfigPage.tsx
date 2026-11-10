@@ -26,6 +26,7 @@ import {
   type Testcase,
   type Subtask,
   type ProblemConfigPayload,
+  type ProblemConfigData,
 } from "@/services/getProblemConfig";
 import { uploadProblemTestcases } from "@/services/problemEdit";
 import TestcaseUploadCard from "@/components/bussiness/TestcaseUploadCard";
@@ -176,17 +177,17 @@ function validateConfig(
     }
   });
 
-  // 1.1 测试点分数校验（字段名为 weight）
-  testcases.forEach((tc) => {
-    if (!Number.isFinite(tc.weight) || tc.weight < 0) {
+  // 无子任务时才使用测试点分数；有子任务时由子任务统一计分。
+  if (subtasks.length === 0) testcases.forEach((tc) => {
+    if (!Number.isInteger(tc.weight) || tc.weight <= 0) {
       issues.push({
         type: "error",
-        message: `测试点 #${tc.seq} 分数必须是大于等于 0 的数字`,
+        message: `测试点 #${tc.seq} 分数必须是正整数`,
         target: String(tc._key),
       });
     }
   });
-  if (testcases.length > 0) {
+  if (subtasks.length === 0 && testcases.length > 0) {
     const totalWeight = testcases.reduce((sum, tc) => sum + (Number.isFinite(tc.weight) ? tc.weight : 0), 0);
     if (totalWeight !== 100) {
       issues.push({
@@ -272,7 +273,7 @@ function validateConfig(
   if (subtasks.length > 0 && totalScore !== 100) {
     const diff = 100 - totalScore;
     issues.push({
-      type: "warning",
+      type: "error",
       message: `子任务总分 ${totalScore}，与 100 相差 ${Math.abs(diff)}（${diff > 0 ? "少了" : "多了"} ${Math.abs(diff)}%）`,
       target: "global",
     });
@@ -504,6 +505,7 @@ export default function ProblemJudgeConfigPage() {
   const [testcaseFile, setTestcaseFile] = useState<File | null>(null);
   const [testcaseFormat, setTestcaseFormat] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadedConfig, setLoadedConfig] = useState<ProblemConfigData | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [testcases, setTestcases] = useState<TestcaseRow[]>([]);
   const [subtasks, setSubtasks] = useState<SubtaskRow[]>([]);
@@ -563,7 +565,8 @@ export default function ProblemJudgeConfigPage() {
 
       // 仅识别 .in 文件，不做前缀匹配
       const inFiles = files.filter((f) => f.endsWith(".in")).sort();
-      const evenScores = buildEvenScores(100, inFiles.length);
+      const useAcmSubtask = inFiles.length > 100;
+      const evenScores = useAcmSubtask ? inFiles.map(() => 1) : buildEvenScores(100, inFiles.length);
       const generatedRows: TestcaseRow[] = inFiles.map((inPath, i) => {
         return {
           _key: Date.now() + i,
@@ -579,7 +582,10 @@ export default function ProblemJudgeConfigPage() {
 
       if (generatedRows.length > 0) {
         setTestcases(generatedRows);
-        setSubtasks([]);
+        setSubtasks(useAcmSubtask ? [{
+          _key: Date.now(), id: 1, cases: generatedRows.map((tc) => tc.id),
+          pre_subtasks: [], score: 100, type: "min",
+        }] : []);
         setDirty(true);
         toast.success(`已从上传文件中识别出 ${generatedRows.length} 个测试点，请检查后保存配置`, {
           position: "top-center",
@@ -684,6 +690,7 @@ export default function ProblemJudgeConfigPage() {
     const fetchProblem = async () => {
       try {
         const configRes = await getProblemConfig(pid);
+        setLoadedConfig(configRes);
         const {
           testcases: tcs,
           subtasks: sts,
@@ -734,6 +741,11 @@ export default function ProblemJudgeConfigPage() {
       return;
     }
 
+    if (!loadedConfig) {
+      toast.error("请先成功加载题目配置");
+      return;
+    }
+
     try {
       const problemTypeMap: Record<string, "standard" | "interactive" | "special"> = {
         Standard: "standard",
@@ -758,17 +770,18 @@ export default function ProblemJudgeConfigPage() {
         ...s,
         score: s.score ?? 0,
       }));
-      let customModules: ProblemConfigPayload["custom_modules"] | undefined;
-      if (values.problem_type === "Interactive") {
-        customModules = { interactor_path: values.interactor_path?.trim() || "" };
-      } else if (values.problem_type === "Special") {
-        customModules = { checker_path: values.checker_path?.trim() || "" };
-      }
+      const customModules = {
+        ...loadedConfig.custom_modules,
+        checker_path: values.checker_path?.trim() || null,
+        interactor_path: values.interactor_path?.trim() || null,
+      };
 
       const payload: ProblemConfigPayload = {
+        ...loadedConfig,
         problem_info: {
-          problem_type: problemTypeMap[values.problem_type] ?? "standard",
-          checker_type: checkerTypeMap[values.checker_type] ?? "standard",
+          ...loadedConfig.problem_info,
+          problem_type: problemTypeMap[values.problem_type],
+          checker_type: checkerTypeMap[values.checker_type],
           time_limit_ms: Number(values.time_limit_ms),
           memory_limit_kb: Number(values.memory_limit_kb),
         },
@@ -821,6 +834,10 @@ export default function ProblemJudgeConfigPage() {
         <span className="text-muted-foreground">加载中...</span>
       </div>
     );
+  }
+
+  if (!loadedConfig) {
+    return <p role="alert" className="p-6 text-destructive">加载题目配置失败，请刷新后重试。</p>;
   }
 
   return (
@@ -933,7 +950,9 @@ export default function ProblemJudgeConfigPage() {
                               <Input
                                 type="text"
                                 inputMode="decimal"
-                                value={Number.isFinite(tc.weight) ? tc.weight : ""}
+                                disabled={subtasks.length > 0}
+                                title={subtasks.length > 0 ? "由所属子任务计分" : undefined}
+                                value={subtasks.length > 0 ? "—" : Number.isFinite(tc.weight) ? tc.weight : ""}
                                 onChange={(e) =>
                                   updateTestcase(
                                     tc._key,
@@ -1024,7 +1043,7 @@ export default function ProblemJudgeConfigPage() {
 
               {subtasks.length === 0 ? (
                 <div className="text-sm text-muted-foreground text-center py-6">
-                  无子任务时按测试点分数（weight）计分，总分必须为 100
+                  按测试点分数计分，总分必须为 100
                 </div>
               ) : (
                 <div className="rounded-md border overflow-hidden">

@@ -14,6 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/app/store";
 import { setContestLanguage } from "@/features/Code/contestCodeSlice";
 import useQueryToGetLanguages from "@/hooks/useQueryToGetLanguages";
+import { languageLabel } from "@/lib/language";
 
 export default function SelectContestLanguage() {
   const dispatch = useDispatch();
@@ -36,7 +37,7 @@ export default function SelectContestLanguage() {
       }}
     >
       <SelectTrigger className="w-[180px] bg-slate-100">
-        <SelectValue placeholder="选择编程语言与版本" />
+        <SelectValue placeholder="选择编程语言" />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
@@ -54,7 +55,7 @@ export default function SelectContestLanguage() {
               .filter((lang) => lang.available)
               .map((lang) => (
                 <SelectItem key={lang.name} value={lang.name}>
-                  {lang.name} {lang.version ? `(${lang.version})` : ""}
+                  {languageLabel(lang.name)}
                 </SelectItem>
               ))
           )}

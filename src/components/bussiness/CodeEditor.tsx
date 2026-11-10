@@ -31,12 +31,18 @@ export default function CodeEditor({ pid }: CodeEditorProps) {
       case "Cpp17":
       case "Cpp20":
         return "cpp";
+      case "Python":
       case "Python3_12":
         return "python";
+      case "Java":
       case "Java17":
         return "java";
+      case "Rust":
+        return "rust";
+      case "Go":
       case "Go1_22":
         return "go";
+      case "Nodejs":
       case "Nodejs22":
         return "javascript";
       default:

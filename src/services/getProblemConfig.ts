@@ -25,9 +25,11 @@ export interface ProblemInfo {
   checker_type: "Standard" | "Special" | "Interactor";
   time_limit_ms?: number;
   memory_limit_kb?: number;
+  max_code_length?: number;
 }
 
 export interface CustomModules {
+  grader_paths?: string[] | null;
   checker_path?: string | null;
   interactor_path?: string | null;
 }
@@ -60,6 +62,7 @@ export interface ProblemConfigPayload {
     checker_type: "standard" | "special" | "interactor";
     time_limit_ms?: number;
     memory_limit_kb?: number;
+    max_code_length?: number;
   };
   testcases: Testcase[];
   subtasks?: Subtask[];
