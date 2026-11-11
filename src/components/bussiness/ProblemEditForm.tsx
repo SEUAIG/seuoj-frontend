@@ -1,3 +1,4 @@
+import { formatLabels, statementLabels, statementTypeFor, type StatementType } from "@/lib/statementType";
 import React, { useEffect, useRef, useState } from "react";
 import { useFieldArray, useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,14 +36,21 @@ const exampleSchema = z.object({
   description: z.string().optional(),
 });
 const problemEditSchema = z.object({
+  statementType: z.enum(["Standard", "Interactive", "InteractiveWithInput", "Communication"]),
   pid: z.string().regex(/^[A-Z][A-Z0-9]{1,19}$/, "PID须以大写字母开头，仅含大写字母和数字").optional(),
   title: z.string().min(1, "题目标题不能为空"),
   is_public: z.boolean().default(true),
   description: z.string().min(1, "题目描述不能为空"),
-  input: z.string().min(1, "输入格式不能为空"),
-  output: z.string().min(1, "输出格式不能为空"),
+  input: z.string(),
+  output: z.string(),
   hint: z.string().optional(),
   example: z.array(exampleSchema).min(1, "至少添加一个示例"),
+}).superRefine((values, ctx) => {
+  const [first, second] = formatLabels[values.statementType];
+  if (!values.input.trim()) ctx.addIssue({ code: "custom", path: ["input"], message: first + "不能为空" });
+  if (values.statementType !== "Interactive" && !values.output.trim()) {
+    ctx.addIssue({ code: "custom", path: ["output"], message: second + "不能为空" });
+  }
 });
 type ProblemEditValues = z.infer<typeof problemEditSchema>;
 interface ProblemEditFormProps {
@@ -60,6 +68,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
   const form = useForm<ProblemEditValues>({
     resolver: zodResolver(problemEditSchema) as any,
     defaultValues: {
+      statementType: "Standard",
       pid: "",
       title: "",
       is_public: true,
@@ -110,6 +119,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
           })
         );
         form.reset({
+          statementType: statementTypeFor(content),
           pid: data.pid || "",
           title: data.title || "",
           is_public: data.is_public ?? true,
@@ -158,6 +168,8 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
     fetchProblem();
   }, [pid, dispatch, form]);
   const { handleSubmit, control, formState, setFocus } = form;
+  const kind = form.watch("statementType");
+  const [firstLabel, secondLabel] = formatLabels[kind];
   const { fields, append, remove } = useFieldArray({
     control,
     name: "example",
@@ -174,6 +186,7 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
       }
       try {
         const res = await createProblem({
+          statement_type: values.statementType,
           pid: values.pid,
           title: values.title,
           is_public: values.is_public ?? true,
@@ -291,6 +304,22 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
             <CardTitle className="text-lg font-semibold">基本信息</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5 pt-6">
+            {isCreateMode && (
+              <FormField control={control} name="statementType" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>题型</FormLabel>
+                  <FormControl>
+                    <select {...field} className="block w-full rounded-md border bg-background px-3 py-2">
+                      {(Object.keys(statementLabels) as StatementType[]).map((type) => (
+                        <option key={type} value={type}>{statementLabels[type]}</option>
+                      ))}
+                    </select>
+                  </FormControl>
+                  {kind === "Communication" && <p className="text-sm text-muted-foreground">两阶段题面分别描述每次运行的输入和输出。两次运行的评测程序需另行配置。</p>}
+                  {(kind === "Interactive" || kind === "InteractiveWithInput") && <p className="text-sm text-muted-foreground">建题后在评测配置中指定交互程序。</p>}
+                </FormItem>
+              )} />
+            )}
             {isCreateMode && (
               <FormField
                 control={control as any}
@@ -413,10 +442,10 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
               name="input"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>输入格式</FormLabel>
+                  <FormLabel>{firstLabel}</FormLabel>
                   <FormControl>
                     <MarkdownImageTextarea
-                      placeholder="请输入输入格式说明（支持 Markdown）"
+                      placeholder={firstLabel + "（支持 Markdown）"}
                       className="min-h-[100px] bg-background/50"
                       value={field.value ?? ""}
                       onValueChange={field.onChange}
@@ -435,10 +464,10 @@ export default function ProblemEditForm({ pid = "" }: ProblemEditFormProps) {
               name="output"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>输出格式</FormLabel>
+                  <FormLabel>{secondLabel}</FormLabel>
                   <FormControl>
                     <MarkdownImageTextarea
-                      placeholder="请输入输出格式说明（支持 Markdown）"
+                      placeholder={secondLabel + "（支持 Markdown）"}
                       className="min-h-[100px] bg-background/50"
                       value={field.value ?? ""}
                       onValueChange={field.onChange}

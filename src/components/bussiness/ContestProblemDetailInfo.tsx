@@ -1,3 +1,5 @@
+import { ProblemFormatSections } from "./ProblemFormatSections";
+import { statementTypeFor, statementLabels } from "@/lib/statementType";
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { ProblemSection } from "./ProblemSection";
@@ -23,8 +25,6 @@ export default function ContestProblemDetailInfo({
     min_cpu_time_ms,
     min_memory_kb,
     min_memory_byte,
-    problem_type = "Standard",
-    checker_type = "Standard",
   } = info as Info;
   const formatTimeValue = (val: string | number | undefined) => {
     if (val === undefined || val === null || val === "") return "--";
@@ -81,12 +81,8 @@ export default function ContestProblemDetailInfo({
     minMemoryValue ?? maxMemoryValue,
     maxMemoryValue
   );
-  const problemTypeLabel =
-    checker_type === "Special"
-      ? "SPJ"
-      : problem_type === "Interactive"
-        ? "交互"
-        : "传统";
+  const kind = statementTypeFor(content);
+  const problemTypeLabel = statementLabels[kind];
   return (
     <div className="problem-statement space-y-8 p-5 md:p-8">
       {/* === 1. 头部标题与标签 === */}
@@ -111,16 +107,7 @@ export default function ContestProblemDetailInfo({
         <ProblemSection title="题目描述">
           <MarkdownRenderer>{description}</MarkdownRenderer>
         </ProblemSection>
-        {input && (
-          <ProblemSection title="输入格式">
-            <MarkdownRenderer>{input}</MarkdownRenderer>
-          </ProblemSection>
-        )}
-        {output && (
-          <ProblemSection title="输出格式">
-            <MarkdownRenderer>{output}</MarkdownRenderer>
-          </ProblemSection>
-        )}
+        <ProblemFormatSections kind={kind} input={input} output={output} />
         {example?.map((ex, index) => (
           <ExampleSection
             key={index}

@@ -2,6 +2,7 @@ import { api } from "@/services/api/axios";
 import { problemEndpoints } from "@/services/endpoints";
 
 export interface CreateProblemRequest {
+  statement_type?: import("@/lib/statementType").StatementType;
   pid: string;
   title: string;
   is_public: boolean;
