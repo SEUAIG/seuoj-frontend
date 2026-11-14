@@ -160,7 +160,7 @@ export default function ContestShell({
     { key: "standings", label: "排名", to: `/contest/${contestId}/standings` },
     {
       key: "clarifications",
-      label: "答疑",
+      label: "公告与答疑",
       to: `/contest/${contestId}/clarifications`,
       dot: notices?.can_manage || tab !== "clarifications" ? clarBadge : 0,
     },

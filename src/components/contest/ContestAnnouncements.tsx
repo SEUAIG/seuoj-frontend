@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Pin } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
+import { CHAT_PROSE, MarkdownSplitEditor } from "@/components/common/MarkdownSplitEditor";
 import {
   createContestAnnouncement,
   deleteContestAnnouncement,
@@ -34,12 +36,15 @@ function Editor({
   const [title, setTitle] = useState(initial?.title ?? "");
   const [content, setContent] = useState(initial?.content ?? "");
   const [pinned, setPinned] = useState(initial?.is_pinned ?? false);
+  const submit = () => {
+    if (!busy && title.trim()) onSubmit({ title: title.trim(), content, is_pinned: pinned });
+  };
   return (
     <form
       className="space-y-2 border-b border-slate-100 py-4"
       onSubmit={(e) => {
         e.preventDefault();
-        if (title.trim()) onSubmit({ title: title.trim(), content, is_pinned: pinned });
+        submit();
       }}
     >
       <input
@@ -48,16 +53,9 @@ function Editor({
         placeholder="标题"
         maxLength={200}
         autoFocus
-        className="w-full rounded-md border bg-white px-2.5 py-1.5 text-sm outline-none focus:border-primary"
+        className="w-full rounded-md border bg-white px-2.5 py-1.5 text-sm font-semibold outline-none focus:border-primary"
       />
-      <textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="正文，支持 Markdown"
-        rows={4}
-        maxLength={10000}
-        className="w-full resize-y rounded-md border bg-white px-2.5 py-1.5 text-sm outline-none focus:border-primary"
-      />
+      <MarkdownSplitEditor value={content} onChange={setContent} onSubmit={submit} maxLength={10000} placeholder="正文" />
       <div className="flex items-center gap-3 text-sm">
         <label className="flex cursor-pointer items-center gap-1.5 text-slate-500">
           <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} />
@@ -74,8 +72,11 @@ function Editor({
   );
 }
 
-/** 概览页侧栏的公告：选手只读，比赛管理者可发布、修改、删除 */
-export default function ContestAnnouncements({ contestId }: { contestId: number }) {
+/**
+ * 比赛公告。概览页（默认）只读，管理者看到去「公告与答疑」页的入口；
+ * `manage` 时（公告与答疑页）管理者可以发布、修改、删除。
+ */
+export default function ContestAnnouncements({ contestId, manage = false }: { contestId: number; manage?: boolean }) {
   const qc = useQueryClient();
   const { data } = useContestNotices(contestId);
   const { seen, mark } = useSeen(contestId);
@@ -86,6 +87,7 @@ export default function ContestAnnouncements({ contestId }: { contestId: number 
 
   const list = data?.announcements ?? [];
   const canManage = data?.can_manage ?? false;
+  const editable = manage && canManage;
 
   useEffect(() => {
     if (!data) return;
@@ -116,13 +118,18 @@ export default function ContestAnnouncements({ contestId }: { contestId: number 
     <section>
       <div className="flex items-baseline justify-between border-b border-slate-900 pb-2.5 text-[13px] font-bold tracking-wide">
         公告
-        {canManage && editing !== "new" && (
+        {canManage && !manage && (
+          <Link to={`/contest/${contestId}/clarifications`} className="font-normal text-slate-500 hover:text-slate-900">
+            发布 / 管理
+          </Link>
+        )}
+        {editable && editing !== "new" && (
           <button
             type="button"
             onClick={() => setEditing("new")}
             className="font-normal text-slate-500 hover:text-slate-900"
           >
-            ＋ 发布
+            ＋ 发布公告
           </button>
         )}
       </div>
@@ -147,7 +154,7 @@ export default function ContestAnnouncements({ contestId }: { contestId: number 
             <div className="flex items-center gap-2 text-xs text-slate-500">
               {a.is_pinned && <Pin className="h-3 w-3" aria-label="置顶" />}
               <span className="font-mono">{when(a)}</span>
-              {canManage && (
+              {editable && (
                 <span className="ml-auto hidden gap-3 group-hover:flex">
                   <button type="button" className="hover:text-slate-900" onClick={() => setEditing(a.announcement_id)}>
                     修改
@@ -176,8 +183,8 @@ export default function ContestAnnouncements({ contestId }: { contestId: number 
               {a.title}
             </h4>
             {a.content && (
-              <div className="prose prose-sm prose-slate max-w-none text-[13px] text-slate-700">
-                <MarkdownRenderer>{a.content}</MarkdownRenderer>
+              <div className={cn(CHAT_PROSE, manage ? "max-w-3xl text-slate-700" : "text-[13px] text-slate-700")}>
+                <MarkdownRenderer breaks>{a.content}</MarkdownRenderer>
               </div>
             )}
           </article>

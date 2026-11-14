@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { CHAT_PROSE, MarkdownSplitEditor } from "@/components/common/MarkdownSplitEditor";
 import ContestShell from "@/components/contest/ContestShell";
+import ContestAnnouncements from "@/components/contest/ContestAnnouncements";
 import { letterOf, parseTime, sortProblems } from "@/components/contest/contestKit";
 import { answeredEvents, answeredKey, useContestNotices, useSeen } from "@/components/contest/noticeKit";
 import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
@@ -134,129 +135,134 @@ export default function ContestClarificationsPage() {
   return (
     <ContestShell contestId={contestId} tab="clarifications">
       <Helmet>
-        <title>{detail?.title ? `答疑 - ${detail.title} - SEUOJ` : "答疑 - SEUOJ"}</title>
+        <title>{detail?.title ? `公告与答疑 - ${detail.title} - SEUOJ` : "公告与答疑 - SEUOJ"}</title>
       </Helmet>
-      <div className="max-w-5xl">
-        {isAuthenticated && !canManage && (
-          <form
-            className="mb-10 space-y-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              ask();
-            }}
-          >
-            <div className="flex gap-2">
-              <select
-                value={pid}
-                onChange={(e) => setPid(e.target.value)}
-                className="rounded-md border bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-primary"
-                aria-label="关于哪道题"
-              >
-                <option value="">全场</option>
-                {problems.map((p) => (
-                  <option key={p.pid} value={p.pid}>
-                    {letterOf(p.sort_order)}. {p.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <MarkdownSplitEditor
-              value={question}
-              onChange={setQuestion}
-              onSubmit={ask}
-              maxLength={2000}
-              placeholder="问题"
-            />
-            <div className="flex justify-end">
-              <Button type="submit" size="sm" disabled={busy || !question.trim()}>
-                提问
-              </Button>
-            </div>
-          </form>
-        )}
+      <div className="max-w-5xl space-y-14">
+        <ContestAnnouncements contestId={contestId} manage />
 
-        {isLoading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-          </div>
-        ) : isError ? (
-          <p className="py-20 text-center text-slate-500">{error instanceof Error ? error.message : "加载失败"}</p>
-        ) : list.length === 0 ? (
-          <p className="border-t border-slate-900 py-16 text-center text-slate-400">—</p>
-        ) : (
-          <div className="border-t border-slate-900">
-            {list.map((c) => (
-              <article key={c.clarification_id} className="group border-b border-slate-100 py-5">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                  <span className="font-display text-sm font-semibold text-slate-900">
-                    {c.problem_pid ? letters[c.problem_pid] ?? c.problem_pid : "全场"}
-                  </span>
-                  <span className="font-mono">{when(c.created_at)}</span>
-                  {canManage && (
-                    <span>
-                      {c.asker_name}
-                      {c.asker_username && c.asker_username !== c.asker_name && (
-                        <span className="ml-1.5 font-mono text-slate-400">{c.asker_username}</span>
-                      )}
-                    </span>
-                  )}
-                  {!canManage && c.mine && <span>我的提问</span>}
-                  {c.answer &&
-                    (c.is_public ? (
-                      <Globe className="h-3 w-3" aria-label="公开" />
-                    ) : (
-                      <Lock className="h-3 w-3" aria-label="仅提问者可见" />
-                    ))}
-                  {canManage && c.answer && editing !== c.clarification_id && (
-                    <span className="ml-auto hidden gap-3 group-hover:flex">
-                      <button type="button" className="hover:text-slate-900" onClick={() => setEditing(c.clarification_id)}>
-                        修改回复
-                      </button>
-                      <button
-                        type="button"
-                        className="text-red-600 hover:text-red-700"
-                        onClick={() => {
-                          if (window.confirm("删除这条提问？")) {
-                            run(() => deleteContestClarification(contestId, c.clarification_id), "已删除");
-                          }
-                        }}
-                      >
-                        删除
-                      </button>
-                    </span>
-                  )}
-                </div>
-                <div className={cn(CHAT_PROSE, "mt-1.5 max-w-3xl text-slate-900")}>
-                  <MarkdownRenderer breaks>{c.question}</MarkdownRenderer>
-                </div>
+        <section>
+          <div className="border-b border-slate-900 pb-2.5 text-[13px] font-bold tracking-wide">答疑</div>
+          {isAuthenticated && !canManage && (
+            <form
+              className="space-y-2 border-b border-slate-100 py-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                ask();
+              }}
+            >
+              <div className="flex gap-2">
+                <select
+                  value={pid}
+                  onChange={(e) => setPid(e.target.value)}
+                  className="rounded-md border bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-primary"
+                  aria-label="关于哪道题"
+                >
+                  <option value="">全场</option>
+                  {problems.map((p) => (
+                    <option key={p.pid} value={p.pid}>
+                      {letterOf(p.sort_order)}. {p.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <MarkdownSplitEditor
+                value={question}
+                onChange={setQuestion}
+                onSubmit={ask}
+                maxLength={2000}
+                placeholder="问题"
+              />
+              <div className="flex justify-end">
+                <Button type="submit" size="sm" disabled={busy || !question.trim()}>
+                  提问
+                </Button>
+              </div>
+            </form>
+          )}
 
-                {c.answer && editing !== c.clarification_id ? (
-                  <div className="mt-3 border-l-2 border-primary pl-3">
-                    <div className={cn(CHAT_PROSE, "max-w-3xl text-slate-700")}>
-                      <MarkdownRenderer breaks>{c.answer}</MarkdownRenderer>
-                    </div>
-                    <span className="font-mono text-xs text-slate-400">{when(c.answered_at)}</span>
+          {isLoading ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+            </div>
+          ) : isError ? (
+            <p className="py-20 text-center text-slate-500">{error instanceof Error ? error.message : "加载失败"}</p>
+          ) : list.length === 0 ? (
+            <p className="py-4 text-sm text-slate-400">—</p>
+          ) : (
+            <div>
+              {list.map((c) => (
+                <article key={c.clarification_id} className="group border-b border-slate-100 py-5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                    <span className="font-display text-sm font-semibold text-slate-900">
+                      {c.problem_pid ? letters[c.problem_pid] ?? c.problem_pid : "全场"}
+                    </span>
+                    <span className="font-mono">{when(c.created_at)}</span>
+                    {canManage && (
+                      <span>
+                        {c.asker_name}
+                        {c.asker_username && c.asker_username !== c.asker_name && (
+                          <span className="ml-1.5 font-mono text-slate-400">{c.asker_username}</span>
+                        )}
+                      </span>
+                    )}
+                    {!canManage && c.mine && <span>我的提问</span>}
+                    {c.answer &&
+                      (c.is_public ? (
+                        <Globe className="h-3 w-3" aria-label="公开" />
+                      ) : (
+                        <Lock className="h-3 w-3" aria-label="仅提问者可见" />
+                      ))}
+                    {canManage && c.answer && editing !== c.clarification_id && (
+                      <span className="ml-auto hidden gap-3 group-hover:flex">
+                        <button type="button" className="hover:text-slate-900" onClick={() => setEditing(c.clarification_id)}>
+                          修改回复
+                        </button>
+                        <button
+                          type="button"
+                          className="text-red-600 hover:text-red-700"
+                          onClick={() => {
+                            if (window.confirm("删除这条提问？")) {
+                              run(() => deleteContestClarification(contestId, c.clarification_id), "已删除");
+                            }
+                          }}
+                        >
+                          删除
+                        </button>
+                      </span>
+                    )}
                   </div>
-                ) : canManage ? (
-                  <AnswerForm
-                    initial={c}
-                    busy={busy}
-                    onCancel={c.answer ? () => setEditing(null) : undefined}
-                    onSubmit={(answer, isPublic) =>
-                      run(
-                        () => answerContestClarification(contestId, c.clarification_id, { answer, is_public: isPublic }),
-                        "已回复",
-                        () => setEditing(null)
-                      )
-                    }
-                  />
-                ) : (
-                  <p className="mt-2 text-xs text-slate-400">等待回复</p>
-                )}
-              </article>
-            ))}
-          </div>
-        )}
+                  <div className={cn(CHAT_PROSE, "mt-1.5 max-w-3xl text-slate-900")}>
+                    <MarkdownRenderer breaks>{c.question}</MarkdownRenderer>
+                  </div>
+
+                  {c.answer && editing !== c.clarification_id ? (
+                    <div className="mt-3 border-l-2 border-primary pl-3">
+                      <div className={cn(CHAT_PROSE, "max-w-3xl text-slate-700")}>
+                        <MarkdownRenderer breaks>{c.answer}</MarkdownRenderer>
+                      </div>
+                      <span className="font-mono text-xs text-slate-400">{when(c.answered_at)}</span>
+                    </div>
+                  ) : canManage ? (
+                    <AnswerForm
+                      initial={c}
+                      busy={busy}
+                      onCancel={c.answer ? () => setEditing(null) : undefined}
+                      onSubmit={(answer, isPublic) =>
+                        run(
+                          () => answerContestClarification(contestId, c.clarification_id, { answer, is_public: isPublic }),
+                          "已回复",
+                          () => setEditing(null)
+                        )
+                      }
+                    />
+                  ) : (
+                    <p className="mt-2 text-xs text-slate-400">等待回复</p>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </ContestShell>
   );
