@@ -5,7 +5,7 @@ export default {
   theme: {
   	extend: {
   		fontFamily: {
-  			display: ['"Noto Serif SC"', '"Source Han Serif SC"', '"Songti SC"', 'SimSun', 'serif']
+  			display: ['system-ui', '"Segoe UI"', '"Microsoft YaHei"', '"PingFang SC"', '"Noto Sans SC"', 'sans-serif']
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
