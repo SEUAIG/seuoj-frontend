@@ -3,15 +3,47 @@ import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import "katex/dist/katex.min.css";
 
 interface MarkdownRendererProps {
   children: string;
   previewImages?: boolean;
+  /** 单个换行也渲染成换行（适合答疑这类随手写的文本） */
+  breaks?: boolean;
 }
 
-const remarkPlugins = [remarkGfm, remarkMath];
+interface MathNode {
+  type: string;
+  position?: { start: { offset?: number } };
+  data?: { hProperties?: Record<string, unknown> };
+  children?: MathNode[];
+}
+
+/**
+ * remark-math 只把 $$ 各占一行的写法当独立公式，同一行的 $$x$$ 会按行内公式渲染。
+ * 这里按原文把以 $$ 开头的行内公式改成独立公式，和洛谷、Codeforces 等站的习惯一致。
+ */
+function remarkInlineDisplayMath() {
+  return (tree: MathNode, file: { value: unknown }) => {
+    const source = String(file.value);
+    const walk = (node: MathNode) => {
+      const offset = node.position?.start.offset;
+      if (node.type === "inlineMath" && offset !== undefined && source.startsWith("$$", offset)) {
+        node.data = {
+          ...node.data,
+          hProperties: { ...node.data?.hProperties, className: ["language-math", "math-display"] },
+        };
+      }
+      node.children?.forEach(walk);
+    };
+    walk(tree);
+  };
+}
+
+const remarkPlugins = [remarkGfm, remarkMath, remarkInlineDisplayMath];
+const remarkPluginsWithBreaks = [...remarkPlugins, remarkBreaks];
 const rehypePlugins = [rehypeKatex];
 
 function PreviewImage({ src, alt, title }: React.ImgHTMLAttributes<HTMLImageElement>) {
@@ -57,10 +89,11 @@ const previewComponents = { img: PreviewImage };
 export const MarkdownRenderer = memo(function MarkdownRenderer({
   children,
   previewImages = false,
+  breaks = false,
 }: MarkdownRendererProps) {
   return (
     <ReactMarkdown
-      remarkPlugins={remarkPlugins}
+      remarkPlugins={breaks ? remarkPluginsWithBreaks : remarkPlugins}
       rehypePlugins={rehypePlugins}
       components={previewImages ? previewComponents : undefined}
     >

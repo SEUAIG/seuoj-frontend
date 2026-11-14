@@ -8,6 +8,8 @@ import { Globe, Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import type { RootState } from "@/app/store";
 import { Button } from "@/components/ui/button";
+import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
+import { CHAT_PROSE, MarkdownSplitEditor } from "@/components/common/MarkdownSplitEditor";
 import ContestShell from "@/components/contest/ContestShell";
 import { letterOf, parseTime, sortProblems } from "@/components/contest/contestKit";
 import { answeredEvents, answeredKey, useContestNotices, useSeen } from "@/components/contest/noticeKit";
@@ -20,7 +22,6 @@ import {
 import type { ContestClarification } from "@/models/contest";
 import { cn } from "@/lib/utils";
 
-const FIELD = "w-full rounded-md border bg-white px-2.5 py-1.5 text-sm outline-none focus:border-primary";
 
 const when = (v?: string) => {
   const d = parseTime(v);
@@ -40,21 +41,25 @@ function AnswerForm({
 }) {
   const [answer, setAnswer] = useState(initial?.answer ?? "");
   const [isPublic, setIsPublic] = useState(initial?.is_public ?? false);
+  const submit = () => {
+    if (!busy && answer.trim()) onSubmit(answer.trim(), isPublic);
+  };
   return (
     <form
       className="mt-3 space-y-2"
       onSubmit={(e) => {
         e.preventDefault();
-        if (answer.trim()) onSubmit(answer.trim(), isPublic);
+        submit();
       }}
     >
-      <textarea
+      <MarkdownSplitEditor
         value={answer}
-        onChange={(e) => setAnswer(e.target.value)}
-        rows={2}
+        onChange={setAnswer}
+        onSubmit={submit}
         maxLength={4000}
+        minHeight={88}
         placeholder="回复"
-        className={cn(FIELD, "resize-y")}
+        autoFocus={!!initial?.answer}
       />
       <div className="flex items-center gap-3 text-sm">
         <label className="flex cursor-pointer items-center gap-1.5 text-slate-500">
@@ -86,6 +91,15 @@ export default function ContestClarificationsPage() {
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
+
+  const ask = () => {
+    if (busy || !question.trim()) return;
+    run(
+      () => askContestClarification(contestId, { problem_pid: pid || undefined, question: question.trim() }),
+      "已提交",
+      () => setQuestion("")
+    );
+  };
 
   const problems = sortProblems(detail?.problem_list);
   const letters = Object.fromEntries(problems.map((p) => [p.pid, letterOf(p.sort_order)]));
@@ -122,18 +136,13 @@ export default function ContestClarificationsPage() {
       <Helmet>
         <title>{detail?.title ? `答疑 - ${detail.title} - SEUOJ` : "答疑 - SEUOJ"}</title>
       </Helmet>
-      <div className="max-w-3xl">
+      <div className="max-w-5xl">
         {isAuthenticated && !canManage && (
           <form
             className="mb-10 space-y-2"
             onSubmit={(e) => {
               e.preventDefault();
-              if (!question.trim()) return;
-              run(
-                () => askContestClarification(contestId, { problem_pid: pid || undefined, question: question.trim() }),
-                "已提交",
-                () => setQuestion("")
-              );
+              ask();
             }}
           >
             <div className="flex gap-2">
@@ -151,13 +160,12 @@ export default function ContestClarificationsPage() {
                 ))}
               </select>
             </div>
-            <textarea
+            <MarkdownSplitEditor
               value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              rows={3}
+              onChange={setQuestion}
+              onSubmit={ask}
               maxLength={2000}
               placeholder="问题"
-              className={cn(FIELD, "resize-y")}
             />
             <div className="flex justify-end">
               <Button type="submit" size="sm" disabled={busy || !question.trim()}>
@@ -218,11 +226,15 @@ export default function ContestClarificationsPage() {
                     </span>
                   )}
                 </div>
-                <p className="mt-1.5 whitespace-pre-wrap text-sm text-slate-900">{c.question}</p>
+                <div className={cn(CHAT_PROSE, "mt-1.5 max-w-3xl text-slate-900")}>
+                  <MarkdownRenderer breaks>{c.question}</MarkdownRenderer>
+                </div>
 
                 {c.answer && editing !== c.clarification_id ? (
                   <div className="mt-3 border-l-2 border-primary pl-3">
-                    <p className="whitespace-pre-wrap text-sm text-slate-700">{c.answer}</p>
+                    <div className={cn(CHAT_PROSE, "max-w-3xl text-slate-700")}>
+                      <MarkdownRenderer breaks>{c.answer}</MarkdownRenderer>
+                    </div>
                     <span className="font-mono text-xs text-slate-400">{when(c.answered_at)}</span>
                   </div>
                 ) : canManage ? (
