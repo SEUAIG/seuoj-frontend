@@ -27,7 +27,7 @@ export default function EvaluationPage() {
       {/* header */}
       <div>
         <div className="text-2xl font-semibold">
-          {isPrivileged ? "所有评测记录" : "我的评测记录"}
+          评测记录
           {pidParam && (
             <span className="text-lg font-normal text-muted-foreground ml-2">
               — {pidParam}
@@ -37,7 +37,7 @@ export default function EvaluationPage() {
         <div className="text-sm text-muted-foreground mt-1">
           {isPrivileged
             ? "查看所有用户的代码提交状态"
-            : "查看和管理你的所有代码提交状态"}
+            : "查看大家在题库中的提交。作业提交、非公开题和正在比赛中的题目只显示你自己的"}
         </div>
       </div>
 

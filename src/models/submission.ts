@@ -24,6 +24,7 @@ export interface SubmissionPageRequest {
   language?: string;
   username?: string;
   assignment_id?: number;
+  user_id?: number;
 }
 
 export interface SubmissionListItem {

@@ -188,6 +188,7 @@ export default function SubmissionListPanel({
   const [usernameFilter, setUsernameFilter] = useState("");
   const [verdictFilter, setVerdictFilter] = useState("");
   const [languageFilter, setLanguageFilter] = useState("");
+  const [mineOnly, setMineOnly] = useState(false);
   const [scope, setScope] = useState<"learning" | "linked">("learning");
   const isAssignmentView = classId !== undefined && assignmentId !== undefined;
   const queryClient = useQueryClient();
@@ -203,7 +204,9 @@ export default function SubmissionListPanel({
       return next;
     });
 
-  const hasFilters = pidFilter || verdictFilter || languageFilter || usernameFilter;
+  // 题库提交对所有登录用户公开（作业、非公开题、进行中比赛的题目除外，由后端过滤），所以人人都能按用户筛选
+  const canFilterUser = isPrivileged || !isAssignmentView;
+  const hasFilters = pidFilter || verdictFilter || languageFilter || usernameFilter || mineOnly;
 
   const clearAllFilters = () => {
     setCurrent(1);
@@ -213,6 +216,7 @@ export default function SubmissionListPanel({
     setUsernameFilter("");
     setVerdictFilter("");
     setLanguageFilter("");
+    setMineOnly(false);
   };
 
   const updateFilter = (key: string, value: string) => {
@@ -242,6 +246,7 @@ export default function SubmissionListPanel({
       verdictFilter,
       languageFilter,
       usernameFilter,
+      mineOnly,
       assignmentId,
       classId,
       scope,
@@ -260,6 +265,7 @@ export default function SubmissionListPanel({
         : getSubmissionPage({
         ...filters,
         assignment_id: assignmentId,
+        user_id: mineOnly && user?.id ? Number(user.id) : undefined,
       });
     },
     placeholderData: keepPreviousData,
@@ -294,7 +300,20 @@ export default function SubmissionListPanel({
           onBlur={() => updateFilter("pid", pidInput.trim())}
           className="w-40 h-9"
         />
-        {isPrivileged && (
+        {!isAssignmentView && (
+          <label className="flex h-9 cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={mineOnly}
+              onChange={(e) => {
+                setCurrent(1);
+                setMineOnly(e.target.checked);
+              }}
+            />
+            只看我的
+          </label>
+        )}
+        {canFilterUser && !mineOnly && (
           <Input
             placeholder="用户名"
             value={usernameInput}
