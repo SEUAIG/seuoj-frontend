@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import "katex/dist/katex.min.css";
+import "./problem-chinese-font.css";
 
 interface MarkdownRendererProps {
   children: string;

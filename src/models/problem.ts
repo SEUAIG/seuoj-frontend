@@ -23,6 +23,7 @@ export interface ProblemInfo {
 }
 
 export interface ProblemContent {
+  statement_type?: import("@/lib/statementType").StoredStatementType;
   pid: string;
   description: string;
   info: ProblemInfo;
