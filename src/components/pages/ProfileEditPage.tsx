@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { changePassword } from "@/services/auth";
+import { handleUnauthorized } from "@/services/api/authGuard";
 import { getSettings, saveSettings, savePermissions, sendEmailCode, changeEmail, resetUserPassword, type UserSettings } from "@/services/user/settings";
 import { capabilityLabels, effectiveCapabilities, type Capability } from "@/lib/capabilities";
 
@@ -92,7 +93,9 @@ export default function ProfileEditPage() {
     void act(async () => {
       const response = await changePassword({ old_password: oldPassword, new_password: newPassword });
       if (response.code !== 0) throw new Error(response.message || "修改失败");
-      setOldPassword(""); setNewPassword(""); setConfirmation(""); toast.success("密码已修改");
+      setOldPassword(""); setNewPassword(""); setConfirmation("");
+      toast.success("密码已修改，请用新密码重新登录");
+      window.setTimeout(handleUnauthorized, 1500);
     });
   };
   const emailSubmit = (event: FormEvent) => {
@@ -186,7 +189,7 @@ export default function ProfileEditPage() {
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>确认重设密码</AlertDialogTitle>
-                <AlertDialogDescription className="[overflow-wrap:anywhere]">将为 @{settings.username} 生成新密码，原密码立即失效。</AlertDialogDescription>
+                <AlertDialogDescription className="[overflow-wrap:anywhere]">将为 @{settings.username} 生成新密码，原密码立即失效，已登录的设备会被登出。</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>取消</AlertDialogCancel>
