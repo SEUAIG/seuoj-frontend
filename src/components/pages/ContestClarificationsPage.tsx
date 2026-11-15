@@ -29,6 +29,17 @@ const when = (v?: string) => {
   return d ? format(d, "MM-dd HH:mm") : "";
 };
 
+const QUICK_REPLIES = [
+  "Yes.",
+  "No.",
+  "不予回复。",
+  "我们无法理解您的意思。",
+  "请仔细阅读比赛公告。",
+  "请仔细阅读题面。",
+  "出于公平性，我们无法回答这个问题。",
+  "您的逻辑或者计算有问题。",
+];
+
 function AnswerForm({
   initial,
   busy,
@@ -62,6 +73,21 @@ function AnswerForm({
         placeholder="回复"
         autoFocus={!!initial?.answer}
       />
+      <div className="flex flex-wrap gap-1.5">
+        {QUICK_REPLIES.map((text) => (
+          <button
+            key={text}
+            type="button"
+            onClick={() => setAnswer(text)}
+            className={cn(
+              "rounded border px-2 py-0.5 text-xs text-slate-600 hover:border-slate-400 hover:text-slate-900",
+              answer.trim() === text && "border-primary text-primary"
+            )}
+          >
+            {text}
+          </button>
+        ))}
+      </div>
       <div className="flex items-center gap-3 text-sm">
         <label className="flex cursor-pointer items-center gap-1.5 text-slate-500">
           <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
