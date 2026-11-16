@@ -35,6 +35,23 @@ export const deliverContestBalloon = async (
   await api.post(contestEndpoints.balloonDeliver(contestId, balloonId));
 };
 
+/** 配色面板数据：题目 + 当前生效颜色。 */
+export interface ContestBalloonProblem {
+  pid: string;
+  title: string;
+  color: string;
+  explicit: boolean;
+}
+
+export const listContestBalloonProblems = async (
+  contestId: number
+): Promise<ContestBalloonProblem[]> => {
+  const res = await api.get<ApiResponse<ContestBalloonProblem[] | undefined>>(
+    contestEndpoints.balloonProblems(contestId)
+  );
+  return res.data.data ?? [];
+};
+
 /** 设置某道题的气球颜色；color 传 null 恢复自动分配。 */
 export const setContestBalloonColor = async (
   contestId: number,

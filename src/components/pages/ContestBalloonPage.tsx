@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -17,9 +17,9 @@ import {
 } from "@/components/ui/table";
 import ContestShell from "@/components/contest/ContestShell";
 import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
-import { getContestProblemListInEditPage } from "@/services/Contest/getContestProblemListInEditPage";
 import {
   deliverContestBalloon,
+  listContestBalloonProblems,
   listContestBalloons,
   setContestBalloonColor,
   type ContestBalloonItem,
@@ -57,7 +57,7 @@ export default function ContestBalloonPage() {
 
   const problemsQuery = useQuery({
     queryKey: ["contest-balloon-problems", contestId],
-    queryFn: () => getContestProblemListInEditPage(contestId),
+    queryFn: () => listContestBalloonProblems(contestId),
     enabled: canManage,
   });
 
@@ -74,25 +74,20 @@ export default function ContestBalloonPage() {
   const colorMutation = useMutation({
     mutationFn: ({ pid, color }: { pid: string; color: string | null }) =>
       setContestBalloonColor(contestId, pid, color),
-    onSuccess: () => toast.success("颜色已保存"),
+    onSuccess: () => {
+      toast.success("颜色已保存");
+      void queryClient.invalidateQueries({ queryKey: ["contest-balloon-problems", contestId] });
+    },
     onError: (error: unknown) => {
       toast.error("保存颜色失败：" + (error instanceof Error ? error.message : String(error)));
     },
   });
 
   const balloons = balloonsQuery.data ?? [];
-  const problems = problemsQuery.data?.problem_list ?? [];
+  const problems = problemsQuery.data ?? [];
   const pending = balloons.filter((item) => item.status === "PENDING");
   const delivered = balloons.filter((item) => item.status === "DELIVERED");
   const visible = showDelivered ? balloons : pending;
-
-  const colorByPid = useMemo(() => {
-    const map = new Map<string, string>();
-    balloons.forEach((item) => {
-      if (item.pid && !map.has(item.pid)) map.set(item.pid, item.color);
-    });
-    return map;
-  }, [balloons]);
 
   return (
     <ContestShell contestId={contestId} tab="balloon" fill>
@@ -200,33 +195,34 @@ export default function ContestBalloonPage() {
                 {problems.length === 0 ? (
                   <span className="text-xs text-muted-foreground">暂无题目</span>
                 ) : (
-                  problems.map((problem) => {
-                    const current = colorByPid.get(problem.pid) ?? "#94a3b8";
-                    return (
-                      <label
-                        key={problem.pid}
-                        className="flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs"
-                        title={problem.title}
-                      >
-                        <span className="font-medium">{problem.pid}</span>
-                        <input
-                          type="color"
-                          className="h-6 w-8 cursor-pointer rounded border-0 bg-transparent p-0"
-                          value={current}
-                          onChange={(event) =>
-                            colorMutation.mutate({ pid: problem.pid, color: event.target.value })
-                          }
-                        />
+                  problems.map((problem) => (
+                    <label
+                      key={problem.pid}
+                      className="flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs"
+                      title={problem.title}
+                    >
+                      <span className="font-medium">{problem.pid}</span>
+                      <input
+                        type="color"
+                        className="h-6 w-8 cursor-pointer rounded border-0 bg-transparent p-0"
+                        value={problem.color}
+                        onChange={(event) =>
+                          colorMutation.mutate({ pid: problem.pid, color: event.target.value })
+                        }
+                      />
+                      {problem.explicit ? (
                         <button
                           type="button"
                           className="text-muted-foreground hover:text-foreground"
                           onClick={() => colorMutation.mutate({ pid: problem.pid, color: null })}
                         >
-                          自动
+                          恢复自动
                         </button>
-                      </label>
-                    );
-                  })
+                      ) : (
+                        <span className="text-muted-foreground">自动</span>
+                      )}
+                    </label>
+                  ))
                 )}
               </div>
             </div>

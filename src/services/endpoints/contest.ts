@@ -20,4 +20,5 @@ export const contestEndpoints = {
   balloonDeliver: (contestId: number, balloonId: number) =>
     `/api/contest/${contestId}/balloon/${balloonId}/deliver`,
   balloonColor: (contestId: number) => `/api/contest/${contestId}/balloon/color`,
+  balloonProblems: (contestId: number) => `/api/contest/${contestId}/balloon/problems`,
 };
