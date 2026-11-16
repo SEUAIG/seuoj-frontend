@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Helmet } from "react-helmet-async";
-import { RefreshCw } from "lucide-react";
+import { Check, RefreshCw, Undo2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,13 +21,15 @@ import {
 } from "@/services/Contest/balloon";
 
 const POLL_MS = 5000;
-const RUN_MS = 900;
+const MOVE_MS = 450;
+/** 时间 | 题目 | 选手 | 已有气球 | 操作 */
+const GRID = "grid grid-cols-[3.25rem_2rem_minmax(0,1fr)_minmax(0,auto)_2.5rem] items-center gap-x-3";
 
 function formatClock(value: string | null | undefined) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleTimeString("zh-CN", { hour12: false });
+  return date.toLocaleTimeString("zh-CN", { hour12: false, hour: "2-digit", minute: "2-digit" });
 }
 
 const timeOf = (value: string | null | undefined) => {
@@ -39,75 +41,72 @@ function displayName(item: ContestBalloonItem) {
   return item.nickname?.trim() || item.username || "未知选手";
 }
 
-/** 带线的小气球，颜色与题目配色一致 */
-function BalloonIcon({ color, className }: { color: string; className?: string }) {
+/** 按背景亮度选黑字或白字，边框取背景加深 */
+function badgeStyle(color: string) {
+  const hex = /^#[0-9a-f]{6}$/i.test(color) ? color : "#94a3b8";
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const light = 0.299 * r + 0.587 * g + 0.114 * b > 160;
+  const dark = (v: number) => Math.round(v * 0.7).toString(16).padStart(2, "0");
+  return {
+    backgroundColor: hex,
+    color: light ? "#000000" : "#ffffff",
+    borderColor: `#${dark(r)}${dark(g)}${dark(b)}`,
+  };
+}
+
+/** 题目色块：气球颜色作底，写题目字母（同 DOMjudge 气球页） */
+function ProblemBadge({ letter, color, title }: { letter: string; color: string; title?: string }) {
   return (
-    <svg viewBox="0 0 24 36" className={className} aria-hidden="true">
-      <ellipse cx="12" cy="11" rx="9" ry="10.5" fill={color} stroke="rgba(15,23,42,0.35)" strokeWidth="1" />
-      <ellipse cx="8.5" cy="7" rx="2.2" ry="3.2" fill="white" opacity="0.45" />
-      <path d="M10.5 21.5 L13.5 21.5 L12 23.5 Z" fill={color} stroke="rgba(15,23,42,0.35)" strokeWidth="0.8" />
-      <path d="M12 23.5 C 9 27, 15 30, 12 35" fill="none" stroke="rgba(15,23,42,0.45)" strokeWidth="1" />
-    </svg>
+    <span
+      className="inline-flex h-6 min-w-6 items-center justify-center rounded border px-1 text-xs font-bold leading-none"
+      style={badgeStyle(color)}
+      title={title}
+    >
+      {letter}
+    </span>
   );
 }
 
 const prefersReducedMotion = () =>
   typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-/**
- * 送达 / 撤回动画：一个小人举着这题颜色的气球，从这一行跑到另一栏顶部。
- * 用 Web Animations API 在 body 上画一个临时元素，跑完自动移除。
- */
-function runToOtherSide(from: DOMRect, to: DOMRect, color: string, label: string, rightward: boolean) {
+/** 把这一行的副本从原位置滑到另一栏顶部 */
+function slideRow(row: HTMLElement, to: DOMRect) {
   if (prefersReducedMotion()) return Promise.resolve();
-  const runner = document.createElement("div");
-  runner.setAttribute("aria-hidden", "true");
-  runner.style.cssText =
-    "position:fixed;left:0;top:0;z-index:60;pointer-events:none;display:flex;align-items:flex-end;gap:2px;";
-  const balloon = `
-    <span style="display:flex;flex-direction:column;align-items:center;margin-bottom:14px">
-      <svg viewBox="0 0 24 36" width="26" height="39">
-        <ellipse cx="12" cy="11" rx="9" ry="10.5" fill="${color}" stroke="rgba(15,23,42,0.35)" stroke-width="1"/>
-        <ellipse cx="8.5" cy="7" rx="2.2" ry="3.2" fill="white" opacity="0.45"/>
-        <path d="M12 21.5 C 9 26, 15 30, 12 35" fill="none" stroke="rgba(15,23,42,0.45)" stroke-width="1"/>
-      </svg>
-      <span style="font:600 12px/1 system-ui;color:#0f172a">${label}</span>
-    </span>`;
-  // 🏃 默认朝左，往右跑时镜像；气球举在身前
-  const person = `<span style="display:inline-block;font-size:36px;line-height:1;transform:scaleX(${rightward ? -1 : 1})">🏃</span>`;
-  runner.innerHTML = rightward ? person + balloon : balloon + person;
-  document.body.appendChild(runner);
-
-  const x0 = from.left + (rightward ? from.width * 0.25 : from.width * 0.6);
-  const y0 = from.top + from.height / 2 - 30;
-  const x1 = to.left + to.width / 2 - 25;
-  const y1 = to.top - 8;
-  // 一路小跳：每段中点抬高一点，看起来是在跑
-  const hops = 6;
-  const frames: Keyframe[] = [];
-  for (let i = 0; i <= hops; i++) {
-    const t = i / hops;
-    // 全程不透明，只在最后一段淡出
-    const opacity = i === hops ? 0 : 1;
-    frames.push({ transform: `translate(${x0 + (x1 - x0) * t}px, ${y0 + (y1 - y0) * t}px)`, opacity, offset: t });
-    if (i < hops) {
-      const m = t + 0.5 / hops;
-      frames.push({ transform: `translate(${x0 + (x1 - x0) * m}px, ${y0 + (y1 - y0) * m - 10}px)`, opacity: 1, offset: m });
-    }
-  }
-  const animation = runner.animate(frames, { duration: RUN_MS, easing: "linear", fill: "forwards" });
-  // 标签页在后台时浏览器不推进动画，finished 会一直不来；超时就直接收尾，记录照样挪过去
-  const timeout = new Promise<void>((resolve) => setTimeout(resolve, RUN_MS + 300));
+  const from = row.getBoundingClientRect();
+  const ghost = row.cloneNode(true) as HTMLElement;
+  ghost.setAttribute("aria-hidden", "true");
+  Object.assign(ghost.style, {
+    position: "fixed",
+    left: `${from.left}px`,
+    top: `${from.top}px`,
+    width: `${from.width}px`,
+    margin: "0",
+    zIndex: "60",
+    pointerEvents: "none",
+    background: "white",
+    boxShadow: "0 8px 24px rgba(15,23,42,0.15)",
+    borderRadius: "6px",
+  });
+  document.body.appendChild(ghost);
+  const dx = to.left - from.left;
+  const dy = to.top - from.top;
+  const animation = ghost.animate(
+    [
+      { transform: "translate(0, 0)", opacity: 1 },
+      { transform: `translate(${dx}px, ${dy}px)`, opacity: 0.6 },
+    ],
+    { duration: MOVE_MS, easing: "cubic-bezier(0.4, 0, 0.2, 1)", fill: "forwards" }
+  );
+  // 标签页在后台时浏览器不推进动画，finished 会一直不来；超时就直接收尾
+  const timeout = new Promise<void>((resolve) => setTimeout(resolve, MOVE_MS + 300));
   return Promise.race([animation.finished.then(() => undefined, () => undefined), timeout]).then(() => {
     animation.cancel();
-    runner.remove();
+    ghost.remove();
   });
 }
 
-/**
- * 取色器：拖动时只改本地颜色，停手 600ms 后才保存一次。
- * 原生 input[type=color] 拖动过程中会连续触发 onChange，直接保存会刷出一串请求和提示。
- */
+/** 取色器：拖动时只改本地颜色，停手 600ms 后才保存一次 */
 function ColorSwatch({ value, onCommit }: { value: string; onCommit: (color: string) => void }) {
   const [draft, setDraft] = useState(value);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -144,13 +143,18 @@ export default function ContestBalloonPage() {
   const { data: detail } = useQueryToGetContestDetail(contestId);
   const canManage = Boolean(detail?.can_write);
 
-  // 题号 → “A 题名”：按比赛里的题目顺序给字母，不显示 Pxxxx
-  const problemLabel = useMemo(() => {
-    const map = new Map<string, { letter: string; title: string }>();
-    for (const p of detail?.problem_list ?? []) map.set(p.pid, { letter: letterOf(p.sort_order), title: p.title });
+  // 题号 → 字母与题名，按比赛里的题目顺序
+  const problemInfo = useMemo(() => {
+    const map = new Map<string, { letter: string; title: string; order: number }>();
+    for (const p of detail?.problem_list ?? [])
+      map.set(p.pid, { letter: letterOf(p.sort_order), title: p.title, order: p.sort_order });
     return (pid: string | null, fallbackTitle?: string | null) => {
       const hit = pid ? map.get(pid) : undefined;
-      return { letter: hit?.letter ?? pid ?? "?", title: hit?.title ?? fallbackTitle ?? "" };
+      return {
+        letter: hit?.letter ?? pid ?? "?",
+        title: hit?.title ?? fallbackTitle ?? "",
+        order: hit?.order ?? Number.MAX_SAFE_INTEGER,
+      };
     };
   }, [detail?.problem_list]);
 
@@ -181,29 +185,26 @@ export default function ContestBalloonPage() {
     },
   });
 
-  // 正在跑的记录先从原栏隐去；刚到的记录在新栏闪一下
-  const [running, setRunning] = useState<Set<number>>(new Set());
+  // 正在移动的行先从原栏隐去；刚到的行在新栏闪一下
+  const [moving, setMoving] = useState<Set<number>>(new Set());
   const [arrived, setArrived] = useState<number | null>(null);
   const rowRefs = useRef(new Map<number, HTMLElement>());
   const pendingListRef = useRef<HTMLDivElement>(null);
   const deliveredListRef = useRef<HTMLDivElement>(null);
 
   const move = async (item: ContestBalloonItem, toDelivered: boolean) => {
-    if (running.has(item.id)) return;
+    if (moving.has(item.id)) return;
     const row = rowRefs.current.get(item.id);
     const target = (toDelivered ? deliveredListRef : pendingListRef).current;
-    const { letter } = problemLabel(item.pid, item.title);
-    setRunning((prev) => new Set(prev).add(item.id));
     void queryClient.cancelQueries({ queryKey: balloonsKey });
-    // 请求和动画同时进行；请求失败时由下面的 catch 提示，不走全局提示
+    // 请求和动画同时进行；失败在下面提示一次
     const request = (toDelivered ? deliverContestBalloon : undeliverContestBalloon)(contestId, item.id).then(
       () => null,
       (error: unknown) => error
     );
-    if (row && target) {
-      await runToOtherSide(row.getBoundingClientRect(), target.getBoundingClientRect(), item.color, letter, toDelivered);
-    }
-    // 动画跑完先在本地挪过去，再以服务器为准刷新
+    const slide = row && target ? slideRow(row, target.getBoundingClientRect()) : Promise.resolve();
+    setMoving((prev) => new Set(prev).add(item.id));
+    await slide;
     queryClient.setQueryData<ContestBalloonItem[]>(balloonsKey, (old) =>
       (old ?? []).map((b) =>
         b.id === item.id
@@ -215,13 +216,13 @@ export default function ContestBalloonPage() {
           : b
       )
     );
-    setRunning((prev) => {
+    setMoving((prev) => {
       const next = new Set(prev);
       next.delete(item.id);
       return next;
     });
     setArrived(item.id);
-    setTimeout(() => setArrived((cur) => (cur === item.id ? null : cur)), 1500);
+    setTimeout(() => setArrived((cur) => (cur === item.id ? null : cur)), 1200);
     const error = await request;
     if (error) toast.error(error instanceof Error ? error.message : "操作失败");
     void queryClient.invalidateQueries({ queryKey: balloonsKey });
@@ -229,7 +230,6 @@ export default function ContestBalloonPage() {
 
   const balloons = balloonsQuery.data ?? [];
   const problems = problemsQuery.data ?? [];
-  // 待送：先 AC 的在上，按顺序送；已送：最近送出的在上
   const pending = balloons
     .filter((item) => item.status === "PENDING")
     .sort((a, b) => timeOf(a.createdAt) - timeOf(b.createdAt) || a.id - b.id);
@@ -237,95 +237,105 @@ export default function ContestBalloonPage() {
     .filter((item) => item.status === "DELIVERED")
     .sort((a, b) => timeOf(b.deliveredAt) - timeOf(a.deliveredAt) || b.id - a.id);
 
-  // 撞色：两道题同一种颜色，现场分不清，提示管理者手动改
+  // 每位选手已经拿到（含待送）的气球，按题目顺序
+  const totals = useMemo(() => {
+    const byUser = new Map<string, ContestBalloonItem[]>();
+    for (const b of balloonsQuery.data ?? []) {
+      const key = b.username ?? `#${b.id}`;
+      byUser.set(key, [...(byUser.get(key) ?? []), b]);
+    }
+    for (const list of byUser.values()) list.sort((a, b) => problemInfo(a.pid).order - problemInfo(b.pid).order);
+    return byUser;
+  }, [balloonsQuery.data, problemInfo]);
+
+  // 撞色：两道题同一种颜色，现场分不清
   const clashes = new Map<string, string[]>();
   for (const problem of problems) {
     const key = problem.color.toLowerCase();
-    clashes.set(key, [...(clashes.get(key) ?? []), problemLabel(problem.pid, problem.title).letter]);
+    clashes.set(key, [...(clashes.get(key) ?? []), problemInfo(problem.pid, problem.title).letter]);
   }
   const clashWith = (pid: string, color: string) => {
-    const self = problemLabel(pid).letter;
+    const self = problemInfo(pid).letter;
     return (clashes.get(color.toLowerCase()) ?? []).filter((other) => other !== self);
   };
 
   const renderRow = (item: ContestBalloonItem, side: "pending" | "delivered") => {
-    const { letter, title } = problemLabel(item.pid, item.title);
+    const { letter, title } = problemInfo(item.pid, item.title);
+    const done = side === "delivered";
     return (
-      <li
+      <div
         key={item.id}
         ref={(el) => {
           if (el) rowRefs.current.set(item.id, el);
           else rowRefs.current.delete(item.id);
         }}
         className={cn(
-          "flex items-center gap-3 border-b px-3 py-2.5 transition-[opacity,background-color] duration-500 last:border-b-0",
-          running.has(item.id) && "opacity-0",
+          GRID,
+          "border-b px-3 py-2 text-sm transition-colors duration-700 last:border-b-0",
+          done && "text-slate-400",
+          moving.has(item.id) && "invisible",
           arrived === item.id && "bg-emerald-50"
         )}
       >
-        <BalloonIcon color={item.color} className="h-9 w-6 shrink-0" />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2">
-            <span className="font-display text-base font-semibold">{letter}</span>
-            <span className="truncate text-sm text-slate-600" title={title}>
-              {title}
-            </span>
-          </div>
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
-            <span className="font-medium text-slate-800">{displayName(item)}</span>
-            <span>
-              {side === "pending" ? `AC ${formatClock(item.createdAt)}` : `送达 ${formatClock(item.deliveredAt)}`}
-            </span>
-            {item.revoked && (
-              <Badge
-                variant="outline"
-                className="border-amber-300 text-amber-700"
-                title="这道题的 AC 已被重测改判或跳过，选手目前没有通过"
-              >
-                AC 已撤销
-              </Badge>
-            )}
-          </div>
-        </div>
-        {side === "pending" ? (
-          <Button size="sm" disabled={running.has(item.id)} onClick={() => void move(item, true)}>
-            送达
+        <span className="font-mono tabular-nums">{formatClock(done ? item.deliveredAt : item.createdAt)}</span>
+        <ProblemBadge letter={letter} color={item.color} title={title} />
+        <span className="flex min-w-0 items-center gap-2">
+          <span className={cn("truncate", !done && "font-medium text-slate-900")}>{displayName(item)}</span>
+          {item.revoked && (
+            <Badge variant="outline" className="shrink-0 border-amber-300 text-amber-700">
+              AC 已撤销
+            </Badge>
+          )}
+        </span>
+        <span className="flex flex-wrap justify-end gap-1">
+          {(totals.get(item.username ?? `#${item.id}`) ?? []).map((b) => (
+            <ProblemBadge key={b.id} letter={problemInfo(b.pid).letter} color={b.color} />
+          ))}
+        </span>
+        {done ? (
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 text-slate-400 hover:text-slate-900"
+            disabled={moving.has(item.id)}
+            onClick={() => void move(item, false)}
+            aria-label="撤回"
+            title="撤回"
+          >
+            <Undo2 className="h-4 w-4" />
           </Button>
         ) : (
           <Button
-            size="sm"
-            variant="ghost"
-            className="text-muted-foreground"
-            disabled={running.has(item.id)}
-            onClick={() => void move(item, false)}
+            size="icon"
+            className="h-8 w-8"
+            disabled={moving.has(item.id)}
+            onClick={() => void move(item, true)}
+            aria-label="送达"
+            title="送达"
           >
-            撤回
+            <Check className="h-4 w-4" />
           </Button>
         )}
-      </li>
+      </div>
     );
   };
 
   const column = (
     title: string,
-    count: number,
-    hint: string,
-    ref: RefObject<HTMLDivElement>,
     rows: ContestBalloonItem[],
     side: "pending" | "delivered",
-    empty: string
+    ref: RefObject<HTMLDivElement>
   ) => (
-    <section className="overflow-hidden rounded-md border">
+    <section className="overflow-hidden rounded-md border bg-white">
       <header className="flex items-center gap-2 border-b bg-muted/50 px-3 py-2 text-sm font-semibold">
         {title}
-        <Badge variant={side === "pending" ? "secondary" : "outline"}>{count}</Badge>
-        <span className="ml-auto text-xs font-normal text-muted-foreground">{hint}</span>
+        <Badge variant={side === "pending" ? "secondary" : "outline"}>{rows.length}</Badge>
       </header>
-      <div ref={ref} className="max-h-[65vh] overflow-y-auto">
+      <div ref={ref} className="max-h-[70vh] overflow-y-auto">
         {rows.length === 0 ? (
-          <p className="py-10 text-center text-sm text-muted-foreground">{empty}</p>
+          <p className="py-8 text-center text-sm text-slate-400">—</p>
         ) : (
-          <ul>{rows.map((item) => renderRow(item, side))}</ul>
+          rows.map((item) => renderRow(item, side))
         )}
       </div>
     </section>
@@ -337,9 +347,8 @@ export default function ContestBalloonPage() {
         <title>气球 - SEUOJ</title>
       </Helmet>
       <div className="mx-auto w-full max-w-[1160px] px-4 py-5 sm:px-7">
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          <h1 className="text-lg font-semibold">气球队列</h1>
-          <span className="text-xs text-muted-foreground">每 {POLL_MS / 1000} 秒自动刷新</span>
+        <div className="mb-4 flex items-center gap-3">
+          <h1 className="text-lg font-semibold">气球</h1>
           <Button
             size="sm"
             variant="ghost"
@@ -354,68 +363,50 @@ export default function ContestBalloonPage() {
 
         {!canManage ? (
           <div className="rounded-md border border-dashed p-6 text-sm text-muted-foreground">
-            只有拥有该比赛管理权限的账号（教师/管理员或比赛负责人）可以查看气球队列。
+            只有比赛管理者可以查看气球。
           </div>
         ) : (
           <>
-            <div className="mb-5 grid gap-5 md:grid-cols-2">
-              {column(
-                "待送",
-                pending.length,
-                "先 AC 的在上",
-                pendingListRef,
-                pending,
-                "pending",
-                balloonsQuery.isLoading ? "加载中..." : "没有待送的气球"
-              )}
-              {column("已送达", delivered.length, "最近送出的在上", deliveredListRef, delivered, "delivered", "还没有送出气球")}
+            <div className="mb-5 grid gap-5 lg:grid-cols-2">
+              {column("待送", pending, "pending", pendingListRef)}
+              {column("已送达", delivered, "delivered", deliveredListRef)}
             </div>
 
-            <div className="rounded-md border p-4">
-              <div className="mb-3 flex items-center gap-2">
-                <h2 className="text-sm font-semibold">题目配色</h2>
-                <span className="text-xs text-muted-foreground">未设置时按题目顺序自动分配</span>
+            <section className="rounded-md border bg-white p-4">
+              <h2 className="mb-3 text-sm font-semibold">题目配色</h2>
+              <div className="flex flex-wrap gap-2">
+                {problems.map((problem) => {
+                  const { letter, title } = problemInfo(problem.pid, problem.title);
+                  const clash = clashWith(problem.pid, problem.color);
+                  return (
+                    <label
+                      key={problem.pid}
+                      className={cn(
+                        "flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs",
+                        clash.length > 0 && "border-destructive"
+                      )}
+                    >
+                      <ProblemBadge letter={letter} color={problem.color} />
+                      <span className="max-w-[10rem] truncate">{title}</span>
+                      <ColorSwatch
+                        value={problem.color}
+                        onCommit={(color) => colorMutation.mutate({ pid: problem.pid, color })}
+                      />
+                      {problem.explicit && (
+                        <button
+                          type="button"
+                          className="text-slate-500 hover:text-slate-900"
+                          onClick={() => colorMutation.mutate({ pid: problem.pid, color: null })}
+                        >
+                          恢复默认
+                        </button>
+                      )}
+                      {clash.length > 0 && <span className="text-destructive">与 {clash.join("、")} 同色</span>}
+                    </label>
+                  );
+                })}
               </div>
-              <div className="flex flex-wrap gap-3">
-                {problems.length === 0 ? (
-                  <span className="text-xs text-muted-foreground">暂无题目</span>
-                ) : (
-                  problems.map((problem) => {
-                    const { letter, title } = problemLabel(problem.pid, problem.title);
-                    const clash = clashWith(problem.pid, problem.color);
-                    return (
-                      <label
-                        key={problem.pid}
-                        className={cn(
-                          "flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs",
-                          clash.length > 0 && "border-destructive"
-                        )}
-                        title={clash.length ? `与 ${clash.join("、")} 颜色相同` : title}
-                      >
-                        <span className="font-semibold">{letter}</span>
-                        <span className="max-w-[10rem] truncate text-slate-600">{title}</span>
-                        <ColorSwatch
-                          value={problem.color}
-                          onCommit={(color) => colorMutation.mutate({ pid: problem.pid, color })}
-                        />
-                        {problem.explicit ? (
-                          <button
-                            type="button"
-                            className="text-muted-foreground hover:text-foreground"
-                            onClick={() => colorMutation.mutate({ pid: problem.pid, color: null })}
-                          >
-                            恢复自动
-                          </button>
-                        ) : (
-                          <span className="text-muted-foreground">自动</span>
-                        )}
-                        {clash.length > 0 && <span className="text-destructive">撞色 {clash.join("、")}</span>}
-                      </label>
-                    );
-                  })
-                )}
-              </div>
-            </div>
+            </section>
           </>
         )}
       </div>
