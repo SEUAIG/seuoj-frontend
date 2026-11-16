@@ -30,7 +30,6 @@ import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
-    DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
@@ -113,11 +112,9 @@ function loadXLSX() {
 function RoleFilterMenu({
     value,
     onToggle,
-    onClear,
 }: {
     value: CommonUserRole[];
     onToggle: (role: CommonUserRole) => void;
-    onClear: () => void;
 }) {
     const summary = (() => {
         if (value.length === 0) return "全部角色";
@@ -145,12 +142,6 @@ function RoleFilterMenu({
                         {label}
                     </DropdownMenuCheckboxItem>
                 ))}
-                {value.length > 0 && (
-                    <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onSelect={onClear}>清除角色筛选</DropdownMenuItem>
-                    </>
-                )}
             </DropdownMenuContent>
         </DropdownMenu>
     );
@@ -258,11 +249,6 @@ export default function AdminUserManagementPage() {
         fetchUsers(1, undefined, next);
     };
 
-    const clearRoleFilter = () => {
-        setRoleFilter([]);
-        setCurrentPage(1);
-        fetchUsers(1, undefined, []);
-    };
 
     const canBan = (user: UserPageRecord) =>
         user.canManageProfile && String(user.user_id) !== String(currentUserId);
@@ -584,9 +570,9 @@ export default function AdminUserManagementPage() {
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold">用户管理</h1>
                 <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => openBanDialog("ban", [], true)}>
+                    <Button size="sm" variant="destructive" onClick={() => openBanDialog("ban", [], true)}>
                         <Ban className="h-4 w-4 mr-1" />
-                        按账号名封禁
+                        封禁
                     </Button>
                     <input
                         ref={fileInputRef}
@@ -626,7 +612,6 @@ export default function AdminUserManagementPage() {
                     <RoleFilterMenu
                         value={roleFilter}
                         onToggle={toggleRoleFilter}
-                        onClear={clearRoleFilter}
                     />
                     <div className="flex rounded-md border p-0.5" role="group" aria-label="账号状态">
                         {BAN_FILTERS.map((f) => (
