@@ -26,6 +26,15 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
     getUserPage,
@@ -52,6 +61,7 @@ import {
     FileSpreadsheet,
     Info,
     Ban,
+    ChevronDown,
 } from "lucide-react";
 import ColumnMappingStep from "@/components/bussiness/ColumnMappingStep";
 import {
@@ -98,6 +108,52 @@ function loadXLSX() {
         xlsxModulePromise = import("xlsx");
     }
     return xlsxModulePromise;
+}
+
+function RoleFilterMenu({
+    value,
+    onToggle,
+    onClear,
+}: {
+    value: CommonUserRole[];
+    onToggle: (role: CommonUserRole) => void;
+    onClear: () => void;
+}) {
+    const summary = (() => {
+        if (value.length === 0) return "全部角色";
+        const first = ROLE_FILTERS.find((item) => item.key === value[0])?.label ?? "1 个角色";
+        return value.length === 1 ? first : `${first} +${value.length - 1}`;
+    })();
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="h-8">
+                    角色：{summary}
+                    <ChevronDown className="ml-1 h-4 w-4 opacity-60" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>按角色筛选（可多选）</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {ROLE_FILTERS.map(({ key, label }) => (
+                    <DropdownMenuCheckboxItem
+                        key={key}
+                        checked={value.includes(key)}
+                        onCheckedChange={() => onToggle(key)}
+                        onSelect={(event) => event.preventDefault()}
+                    >
+                        {label}
+                    </DropdownMenuCheckboxItem>
+                ))}
+                {value.length > 0 && (
+                    <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={onClear}>清除角色筛选</DropdownMenuItem>
+                    </>
+                )}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
 }
 
 export default function AdminUserManagementPage() {
@@ -547,7 +603,7 @@ export default function AdminUserManagementPage() {
             </div>
 
             {/* Search bar */}
-            <div className="flex gap-2 mb-4">
+            <div className="flex flex-wrap items-center gap-2 mb-4">
                 <Input
                     placeholder="搜索用户名"
                     value={searchUsername}
@@ -566,50 +622,27 @@ export default function AdminUserManagementPage() {
                     <Search className="h-4 w-4 mr-1" />
                     搜索
                 </Button>
-                <div className="ml-auto flex rounded-md border p-0.5" role="group" aria-label="账号状态">
-                    {BAN_FILTERS.map((f) => (
-                        <Button
-                            key={f.key}
-                            size="sm"
-                            variant={banFilter === f.key ? "secondary" : "ghost"}
-                            className="h-8"
-                            aria-pressed={banFilter === f.key}
-                            onClick={() => handleBanFilter(f.key)}
-                        >
-                            {f.label}
-                        </Button>
-                    ))}
+                <div className="ml-auto flex flex-wrap items-center gap-2">
+                    <RoleFilterMenu
+                        value={roleFilter}
+                        onToggle={toggleRoleFilter}
+                        onClear={clearRoleFilter}
+                    />
+                    <div className="flex rounded-md border p-0.5" role="group" aria-label="账号状态">
+                        {BAN_FILTERS.map((f) => (
+                            <Button
+                                key={f.key}
+                                size="sm"
+                                variant={banFilter === f.key ? "secondary" : "ghost"}
+                                className="h-8"
+                                aria-pressed={banFilter === f.key}
+                                onClick={() => handleBanFilter(f.key)}
+                            >
+                                {f.label}
+                            </Button>
+                        ))}
+                    </div>
                 </div>
-            </div>
-
-            {/* 角色筛选：多选，任一匹配 */}
-            <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
-                <span className="text-muted-foreground">角色</span>
-                {ROLE_FILTERS.map(({ key, label }) => {
-                    const active = roleFilter.includes(key);
-                    return (
-                        <Button
-                            key={key}
-                            size="sm"
-                            variant={active ? "secondary" : "outline"}
-                            className="h-8"
-                            aria-pressed={active}
-                            onClick={() => toggleRoleFilter(key)}
-                        >
-                            {label}
-                        </Button>
-                    );
-                })}
-                {roleFilter.length > 0 && (
-                    <>
-                        <Button size="sm" variant="ghost" className="h-8" onClick={clearRoleFilter}>
-                            清除角色筛选
-                        </Button>
-                        <span className="text-xs text-muted-foreground">
-                            已选 {roleFilter.length} 个角色（命中任一即显示）
-                        </span>
-                    </>
-                )}
             </div>
 
             {selected.size > 0 && (
