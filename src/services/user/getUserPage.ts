@@ -21,6 +21,8 @@ export const getUserPage = async (
 ): Promise<GetUserPageResponse> => {
   const response = await api.get<GetUserPageResponse>(userEndpoints.page, {
     params,
+    // Send repeated keys (roles=A&roles=B) so Spring binds them to List<String>.
+    paramsSerializer: { indexes: null },
   });
   return response.data;
 };

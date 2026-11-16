@@ -16,7 +16,7 @@ import {
   useSeen,
 } from "./noticeKit";
 
-export type ContestTab = "overview" | "problem" | "submissions" | "standings" | "clarifications";
+export type ContestTab = "overview" | "problem" | "submissions" | "standings" | "clarifications" | "balloon";
 
 const lastProblemKey = (contestId: number) => `contest:${contestId}:lastProblem`;
 
@@ -202,6 +202,10 @@ export default function ContestShell({
       dot: notices?.can_manage || tab !== "clarifications" ? clarBadge : 0,
     },
   ];
+
+  if (data?.can_write) {
+    tabs.push({ key: "balloon", label: "气球", to: `/contest/${contestId}/balloon` });
+  }
 
   return (
     <div className={cn("w-full", fill && "flex flex-col h-[calc(100vh-3.5rem)]")}>

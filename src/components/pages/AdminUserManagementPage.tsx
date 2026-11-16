@@ -75,6 +75,13 @@ const BAN_FILTERS: { key: BanFilter; label: string }[] = [
     { key: "banned", label: "封禁中" },
 ];
 
+const ROLE_FILTERS: { key: CommonUserRole; label: string }[] = [
+    { key: "STUDENT", label: "学生" },
+    { key: "TEACHER", label: "教师" },
+    { key: "ADMIN", label: "管理员" },
+    { key: "SUPER_ADMIN", label: "超级管理员" },
+];
+
 function formatBanUntil(until?: string | null) {
     if (!until) return "永久";
     return until.replace("T", " ").slice(0, 16);
@@ -107,6 +114,7 @@ export default function AdminUserManagementPage() {
     const [searchEmail, setSearchEmail] = useState("");
     const [loading, setLoading] = useState(false);
     const [banFilter, setBanFilter] = useState<BanFilter>("all");
+    const [roleFilter, setRoleFilter] = useState<CommonUserRole[]>([]);
 
     // 封禁：勾选跨页保留，key 为 user_id
     const [selected, setSelected] = useState<Map<number, UserPageRecord>>(new Map());
@@ -135,15 +143,17 @@ export default function AdminUserManagementPage() {
 
     // Fetch user list
     const fetchUsers = useCallback(
-        async (page?: number, filter?: BanFilter) => {
+        async (page?: number, filter?: BanFilter, roleOverride?: CommonUserRole[]) => {
             setLoading(true);
             const status = filter ?? banFilter;
+            const roles = roleOverride ?? roleFilter;
             try {
                 const res = await getUserPage({
                     current: page ?? currentPage,
                     size: pageSize,
                     username: searchUsername || undefined,
                     email: searchEmail || undefined,
+                    roles: roles.length > 0 ? roles : undefined,
                     banned: status === "all" ? undefined : status === "banned",
                 });
                 if (res.code === 0) {
@@ -159,7 +169,7 @@ export default function AdminUserManagementPage() {
                 setLoading(false);
             }
         },
-        [currentPage, pageSize, searchUsername, searchEmail, banFilter]
+        [currentPage, pageSize, searchUsername, searchEmail, banFilter, roleFilter]
     );
 
     useEffect(() => {
@@ -181,6 +191,21 @@ export default function AdminUserManagementPage() {
         setBanFilter(filter);
         setCurrentPage(1);
         fetchUsers(1, filter);
+    };
+
+    const toggleRoleFilter = (role: CommonUserRole) => {
+        const next = roleFilter.includes(role)
+            ? roleFilter.filter((item) => item !== role)
+            : [...roleFilter, role];
+        setRoleFilter(next);
+        setCurrentPage(1);
+        fetchUsers(1, undefined, next);
+    };
+
+    const clearRoleFilter = () => {
+        setRoleFilter([]);
+        setCurrentPage(1);
+        fetchUsers(1, undefined, []);
     };
 
     const canBan = (user: UserPageRecord) =>
@@ -555,6 +580,36 @@ export default function AdminUserManagementPage() {
                         </Button>
                     ))}
                 </div>
+            </div>
+
+            {/* 角色筛选：多选，任一匹配 */}
+            <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+                <span className="text-muted-foreground">角色</span>
+                {ROLE_FILTERS.map(({ key, label }) => {
+                    const active = roleFilter.includes(key);
+                    return (
+                        <Button
+                            key={key}
+                            size="sm"
+                            variant={active ? "secondary" : "outline"}
+                            className="h-8"
+                            aria-pressed={active}
+                            onClick={() => toggleRoleFilter(key)}
+                        >
+                            {label}
+                        </Button>
+                    );
+                })}
+                {roleFilter.length > 0 && (
+                    <>
+                        <Button size="sm" variant="ghost" className="h-8" onClick={clearRoleFilter}>
+                            清除角色筛选
+                        </Button>
+                        <span className="text-xs text-muted-foreground">
+                            已选 {roleFilter.length} 个角色（命中任一即显示）
+                        </span>
+                    </>
+                )}
             </div>
 
             {selected.size > 0 && (

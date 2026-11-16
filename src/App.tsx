@@ -96,6 +96,9 @@ const ContestStandingsPage = React.lazy(
 const ContestClarificationsPage = React.lazy(
   () => import("./components/pages/ContestClarificationsPage")
 );
+const ContestBalloonPage = React.lazy(
+  () => import("./components/pages/ContestBalloonPage")
+);
 const ContestMemberImportPage = React.lazy(() => import("./components/pages/ContestMemberImportPage"));
 const ContestMembersPage = React.lazy(() => import("./components/pages/ContestMembersPage"));
 const ContestEditPage = React.lazy(
@@ -196,6 +199,10 @@ function App() {
             <Route
               path=":id/clarifications"
               element={<ContestClarificationsPage />}
+            />
+            <Route
+              path=":id/balloon"
+              element={<ContestBalloonPage />}
             />
             <Route
               path=":id/:pid"
