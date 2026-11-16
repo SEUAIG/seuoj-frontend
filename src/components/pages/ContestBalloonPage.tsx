@@ -54,13 +54,26 @@ function badgeStyle(color: string) {
   };
 }
 
-/** 题目色块：气球颜色作底，写题目字母（同 DOMjudge 气球页） */
-function ProblemBadge({ letter, color, title }: { letter: string; color: string; title?: string }) {
+/** 题目色块：气球颜色作底，写题目字母（同 DOMjudge 气球页）；一血在外侧加一圈金色 */
+function ProblemBadge({
+  letter,
+  color,
+  title,
+  first = false,
+}: {
+  letter: string;
+  color: string;
+  title?: string;
+  first?: boolean;
+}) {
   return (
     <span
-      className="inline-flex h-6 min-w-6 items-center justify-center rounded border px-1 text-xs font-bold leading-none"
+      className={cn(
+        "inline-flex h-6 min-w-6 items-center justify-center rounded border px-1 text-xs font-bold leading-none",
+        first && "ring-2 ring-[#f5b301] ring-offset-1"
+      )}
       style={badgeStyle(color)}
-      title={title}
+      title={first ? `${title ? `${title} · ` : ""}一血` : title}
     >
       {letter}
     </span>
@@ -278,7 +291,7 @@ export default function ContestBalloonPage() {
         )}
       >
         <span className="font-mono tabular-nums">{formatClock(done ? item.deliveredAt : item.createdAt)}</span>
-        <ProblemBadge letter={letter} color={item.color} title={title} />
+        <ProblemBadge letter={letter} color={item.color} title={title} first={!!item.firstSolve} />
         <span className="flex min-w-0 items-center gap-2">
           <span className={cn("truncate", !done && "font-medium text-slate-900")}>{displayName(item)}</span>
           {item.revoked && (
@@ -289,7 +302,7 @@ export default function ContestBalloonPage() {
         </span>
         <span className="flex flex-wrap justify-end gap-1">
           {(totals.get(item.username ?? `#${item.id}`) ?? []).map((b) => (
-            <ProblemBadge key={b.id} letter={problemInfo(b.pid).letter} color={b.color} />
+            <ProblemBadge key={b.id} letter={problemInfo(b.pid).letter} color={b.color} first={!!b.firstSolve} />
           ))}
         </span>
         {done ? (

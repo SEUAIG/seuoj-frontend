@@ -5,6 +5,11 @@ import type { ApiResponse } from "@/models/common";
 export interface ContestBalloonItem {
   id: number;
   problemId: number;
+  submissionId?: number;
+  /** 触发气球的 AC 提交时间 */
+  submitTime?: string | null;
+  /** 本题一血 */
+  firstSolve?: boolean | null;
   pid: string | null;
   title: string | null;
   color: string;
