@@ -16,7 +16,7 @@ import {
   SimulationNodeDatum,
 } from "d3-force";
 import { Helmet } from "react-helmet-async";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 
@@ -49,6 +49,26 @@ const GRAPH_HEIGHT = 1400;
 const DRAG_THRESHOLD = 6;
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 3;
+/** User-space units that must stay inside the viewport, so the graph cannot be lost off-screen. */
+const VIEW_MARGIN = 160;
+
+interface ViewTransform {
+  x: number;
+  y: number;
+  k: number;
+}
+
+function clampView(view: ViewTransform): ViewTransform {
+  const minX = -(GRAPH_WIDTH * view.k) + VIEW_MARGIN;
+  const maxX = GRAPH_WIDTH - VIEW_MARGIN;
+  const minY = -(GRAPH_HEIGHT * view.k) + VIEW_MARGIN;
+  const maxY = GRAPH_HEIGHT - VIEW_MARGIN;
+  return {
+    k: view.k,
+    x: Math.min(maxX, Math.max(minX, view.x)),
+    y: Math.min(maxY, Math.max(minY, view.y)),
+  };
+}
 
 type PositionedNode = KnowledgeGraphNode & { x: number; y: number };
 type ForceNode = PositionedNode & SimulationNodeDatum;
@@ -115,6 +135,35 @@ export default function KnowledgeGraphPage() {
   const simulationRef = useRef<Simulation<ForceNode, ForceLink> | null>(null);
   const nodesRef = useRef<ForceNode[]>([]);
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const svgWheelCleanupRef = useRef<(() => void) | null>(null);
+
+  // React binds onWheel as a passive listener, so preventDefault() there is
+  // ignored and the page scrolls while zooming. Bind a native non-passive
+  // listener instead, and keep it in sync with the conditionally rendered SVG.
+  const attachSvg = useCallback((element: SVGSVGElement | null) => {
+    svgWheelCleanupRef.current?.();
+    svgWheelCleanupRef.current = null;
+    svgRef.current = element;
+    if (!element) return;
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const rect = element.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const svgX = ((event.clientX - rect.left) / rect.width) * GRAPH_WIDTH;
+      const svgY = ((event.clientY - rect.top) / rect.height) * GRAPH_HEIGHT;
+      zoomAtBy(svgX, svgY, event.deltaY > 0 ? 0.9 : 1.1);
+    };
+    element.addEventListener("wheel", handleWheel, { passive: false });
+    svgWheelCleanupRef.current = () => element.removeEventListener("wheel", handleWheel);
+  }, []);
+
+  useEffect(
+    () => () => {
+      svgWheelCleanupRef.current?.();
+      svgWheelCleanupRef.current = null;
+    },
+    []
+  );
   const pendingDragRef = useRef<{ nodeId: string; x: number; y: number } | null>(null);
   const panningRef = useRef<{
     startClientX: number;
@@ -273,9 +322,24 @@ export default function KnowledgeGraphPage() {
     setViewTransform((prev) => {
       const k = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextK));
       if (Math.abs(k - prev.k) < 1e-6) return prev;
-      const x = svgX - ((svgX - prev.x) / prev.k) * k;
-      const y = svgY - ((svgY - prev.y) / prev.k) * k;
-      return { x, y, k };
+      return clampView({
+        k,
+        x: svgX - ((svgX - prev.x) / prev.k) * k,
+        y: svgY - ((svgY - prev.y) / prev.k) * k,
+      });
+    });
+  }
+
+  /** Multiplicative zoom computed inside the updater, so native listeners never read stale state. */
+  function zoomAtBy(svgX: number, svgY: number, factor: number) {
+    setViewTransform((prev) => {
+      const k = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, prev.k * factor));
+      if (Math.abs(k - prev.k) < 1e-6) return prev;
+      return clampView({
+        k,
+        x: svgX - ((svgX - prev.x) / prev.k) * k,
+        y: svgY - ((svgY - prev.y) / prev.k) * k,
+      });
     });
   }
 
@@ -284,7 +348,7 @@ export default function KnowledgeGraphPage() {
   }
 
   function resetZoom() {
-    setViewTransform({ x: 0, y: 0, k: 0.65 });
+    setViewTransform(clampView({ x: 0, y: 0, k: 0.65 }));
   }
 
   function onStartDrag(nodeId: string, clientX: number, clientY: number) {
@@ -310,7 +374,7 @@ export default function KnowledgeGraphPage() {
         const { startX, startY, startClientX, startClientY } = panningRef.current;
         const dx = ((clientX - startClientX) / rect.width) * GRAPH_WIDTH;
         const dy = ((clientY - startClientY) / rect.height) * GRAPH_HEIGHT;
-        setViewTransform((prev) => ({ ...prev, x: startX + dx, y: startY + dy }));
+        setViewTransform((prev) => clampView({ k: prev.k, x: startX + dx, y: startY + dy }));
       }
       return;
     }
@@ -382,17 +446,9 @@ export default function KnowledgeGraphPage() {
             ) : (
               <div className="relative h-full min-h-[620px] overflow-hidden rounded-lg border bg-background">
                 <svg
-                  ref={svgRef}
+                  ref={attachSvg}
                   viewBox={`0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`}
                   className="h-full w-full"
-                  onWheel={(event) => {
-                    event.preventDefault();
-                    const rect = event.currentTarget.getBoundingClientRect();
-                    const svgX = ((event.clientX - rect.left) / rect.width) * GRAPH_WIDTH;
-                    const svgY = ((event.clientY - rect.top) / rect.height) * GRAPH_HEIGHT;
-                    const factor = event.deltaY > 0 ? 0.9 : 1.1;
-                    zoomAt(svgX, svgY, viewTransform.k * factor);
-                  }}
                   onPointerDown={(event) => {
                     if (event.target !== event.currentTarget) return;
                     panningRef.current = {
@@ -406,6 +462,7 @@ export default function KnowledgeGraphPage() {
                   onPointerMove={(event) => onMoveDrag(event.clientX, event.clientY)}
                   onPointerUp={onEndDrag}
                   onPointerLeave={onEndDrag}
+                  onPointerCancel={onEndDrag}
                   onClick={(event) => {
                     if (!draggingNodeId && event.target === event.currentTarget) {
                       setSelectedNodeId(null);

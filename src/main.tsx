@@ -1,4 +1,5 @@
 import AuthRefresh from "./components/common/AuthRefresh";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
@@ -66,7 +67,9 @@ createRoot(document.getElementById("root")!).render(
               persistor={persistor}
             >
               <AuthRefresh />
-              <App />
+              <ErrorBoundary>
+                <App />
+              </ErrorBoundary>
             </PersistGate>
           </Provider>
           {ReactQueryDevtools ? (

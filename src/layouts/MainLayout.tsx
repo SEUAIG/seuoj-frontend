@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from "react-router-dom";
 import NavBar from "@/components/common/NavBar";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
 import Slogan from "@/components/common/Slogan";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -15,7 +16,9 @@ export default function MainLayout() {
       <main
         className={`flex-1 w-full flex flex-col pt-14 ${isFullscreenPage ? "h-[calc(100vh-3.5rem)] overflow-hidden" : ""}`}
       >
-        <Outlet />
+        <ErrorBoundary key={pathname}>
+          <Outlet />
+        </ErrorBoundary>
       </main>
       {!isFullscreenPage ? (
         <footer className="flex-none mt-auto">
