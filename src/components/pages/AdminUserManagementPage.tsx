@@ -214,7 +214,10 @@ export default function AdminUserManagementPage() {
     };
 
     const selectedUsers = Array.from(selected.values());
-    const selectedBannedCount = selectedUsers.filter((u) => u.banned).length;
+    // 批量封禁只处理未封禁的账号：后端重新封禁会覆盖原期限，混进永久封禁的账号会被改短
+    const selectedActiveUsers = selectedUsers.filter((u) => !u.banned);
+    const selectedBannedUsers = selectedUsers.filter((u) => u.banned);
+    const selectedBannedCount = selectedBannedUsers.length;
 
     const resetImportDialog = () => {
         setImportStep("config");
@@ -561,11 +564,21 @@ export default function AdminUserManagementPage() {
                         {selectedBannedCount > 0 && <span className="text-muted-foreground">（其中 {selectedBannedCount} 个已封禁）</span>}
                     </span>
                     <div className="ml-auto flex gap-2">
-                        <Button size="sm" variant="destructive" onClick={() => openBanDialog("ban", selectedUsers)}>
-                            封禁所选
+                        <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={selectedActiveUsers.length === 0}
+                            onClick={() => openBanDialog("ban", selectedActiveUsers)}
+                        >
+                            封禁所选{selectedBannedCount > 0 && `（${selectedActiveUsers.length} 个未封禁）`}
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => openBanDialog("unban", selectedUsers)}>
-                            解封所选
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={selectedBannedCount === 0}
+                            onClick={() => openBanDialog("unban", selectedBannedUsers)}
+                        >
+                            解封所选{selectedBannedCount > 0 && selectedBannedCount < selected.size && `（${selectedBannedCount} 个）`}
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => setSelected(new Map())}>
                             清空选择

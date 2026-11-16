@@ -49,8 +49,9 @@ export default function ContestSubmissionListPage() {
     setPage(1);
   };
   const queryClient = useQueryClient();
-  // 管理者勾选（跨页、跨筛选保留），key 为 submission_no
+  // 管理者勾选，key 为 submission_no。翻页保留；换筛选清空，免得批量操作带上看不见的提交
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  useEffect(() => setSelected(new Set()), [contestId, pid, result, username]);
   const [skipAction, setSkipAction] = useState<null | { skipped: boolean; whole: boolean }>(null);
   // 重测：selected = 勾选的提交；problem = 本场当前筛选题目的全部提交
   const [rejudgeAction, setRejudgeAction] = useState<null | "selected" | "problem">(null);

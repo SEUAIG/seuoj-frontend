@@ -176,7 +176,10 @@ export default function UserBanDialog({ open, mode, users, allowUsernames, onOpe
                                 placeholder={"每行一个，也可用空格或逗号分隔，例如：\n213240001\n213240002"}
                                 className="min-h-28 font-mono text-sm"
                             />
-                            <p className="text-xs text-muted-foreground">识别到 {usernames.length} 个账号名</p>
+                            <p className="text-xs text-muted-foreground">
+                                识别到 {usernames.length} 个账号名
+                                {mode === "ban" && "。其中已在封禁中的账号，原期限会被本次设置覆盖（永久封禁也会改成本次期限）"}
+                            </p>
                         </div>
                     )}
 

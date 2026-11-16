@@ -193,7 +193,12 @@ export default function SubmissionListPanel({
   const isAssignmentView = classId !== undefined && assignmentId !== undefined;
   const queryClient = useQueryClient();
   // 教师 / 管理员可勾选后批量跳过；能否处理每条提交由后端按题目、班级、比赛权限判断
+  // 翻页保留勾选；换筛选清空，免得批量操作带上看不见的提交
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  useEffect(
+    () => setSelected(new Set()),
+    [pidFilter, usernameFilter, verdictFilter, languageFilter, mineOnly, scope]
+  );
   const [skipTarget, setSkipTarget] = useState<boolean | null>(null);
   const [rejudgeOpen, setRejudgeOpen] = useState(false);
   const toggle = (no: string, checked: boolean) =>

@@ -17,7 +17,6 @@ import ContestShell, { rememberProblem } from "@/components/contest/ContestShell
 import {
   STATE_TEXT,
   cellStateOf,
-  contestStatusOf,
   isMine,
   letterOf,
   sortProblems,
@@ -44,10 +43,7 @@ export default function ContestProblemDetailPage() {
     pidParam || ""
   );
   const { data: contestDetail } = useQueryToGetContestDetail(contestId || 0);
-  const { data: standings } = useContestStandings(
-    contestId,
-    contestStatusOf(contestDetail) === "IN_PROGRESS"
-  );
+  const { data: standings } = useContestStandings(contestId, contestDetail, false);
   const problems = sortProblems(contestDetail?.problem_list);
   const me = standings?.records.find((r) => isMine(r, user));
   const current = problems.find((p) => p.pid === pidParam);

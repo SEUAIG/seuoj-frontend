@@ -210,7 +210,7 @@ export default function ContestClarificationsPage() {
             <div className="flex justify-center py-20">
               <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
             </div>
-          ) : isError ? (
+          ) : isError && !data ? (
             <p className="py-20 text-center text-slate-500">{error instanceof Error ? error.message : "加载失败"}</p>
           ) : list.length === 0 ? (
             <p className="py-4 text-sm text-slate-400">—</p>

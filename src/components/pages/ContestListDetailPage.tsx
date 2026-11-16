@@ -116,7 +116,7 @@ export default function ContestListDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const { data, isLoading, isError, error, refetch } = useQueryToGetContestDetail(contestId || 0);
   const status = contestStatusOf(data);
-  const { data: standings } = useContestStandings(contestId, status === "IN_PROGRESS");
+  const { data: standings } = useContestStandings(contestId, data);
   const { data: notices } = useContestNotices(contestId);
 
   const toggleRegister = async (register: boolean) => {

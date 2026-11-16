@@ -1,9 +1,11 @@
+import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { isValid, parseISO } from "date-fns";
 import type { RootState } from "@/app/store";
 import { getContestStandings } from "@/services/Contest/getContestStandings";
 import type {
+  ContestDetailData,
   ContestProblemOverview,
   ContestRuleType,
   ContestStandingsData,
@@ -57,13 +59,44 @@ export const STATUS_LABEL: Record<ContestStatus, string> = {
 
 export const isAcm = (rule?: ContestRuleType) => rule === "ACM";
 
-export function useContestStandings(contestId: number, live = false) {
+/** 4xx 是后端明确拒绝（未登录、无权限、不公开），再轮询也一样；网络抖动和 5xx 才值得继续 */
+export const isClientError = (error: unknown) => {
+  const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+  return status != null && status >= 400 && status < 500;
+};
+
+/**
+ * 与后端 ContestService.getContestStandings 的规则一致：
+ * 赛前只有管理者能看；隐藏统计的比赛在结束前只有管理者能看。
+ * 返回不可见的原因，可见时返回 null。比赛详情还没加载时也返回 null，由调用方等详情。
+ */
+export function standingsBlockedReason(
+  detail: Pick<ContestDetailData, "status" | "start_time" | "end_time" | "hide_statistics" | "can_write"> | undefined,
+  isAuthenticated: boolean
+): string | null {
+  if (!isAuthenticated) return "登录后查看排名";
+  if (!detail || detail.can_write) return null;
+  const status = contestStatusOf(detail);
+  if (status === "NOT_STARTED") return "比赛尚未开始，无法查看榜单";
+  if (detail.hide_statistics && status !== "FINISHED") return "本场比赛结束前不公开排名";
+  return null;
+}
+
+/**
+ * 榜单。只在确定可见时才请求，失败不弹全局提示（页面自己显示原因）。
+ * poll：比赛进行中每 30 秒刷新；题目页只用榜单给题号染色，不必轮询。
+ */
+export function useContestStandings(contestId: number, detail: ContestDetailData | undefined, poll = true) {
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const visible = !!detail && standingsBlockedReason(detail, isAuthenticated) === null;
+  const live = poll && contestStatusOf(detail) === "IN_PROGRESS";
   return useQuery<ContestStandingsData | undefined>({
     queryKey: ["contestStandings", contestId],
     queryFn: () => getContestStandings(contestId, {}),
-    enabled: !!contestId,
-    refetchInterval: live ? 30_000 : false,
+    enabled: !!contestId && visible,
+    refetchInterval: (query) => (live && !isClientError(query.state.error) ? 30_000 : false),
     retry: false,
+    meta: { silentError: true },
   });
 }
 

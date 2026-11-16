@@ -31,7 +31,9 @@ const ReactQueryDevtools =
 
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
-    onError: (error: Error) => {
+    onError: (error: Error, query) => {
+      // 轮询类查询（榜单、公告答疑）由页面自己显示错误，不然每次失败都弹一次
+      if (query.meta?.silentError) return;
       toast.error(error.message || "发生未知错误");
     },
   }),

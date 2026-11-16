@@ -1,11 +1,12 @@
 import SubmitterLink from "@/components/common/SubmitterLink";
 import React from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/app/store";
 import { Helmet } from "react-helmet-async";
 import { Loader2 } from "lucide-react";
 import ContestShell from "@/components/contest/ContestShell";
 import {
-  contestStatusOf,
   displayName,
   hm,
   isAcm,
@@ -14,6 +15,7 @@ import {
   problemStats,
   scoreColor,
   sortProblems,
+  standingsBlockedReason,
   useContestStandings,
   useCurrentUser,
   type ProblemStat,
@@ -88,8 +90,9 @@ export default function ContestStandingsPage() {
   const nav = useNavigate();
   const user = useCurrentUser();
   const { data: detail } = useQueryToGetContestDetail(contestId || 0);
-  const live = contestStatusOf(detail) === "IN_PROGRESS";
-  const { data, isLoading, isError, error } = useContestStandings(contestId, live);
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const blocked = standingsBlockedReason(detail, isAuthenticated);
+  const { data, isLoading, isError, error } = useContestStandings(contestId, detail);
 
   const rule = data?.rule_type ?? detail?.rule_type;
   const acm = isAcm(rule);
@@ -115,11 +118,13 @@ export default function ContestStandingsPage() {
       </Helmet>
       <h2 className="mb-4 font-display text-[26px] font-semibold">排名</h2>
 
-      {isLoading ? (
+      {blocked ? (
+        <p className="py-24 text-center text-slate-500">{blocked}</p>
+      ) : !detail || isLoading ? (
         <div className="flex justify-center py-24">
           <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
         </div>
-      ) : isError ? (
+      ) : isError && !data ? (
         <p className="py-24 text-center text-slate-500">
           {error instanceof Error ? error.message : "排名暂不可见"}
         </p>

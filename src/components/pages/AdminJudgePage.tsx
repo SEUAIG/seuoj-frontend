@@ -223,14 +223,27 @@ function HostActions({ status }: { status: JudgeHostsStatus }) {
   const all = useHostMutation((enabled: boolean) => setAllJudgeHostsEnabled(enabled), "已更新");
   const add = useHostMutation(() => addJudgeHost(), "已添加");
   const count = status.judge?.hosts.filter((h) => !h.removing).length ?? 0;
+  const [confirmPause, setConfirmPause] = useState(false);
   if (!status.canEdit) return null;
   return (
     <div className="flex flex-wrap gap-2">
+      <AlertDialog open={confirmPause} onOpenChange={setConfirmPause}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>暂停全部评测机？</AlertDialogTitle>
+          </AlertDialogHeader>
+          <p className="text-sm text-muted-foreground">暂停后全站新提交都会排队等待，直到重新启动。比赛进行中请谨慎。</p>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={() => all.mutate(false)}>全部暂停</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <Button size="sm" variant="outline" disabled={all.isPending} onClick={() => all.mutate(true)}>
         <Play className="mr-1 h-4 w-4" />
         全部启动
       </Button>
-      <Button size="sm" variant="outline" disabled={all.isPending} onClick={() => all.mutate(false)}>
+      <Button size="sm" variant="outline" disabled={all.isPending} onClick={() => setConfirmPause(true)}>
         <Pause className="mr-1 h-4 w-4" />
         全部暂停
       </Button>

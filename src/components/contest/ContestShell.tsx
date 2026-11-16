@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Settings, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -63,6 +64,41 @@ function useClock(start: Date | null, end: Date | null) {
     hot: left < 3600,
     muted: false,
   };
+}
+
+/**
+ * 开赛、结束那一刻自动重新拉比赛详情：后端开赛前返回的题目列表是空的，
+ * 不刷新的话停在页面上的选手看不到题。
+ * 本地时钟算出的阶段和后端给的 status 不一致就刷新；刷新后仍不一致（本机时钟偏快）
+ * 隔几秒再试，最多 10 次。首次延迟随机 0–3 秒，避免全场同一秒请求。
+ */
+function useRefreshOnPhaseChange(
+  contestId: number,
+  serverStatus: string | undefined,
+  start: Date | null,
+  end: Date | null,
+  dataUpdatedAt: number
+) {
+  const qc = useQueryClient();
+  const now = useNow();
+  const attempts = useRef(0);
+  const localStatus =
+    !start || !end ? undefined : now < start.getTime() ? "NOT_STARTED" : now > end.getTime() ? "FINISHED" : "IN_PROGRESS";
+  const stale = !!serverStatus && !!localStatus && serverStatus !== localStatus;
+
+  useEffect(() => {
+    if (!stale) {
+      attempts.current = 0;
+      return;
+    }
+    if (attempts.current >= 10) return;
+    const delay = attempts.current === 0 ? Math.random() * 3000 : 3000 + Math.random() * 3000;
+    const t = setTimeout(() => {
+      attempts.current += 1;
+      void qc.invalidateQueries({ queryKey: ["contestDetail", contestId] });
+    }, delay);
+    return () => clearTimeout(t);
+  }, [stale, dataUpdatedAt, contestId, qc]);
 }
 
 /**
@@ -131,10 +167,11 @@ export default function ContestShell({
   /** 题目页：内容占满剩余视口高度 */
   fill?: boolean;
 }) {
-  const { data } = useQueryToGetContestDetail(contestId || 0);
+  const { data, dataUpdatedAt } = useQueryToGetContestDetail(contestId || 0);
   const start = parseTime(data?.start_time);
   const end = parseTime(data?.end_time);
   const clock = useClock(start, end);
+  useRefreshOnPhaseChange(contestId, data?.status, start, end, dataUpdatedAt);
   const notices = useNoticeAlerts(contestId);
   const { seen } = useSeen(contestId);
   const unseenAnnouncements = (notices?.announcements ?? []).filter((a) => !seen.a.includes(announcementKey(a))).length;

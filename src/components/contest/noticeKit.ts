@@ -2,7 +2,7 @@ import { useCallback, useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getContestNotices } from "@/services/Contest/notices";
 import type { ContestAnnouncement, ContestClarification, ContestNoticesData } from "@/models/contest";
-import { useCurrentUser } from "./contestKit";
+import { isClientError, useCurrentUser } from "./contestKit";
 
 /** 公告与答疑：每 30 秒拉一次，所有比赛页共用同一个查询 */
 export function useContestNotices(contestId: number) {
@@ -10,9 +10,11 @@ export function useContestNotices(contestId: number) {
     queryKey: ["contestNotices", contestId],
     queryFn: () => getContestNotices(contestId),
     enabled: !!contestId,
-    refetchInterval: 30_000,
+    // 被拒绝（4xx）就停，网络抖动继续轮询；失败不弹全局提示，页面保留上次的数据
+    refetchInterval: (query) => (isClientError(query.state.error) ? false : 30_000),
     refetchIntervalInBackground: true,
     retry: false,
+    meta: { silentError: true },
   });
 }
 
