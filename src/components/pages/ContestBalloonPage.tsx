@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ import {
   listContestBalloonProblems,
   listContestBalloons,
   setContestBalloonColor,
+  undeliverContestBalloon,
   type ContestBalloonItem,
 } from "@/services/Contest/balloon";
 
@@ -43,6 +44,8 @@ export default function ContestBalloonPage() {
   const contestId = Number(id);
   const queryClient = useQueryClient();
   const [showDelivered, setShowDelivered] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   const { data: detail } = useQueryToGetContestDetail(contestId);
   const canManage = Boolean(detail?.can_write);
@@ -71,12 +74,23 @@ export default function ContestBalloonPage() {
     },
   });
 
+  const undeliver = useMutation({
+    mutationFn: (balloonId: number) => undeliverContestBalloon(contestId, balloonId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["contest-balloons", contestId] });
+    },
+    onError: (error: unknown) => {
+      toast.error("撤回失败：" + (error instanceof Error ? error.message : String(error)));
+    },
+  });
+
   const colorMutation = useMutation({
     mutationFn: ({ pid, color }: { pid: string; color: string | null }) =>
       setContestBalloonColor(contestId, pid, color),
     onSuccess: () => {
       toast.success("颜色已保存");
       void queryClient.invalidateQueries({ queryKey: ["contest-balloon-problems", contestId] });
+      void queryClient.invalidateQueries({ queryKey: ["contest-balloons", contestId] });
     },
     onError: (error: unknown) => {
       toast.error("保存颜色失败：" + (error instanceof Error ? error.message : String(error)));
@@ -88,9 +102,19 @@ export default function ContestBalloonPage() {
   const pending = balloons.filter((item) => item.status === "PENDING");
   const delivered = balloons.filter((item) => item.status === "DELIVERED");
   const visible = showDelivered ? balloons : pending;
+  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const pageRows = visible.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [showDelivered]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   return (
-    <ContestShell contestId={contestId} tab="balloon" fill>
+    <ContestShell contestId={contestId} tab="balloon">
       <Helmet>
         <title>气球 - SEUOJ</title>
       </Helmet>
@@ -146,7 +170,7 @@ export default function ContestBalloonPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    visible.map((item) => (
+                    pageRows.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell className="text-xs text-muted-foreground">
                           {formatClock(item.createdAt)}
@@ -172,9 +196,15 @@ export default function ContestBalloonPage() {
                               送达
                             </Button>
                           ) : (
-                            <span className="text-xs text-muted-foreground">
-                              {formatClock(item.deliveredAt)}
-                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              title={`送达于 ${formatClock(item.deliveredAt)}，点击撤回`}
+                              onClick={() => undeliver.mutate(item.id)}
+                              disabled={undeliver.isPending}
+                            >
+                              已送达
+                            </Button>
                           )}
                         </TableCell>
                       </TableRow>
@@ -182,6 +212,30 @@ export default function ContestBalloonPage() {
                   )}
                 </TableBody>
               </Table>
+            </div>
+
+            <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                共 {visible.length} 条 · 第 {page} / {totalPages} 页
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={page <= 1}
+                  onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                >
+                  上一页
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                >
+                  下一页
+                </Button>
+              </div>
             </div>
 
             <div className="rounded-md border p-4">

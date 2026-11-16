@@ -35,6 +35,14 @@ export const deliverContestBalloon = async (
   await api.post(contestEndpoints.balloonDeliver(contestId, balloonId));
 };
 
+/** 撤回送达：气球回到待送达队列。 */
+export const undeliverContestBalloon = async (
+  contestId: number,
+  balloonId: number
+): Promise<void> => {
+  await api.post(contestEndpoints.balloonUndeliver(contestId, balloonId));
+};
+
 /** 配色面板数据：题目 + 当前生效颜色。 */
 export interface ContestBalloonProblem {
   pid: string;
