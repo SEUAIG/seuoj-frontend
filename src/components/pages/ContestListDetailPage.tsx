@@ -172,7 +172,6 @@ export default function ContestListDetailPage() {
             <div className="flex items-center gap-2 text-[13px] text-slate-500">
               <span className={cn("inline-block h-[7px] w-[7px] rounded-full", DOT[status])} />
               {STATUS_LABEL[status]}
-              {rule && ` · 赛制：${rule}`}
               {isRegistered && data.can_unregister && (
                 <button
                   type="button"
@@ -188,6 +187,7 @@ export default function ContestListDetailPage() {
               {data.title}
             </h1>
             {data.subtitle && <p className="mb-1 text-slate-600">{data.subtitle}</p>}
+            {rule && <div className="text-[13px] text-slate-500">赛制：{rule}</div>}
             <div className="text-[13px] text-slate-500">{timeRange(start, end)}</div>
           </div>
           <div className="flex shrink-0 items-end gap-9 md:ml-auto">
