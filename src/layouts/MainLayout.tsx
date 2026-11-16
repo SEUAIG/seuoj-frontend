@@ -16,7 +16,7 @@ export default function MainLayout() {
       <main
         className={`flex-1 w-full flex flex-col pt-14 ${isFullscreenPage ? "h-[calc(100vh-3.5rem)] overflow-hidden" : ""}`}
       >
-        <ErrorBoundary key={pathname}>
+        <ErrorBoundary resetKey={pathname}>
           <Outlet />
         </ErrorBoundary>
       </main>

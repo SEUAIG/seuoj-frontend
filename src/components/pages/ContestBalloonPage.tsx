@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import ContestShell from "@/components/contest/ContestShell";
+import { isClientError } from "@/components/contest/contestKit";
 import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
 import {
   deliverContestBalloon,
@@ -33,6 +34,37 @@ function formatClock(value: string | null | undefined) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleTimeString("zh-CN", { hour12: false });
+}
+
+/**
+ * 取色器：拖动时只改本地颜色，停手 600ms 后才保存一次。
+ * 原生 input[type=color] 拖动过程中会连续触发 onChange，直接保存会刷出一串请求和提示。
+ */
+function ColorSwatch({ value, onCommit }: { value: string; onCommit: (color: string) => void }) {
+  const [draft, setDraft] = useState(value);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!timer.current) setDraft(value);
+  }, [value]);
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+  return (
+    <input
+      type="color"
+      className="h-6 w-8 cursor-pointer rounded border-0 bg-transparent p-0"
+      value={draft}
+      onChange={(event) => {
+        const next = event.target.value;
+        setDraft(next);
+        if (timer.current) clearTimeout(timer.current);
+        timer.current = setTimeout(() => {
+          timer.current = null;
+          if (next.toLowerCase() !== value.toLowerCase()) onCommit(next);
+        }, 600);
+      }}
+    />
+  );
 }
 
 function displayName(item: ContestBalloonItem) {
@@ -53,9 +85,12 @@ export default function ContestBalloonPage() {
   const balloonsQuery = useQuery({
     queryKey: ["contest-balloons", contestId],
     queryFn: () => listContestBalloons(contestId),
-    enabled: Number.isFinite(contestId) && contestId > 0,
-    refetchInterval: POLL_MS,
+    // 只有比赛管理者能看队列；被拒（4xx）就停，失败不弹全局提示，页面保留上次的数据
+    enabled: canManage && Number.isFinite(contestId) && contestId > 0,
+    refetchInterval: (query) => (isClientError(query.state.error) ? false : POLL_MS),
     refetchIntervalInBackground: false,
+    retry: false,
+    meta: { silentError: true },
   });
 
   const problemsQuery = useQuery({
@@ -69,18 +104,12 @@ export default function ContestBalloonPage() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["contest-balloons", contestId] });
     },
-    onError: (error: unknown) => {
-      toast.error("标记送达失败：" + (error instanceof Error ? error.message : String(error)));
-    },
   });
 
   const undeliver = useMutation({
     mutationFn: (balloonId: number) => undeliverContestBalloon(contestId, balloonId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["contest-balloons", contestId] });
-    },
-    onError: (error: unknown) => {
-      toast.error("撤回失败：" + (error instanceof Error ? error.message : String(error)));
     },
   });
 
@@ -92,9 +121,6 @@ export default function ContestBalloonPage() {
       void queryClient.invalidateQueries({ queryKey: ["contest-balloon-problems", contestId] });
       void queryClient.invalidateQueries({ queryKey: ["contest-balloons", contestId] });
     },
-    onError: (error: unknown) => {
-      toast.error("保存颜色失败：" + (error instanceof Error ? error.message : String(error)));
-    },
   });
 
   const balloons = balloonsQuery.data ?? [];
@@ -102,6 +128,14 @@ export default function ContestBalloonPage() {
   const pending = balloons.filter((item) => item.status === "PENDING");
   const delivered = balloons.filter((item) => item.status === "DELIVERED");
   const visible = showDelivered ? balloons : pending;
+  // 撞色：两道题同一种颜色，现场分不清，提示管理者手动改
+  const clashes = new Map<string, string[]>();
+  for (const problem of problems) {
+    const key = problem.color.toLowerCase();
+    clashes.set(key, [...(clashes.get(key) ?? []), problem.pid]);
+  }
+  const clashWith = (pid: string, color: string) =>
+    (clashes.get(color.toLowerCase()) ?? []).filter((other) => other !== pid);
   const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const pageRows = visible.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -185,7 +219,18 @@ export default function ContestBalloonPage() {
                             {item.color}
                           </span>
                         </TableCell>
-                        <TableCell>{displayName(item)}</TableCell>
+                        <TableCell>
+                          {displayName(item)}
+                          {item.revoked && (
+                            <Badge
+                              variant="outline"
+                              className="ml-2 border-amber-300 text-amber-700"
+                              title="这道题的 AC 已被重测改判或跳过，选手目前没有通过"
+                            >
+                              AC 已撤销
+                            </Badge>
+                          )}
+                        </TableCell>
                         <TableCell className="text-right">
                           {item.status === "PENDING" ? (
                             <Button
@@ -249,20 +294,21 @@ export default function ContestBalloonPage() {
                 {problems.length === 0 ? (
                   <span className="text-xs text-muted-foreground">暂无题目</span>
                 ) : (
-                  problems.map((problem) => (
+                  problems.map((problem) => {
+                    const clash = clashWith(problem.pid, problem.color);
+                    return (
                     <label
                       key={problem.pid}
-                      className="flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs"
-                      title={problem.title}
+                      className={
+                        "flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs" +
+                        (clash.length ? " border-destructive" : "")
+                      }
+                      title={clash.length ? `与 ${clash.join("、")} 颜色相同` : problem.title}
                     >
                       <span className="font-medium">{problem.pid}</span>
-                      <input
-                        type="color"
-                        className="h-6 w-8 cursor-pointer rounded border-0 bg-transparent p-0"
+                      <ColorSwatch
                         value={problem.color}
-                        onChange={(event) =>
-                          colorMutation.mutate({ pid: problem.pid, color: event.target.value })
-                        }
+                        onCommit={(color) => colorMutation.mutate({ pid: problem.pid, color })}
                       />
                       {problem.explicit ? (
                         <button
@@ -275,8 +321,12 @@ export default function ContestBalloonPage() {
                       ) : (
                         <span className="text-muted-foreground">自动</span>
                       )}
+                      {clash.length > 0 && (
+                        <span className="text-destructive">撞色 {clash.join("、")}</span>
+                      )}
                     </label>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

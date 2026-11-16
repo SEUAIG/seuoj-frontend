@@ -163,7 +163,7 @@ export default function AdminUserManagementPage() {
     const [banFilter, setBanFilter] = useState<BanFilter>("all");
     const [roleFilter, setRoleFilter] = useState<CommonUserRole[]>([]);
 
-    // 封禁：勾选跨页保留，key 为 user_id
+    // 封禁：勾选跨页保留，key 为 user_id；筛选条件变化时清空，避免看不见的用户被一起封禁
     const [selected, setSelected] = useState<Map<number, UserPageRecord>>(new Map());
     const [banDialog, setBanDialog] = useState<{
         open: boolean;
@@ -188,9 +188,13 @@ export default function AdminUserManagementPage() {
     const [rawDataRows, setRawDataRows] = useState<string[][]>([]);
     const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
 
+    // 请求序号：筛选可连点并发，只采用最新一次请求的结果，防止晚发早回被覆盖
+    const fetchSeqRef = useRef(0);
+
     // Fetch user list
     const fetchUsers = useCallback(
         async (page?: number, filter?: BanFilter, roleOverride?: CommonUserRole[]) => {
+            const seq = ++fetchSeqRef.current;
             setLoading(true);
             const status = filter ?? banFilter;
             const roles = roleOverride ?? roleFilter;
@@ -203,17 +207,19 @@ export default function AdminUserManagementPage() {
                     roles: roles.length > 0 ? roles : undefined,
                     banned: status === "all" ? undefined : status === "banned",
                 });
+                if (seq !== fetchSeqRef.current) return;
                 if (res.code === 0) {
                     setUsers(res.data.records);
                     setTotal(res.data.total);
                 }
             } catch (err: unknown) {
+                if (seq !== fetchSeqRef.current) return;
                 toast.error(
                     "获取用户列表失败: " +
                     (err instanceof Error ? err.message : String(err))
                 );
             } finally {
-                setLoading(false);
+                if (seq === fetchSeqRef.current) setLoading(false);
             }
         },
         [currentPage, pageSize, searchUsername, searchEmail, banFilter, roleFilter]
@@ -225,6 +231,7 @@ export default function AdminUserManagementPage() {
     }, []);
 
     const handleSearch = () => {
+        setSelected(new Map());
         setCurrentPage(1);
         fetchUsers(1);
     };
@@ -236,6 +243,7 @@ export default function AdminUserManagementPage() {
 
     const handleBanFilter = (filter: BanFilter) => {
         setBanFilter(filter);
+        setSelected(new Map());
         setCurrentPage(1);
         fetchUsers(1, filter);
     };
@@ -245,6 +253,7 @@ export default function AdminUserManagementPage() {
             ? roleFilter.filter((item) => item !== role)
             : [...roleFilter, role];
         setRoleFilter(next);
+        setSelected(new Map());
         setCurrentPage(1);
         fetchUsers(1, undefined, next);
     };

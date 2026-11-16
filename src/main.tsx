@@ -1,5 +1,5 @@
 import AuthRefresh from "./components/common/AuthRefresh";
-import ErrorBoundary from "./components/common/ErrorBoundary";
+import ErrorBoundary, { reloadOnceForStaleChunk } from "./components/common/ErrorBoundary";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
@@ -20,6 +20,11 @@ import React, { Suspense, lazy } from "react";
 import { injectStore } from "./services/api/axios.ts";
 import { setOnLoginSuccess } from "./features/auth/authSlice.ts";
 injectStore(store, () => persistor.purge());
+
+// 部署新版本后旧页面预加载的 chunk 会 404：自动刷新一次拿新的 index.html
+window.addEventListener("vite:preloadError", (event) => {
+  if (reloadOnceForStaleChunk()) event.preventDefault();
+});
 
 const ReactQueryDevtools =
   import.meta.env.DEV

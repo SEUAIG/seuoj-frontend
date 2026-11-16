@@ -11,6 +11,8 @@ export interface ContestBalloonItem {
   status: "PENDING" | "DELIVERED";
   createdAt: string;
   deliveredAt: string | null;
+  /** 对应提交已被重测改判或 skip（只出现在已送达的气球上） */
+  revoked?: boolean | null;
   username: string | null;
   nickname: string | null;
 }

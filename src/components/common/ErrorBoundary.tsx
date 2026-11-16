@@ -4,16 +4,43 @@ interface Props {
   children: ReactNode;
   /** Replaces the default card when provided. */
   fallback?: ReactNode;
+  /** 变化时（例如换路径）清除出错状态；不用 key，避免每次换路径整棵子树重挂载 */
+  resetKey?: unknown;
 }
 
 interface State {
   error: Error | null;
 }
 
+const CHUNK_RELOAD_KEY = "seuoj:chunk-reload-at";
+const CHUNK_ERROR_RE =
+  /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i;
+
+export function isChunkLoadError(error: unknown): boolean {
+  return error instanceof Error && CHUNK_ERROR_RE.test(error.message);
+}
+
+/**
+ * 新版本部署后旧 chunk 会 404，React.lazy 会缓存失败结果，只能整页刷新。
+ * 10 秒内只自动刷新一次，防止新版本本身有问题时无限刷新。返回是否已触发刷新。
+ */
+export function reloadOnceForStaleChunk(): boolean {
+  try {
+    const last = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) || 0);
+    if (Date.now() - last < 10_000) return false;
+    sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+  } catch {
+    // sessionStorage 不可用时不自动刷新，避免没有防循环标记
+    return false;
+  }
+  window.location.reload();
+  return true;
+}
+
 /**
  * Catches render/lifecycle errors in its subtree so one broken page cannot
  * unmount the whole application (which shows up as a blank white screen).
- * Pass a `key` (for example the current pathname) to reset it on navigation.
+ * Pass `resetKey` (for example the current pathname) to reset it on navigation.
  */
 export default class ErrorBoundary extends Component<Props, State> {
   state: State = { error: null };
@@ -25,6 +52,13 @@ export default class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo) {
     // Keep the original stack in the console for troubleshooting.
     console.error("[ErrorBoundary]", error, info.componentStack);
+    if (isChunkLoadError(error)) reloadOnceForStaleChunk();
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    if (this.state.error && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ error: null });
+    }
   }
 
   private handleRetry = () => {
