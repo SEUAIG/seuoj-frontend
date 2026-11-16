@@ -570,9 +570,9 @@ export default function AdminUserManagementPage() {
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold">用户管理</h1>
                 <div className="flex gap-2">
-                    <Button size="sm" variant="destructive" onClick={() => openBanDialog("ban", [], true)}>
+                    <Button size="sm" variant="outline" onClick={() => openBanDialog("ban", [], true)}>
                         <Ban className="h-4 w-4 mr-1" />
-                        封禁
+                        封禁账号
                     </Button>
                     <input
                         ref={fileInputRef}
