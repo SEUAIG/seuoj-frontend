@@ -304,13 +304,13 @@ export default function KnowledgeGraphPage() {
     if (panningRef.current && svgRef.current) {
       const rect = svgRef.current.getBoundingClientRect();
       if (rect.width && rect.height) {
-        const dx = ((clientX - panningRef.current.startClientX) / rect.width) * GRAPH_WIDTH;
-        const dy = ((clientY - panningRef.current.startClientY) / rect.height) * GRAPH_HEIGHT;
-        setViewTransform((prev) => ({
-          ...prev,
-          x: panningRef.current!.startX + dx,
-          y: panningRef.current!.startY + dy,
-        }));
+        // pointerup / pointerleave can clear panningRef before this deferred
+        // updater runs; capture the start values synchronously to avoid a
+        // null dereference that would crash the whole React tree.
+        const { startX, startY, startClientX, startClientY } = panningRef.current;
+        const dx = ((clientX - startClientX) / rect.width) * GRAPH_WIDTH;
+        const dy = ((clientY - startClientY) / rect.height) * GRAPH_HEIGHT;
+        setViewTransform((prev) => ({ ...prev, x: startX + dx, y: startY + dy }));
       }
       return;
     }
