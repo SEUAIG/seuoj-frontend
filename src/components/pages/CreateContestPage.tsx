@@ -51,6 +51,7 @@ const contestFormSchema = z
     rule_type: z.enum(["ACM", "NOI", "IOI", "CUSTOM"]),
     is_public: z.boolean().default(false),
     hide_statistics: z.boolean().default(false),
+    discussion_enabled: z.boolean().default(false),
     scoring_config: z.string().optional(),
     scoring_script: z.string().optional(),
   })
@@ -72,6 +73,7 @@ export default function CreateContestPage() {
       rule_type: "ACM",
       is_public: false,
       hide_statistics: false,
+      discussion_enabled: false,
       scoring_config: "",
       scoring_script: "",
     },
@@ -88,6 +90,7 @@ export default function CreateContestPage() {
         rule_type: values.rule_type,
         is_public: values.is_public,
         hide_statistics: values.hide_statistics,
+        discussion_enabled: values.discussion_enabled,
         scoring_config: values.scoring_config || undefined,
         scoring_script: values.scoring_script || undefined,
       };
@@ -403,6 +406,26 @@ export default function CreateContestPage() {
               )}
             />
           </div>
+          <FormField
+            control={form.control}
+            name="discussion_enabled"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>展示题解与讨论页面</FormLabel>
+                  <FormDescription>
+                    开启后，比赛结束时比赛页出现「讨论」标签，展示官方题解和题目索引；比赛管理者随时可以预览、编辑官方题解。建议只在正式比赛里打开，验题赛、考试和练习不要开启。
+                  </FormDescription>
+                </div>
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="description"
