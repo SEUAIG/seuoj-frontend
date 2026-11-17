@@ -334,6 +334,8 @@ export interface ContestDiscussionProblem {
   sort_order: number;
   pid: string;
   title: string;
+  /** 这道题的讨论发言数 */
+  comment_count: number;
 }
 
 export interface ContestDiscussionData {
@@ -342,6 +344,8 @@ export interface ContestDiscussionData {
   can_manage: boolean;
   editorial: ContestEditorial | null;
   problems: ContestDiscussionProblem[];
+  /** 整场讨论的发言数 */
+  comment_count: number;
 }
 
 export interface SaveContestEditorialRequest {

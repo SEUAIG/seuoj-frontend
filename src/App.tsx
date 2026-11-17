@@ -105,6 +105,11 @@ const ContestDiscussionPage = React.lazy(
 const ContestEditorialEditPage = React.lazy(
   () => import("./components/pages/ContestEditorialEditPage")
 );
+const ContestProblemDiscussionPage = React.lazy(
+  () => import("./components/pages/ContestProblemDiscussionPage")
+);
+const ProblemDiscussionPage = React.lazy(() => import("./components/pages/ProblemDiscussionPage"));
+const CommentPage = React.lazy(() => import("./components/pages/CommentPage"));
 const ContestMemberImportPage = React.lazy(() => import("./components/pages/ContestMemberImportPage"));
 const ContestMembersPage = React.lazy(() => import("./components/pages/ContestMembersPage"));
 const ContestEditPage = React.lazy(
@@ -158,7 +163,9 @@ function App() {
           <Route path="/problemsLibrary">
             <Route index element={<ProblemsLibraryPage />} />
             <Route path=":id" element={<ProblemDetailPage />} />
+            <Route path=":id/discussion" element={<ProblemDiscussionPage />} />
           </Route>
+          <Route path="/comment/:id" element={<CommentPage />} />
           <Route element={<ProtectedRoute allowRole="student" />}>
             <Route path="/problemsLibrary/create" element={<ProblemCreatePage />} />
             <Route path="/problemsLibrary/:id/edit" element={<ProblemEditPage />} />
@@ -221,6 +228,10 @@ function App() {
             <Route
               path=":id/:pid"
               element={<ContestProblemDetailPage />}
+            />
+            <Route
+              path=":id/:pid/discussion"
+              element={<ContestProblemDiscussionPage />}
             />
           </Route>
           <Route element={<ProtectedRoute allowRole="student" />}>

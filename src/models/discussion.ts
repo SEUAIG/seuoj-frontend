@@ -1,0 +1,65 @@
+/** 讨论 thread：题目讨论、整场比赛讨论 */
+export type CommentTargetType = "PROBLEM" | "CONTEST";
+
+/** 定位一个 thread：题目用 pid（从比赛进来再带 contest_id），整场讨论用 contest_id */
+export interface ThreadTarget {
+  target_type: CommentTargetType;
+  pid?: string;
+  contest_id?: number;
+}
+
+export interface CommentAuthor {
+  id: number;
+  username: string;
+  nickname?: string | null;
+}
+
+export interface CommentItem {
+  id: number;
+  parent_id: number | null;
+  root_id: number;
+  depth: number;
+  /** 已删除、或对你隐藏时为 null */
+  author: CommentAuthor | null;
+  content: string | null;
+  deleted: boolean;
+  hidden: boolean;
+  /** 只有作者和管理者拿得到 */
+  hidden_reason?: string | null;
+  score: number;
+  my_vote: -1 | 0 | 1;
+  reply_count: number;
+  pinned: boolean;
+  mine: boolean;
+  can_delete: boolean;
+  created_at: string;
+}
+
+export interface CommentThreadData {
+  target_type: CommentTargetType;
+  pid?: string | null;
+  problem_title?: string | null;
+  contest_id?: number | null;
+  can_post: boolean;
+  can_manage: boolean;
+  sort: "hot" | "new";
+  current: number;
+  size: number;
+  /** 顶层发言总数 */
+  total: number;
+  /** 子树页的根 */
+  focus_id?: number | null;
+  pinned: CommentItem[];
+  /** 扁平列表，按 parent_id 拼树 */
+  comments: CommentItem[];
+}
+
+export interface CommentSummary {
+  can_view: boolean;
+  comment_count: number;
+}
+
+export interface VoteResult {
+  score: number;
+  my_vote: -1 | 0 | 1;
+}

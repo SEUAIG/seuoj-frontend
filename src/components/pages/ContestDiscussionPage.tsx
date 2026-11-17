@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import ContestShell from "@/components/contest/ContestShell";
+import CommentThread from "@/components/discussion/CommentThread";
 import { letterOf, parseTime } from "@/components/contest/contestKit";
 import { EDITORIAL_PROSE, fileSize } from "@/components/contest/editorialKit";
 import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
@@ -151,18 +152,42 @@ export default function ContestDiscussionPage() {
             ) : (
               <ul>
                 {data.problems.map((p) => (
-                  <li key={p.pid} className="border-b border-slate-100">
+                  <li key={p.pid} className="flex items-baseline gap-4 border-b border-slate-100 py-3 text-sm">
                     <Link
                       to={`/contest/${contestId}/${p.pid}`}
-                      className="flex items-baseline gap-4 py-3 text-sm text-slate-700 hover:text-primary"
+                      className="flex min-w-0 flex-1 items-baseline gap-4 text-slate-700 hover:text-primary"
                     >
                       <span className="w-6 font-mono font-semibold text-slate-900">{letterOf(p.sort_order)}</span>
                       <span className="truncate">{p.title}</span>
+                    </Link>
+                    <Link
+                      to={`/contest/${contestId}/${p.pid}/discussion`}
+                      title={`讨论 ${p.comment_count} 条`}
+                      aria-label={`讨论 ${p.comment_count} 条`}
+                      className={cn(
+                        "shrink-0 rounded px-1.5 tabular-nums text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+                        p.comment_count === 0 && "opacity-40"
+                      )}
+                    >
+                      💭 {p.comment_count}
                     </Link>
                   </li>
                 ))}
               </ul>
             )}
+          </section>
+
+          <section>
+            <div className="flex items-end justify-between border-b border-slate-900 pb-2.5">
+              <span className="text-[13px] font-bold tracking-wide">讨论</span>
+              <span className="text-xs text-slate-400">关于整场比赛；某道题的讨论请点上面题目旁的 💭</span>
+            </div>
+            <div className="pt-5">
+              <CommentThread
+                mode={{ kind: "thread", target: { target_type: "CONTEST", contest_id: contestId } }}
+                contestId={contestId}
+              />
+            </div>
           </section>
         </div>
       )}

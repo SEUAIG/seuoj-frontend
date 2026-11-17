@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useMemo, useCallback } from "react"
 import { Helmet } from "react-helmet-async";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../app/store";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import ProblemDetailInfo from "@/components/bussiness/ProblemDetailInfo";
@@ -16,6 +16,7 @@ import type { CreateSubmissionRequest } from "@/models/submission";
 import ProblemAccessState from "@/components/common/ProblemAccessState";
 import { isAxiosError } from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import useCommentSummary from "@/hooks/useCommentSummary";
 export default function ProblemDetailPage() {
   const { isAuthenticated } = useSelector((store: RootState) => store.auth);
   const { id } = useParams();
@@ -32,6 +33,7 @@ export default function ProblemDetailPage() {
   );
   const nav = useNavigate();
   const dispatch = useDispatch();
+  const { data: discussion } = useCommentSummary({ target_type: "PROBLEM", pid: id ?? "" }, !!id);
   const changeLanguage = useCallback((value: string) => dispatch(setLanguage(value)), [dispatch]);
   const hasTestCases = useMemo(() => {
     if (!problem) return true;
@@ -182,7 +184,18 @@ export default function ProblemDetailPage() {
             <ChevronLeft className="mr-1 h-4 w-4" />
             上一题
           </Button>
-          <span className="text-xs text-muted-foreground">{pid}</span>
+          <div className="flex items-center gap-3 text-xs">
+            <span className="text-muted-foreground">{pid}</span>
+            {discussion?.can_view && (
+              <Link
+                to={`/problemsLibrary/${pid}/discussion`}
+                aria-label={`讨论 ${discussion.comment_count} 条`}
+                className="rounded px-1.5 py-0.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              >
+                💭 讨论 {discussion.comment_count}
+              </Link>
+            )}
+          </div>
           <Button
             variant="ghost"
             size="sm"
