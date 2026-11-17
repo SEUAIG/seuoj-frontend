@@ -178,9 +178,8 @@ export default function ContestDiscussionPage() {
           </section>
 
           <section>
-            <div className="flex items-end justify-between border-b border-slate-900 pb-2.5">
-              <span className="text-[13px] font-bold tracking-wide">讨论</span>
-              <span className="text-xs text-slate-400">关于整场比赛；某道题的讨论请点上面题目旁的 💭</span>
+            <div className="border-b border-slate-900 pb-2.5 text-[13px] font-bold tracking-wide">
+              关于整场比赛，你有什么分享/建议/吐槽？
             </div>
             <div className="pt-5">
               <CommentThread
