@@ -1,5 +1,6 @@
 import { useFileList } from "@/hooks/useFileList";
-import { getTestFile, downloadProblemFile } from "@/services/getTestFile";
+import { getTestFile, downloadProblemFile, exportProblemPack } from "@/services/getTestFile";
+import { toast } from "sonner";
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -11,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
-import { ArrowLeft, Download, FileText, Settings } from "lucide-react";
+import { ArrowLeft, Download, FileText, Package, Settings } from "lucide-react";
 import { Checkbox } from "../ui/checkbox";
 import { Button } from "../ui/button";
 
@@ -56,6 +57,19 @@ export default function ProblemTestFilePage() {
       triggerBlobDownload(blob, filename);
     } catch (e) {
       console.error("下载失败", e);
+    }
+  };
+
+  const [exporting, setExporting] = useState(false);
+  const handleExportPack = async () => {
+    if (!id || exporting) return;
+    setExporting(true);
+    try {
+      triggerBlobDownload(await exportProblemPack(id), `${id}.zip`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "导出失败");
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -112,6 +126,17 @@ export default function ProblemTestFilePage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2"
+              disabled={!id || exporting}
+              onClick={handleExportPack}
+              title="题面、评测配置和全部数据打成一个 zip，可在新建题目页导入"
+            >
+              <Package className="h-4 w-4" />
+              {exporting ? "导出中…" : "导出题目包"}
+            </Button>
             <Button
               size="sm"
               variant="outline"
