@@ -11,4 +11,5 @@ export const problemEndpoints = {
   data: (pid: string) => `/api/problem/data/${pid}`,
   tags: "/api/problem/tag",
   statistics: (pid: string) => `/api/problem/${pid}/statistics`,
+  exportPack: (pid: string) => `/api/problem/${pid}/export`,
 };

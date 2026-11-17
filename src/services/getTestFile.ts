@@ -16,3 +16,25 @@ export async function downloadProblemFile(pid: string, fileName: string): Promis
   });
   return res.data;
 }
+
+/**
+ * 导出题目包（Hydro 目录结构的 zip），可直接在“导入题目包”里导回
+ * 出错时后端返回 JSON，但 responseType 为 blob，需要自己读出 message
+ */
+export async function exportProblemPack(pid: string): Promise<Blob> {
+  try {
+    const res = await api.get(problemEndpoints.exportPack(pid), { responseType: "blob" });
+    return res.data;
+  } catch (e: any) {
+    const data = e?.response?.data;
+    let message = "导出失败";
+    if (data instanceof Blob) {
+      try {
+        message = JSON.parse(await data.text())?.message || message;
+      } catch {
+        // 不是 JSON，保留默认提示
+      }
+    }
+    throw new Error(message);
+  }
+}
