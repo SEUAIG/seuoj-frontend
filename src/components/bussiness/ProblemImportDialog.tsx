@@ -22,7 +22,7 @@ import { importProblemPack } from "@/services/Problem/importProblemPack";
 /** 题目包目录结构说明，与 createhydro 产出的 Hydro 结构一致 */
 const PACK_LAYOUT = `pack.zip
 ├── problem.yaml     题目元信息，取 title 与 tag
-├── problem_zh.md    题面，按 ## 题目描述 / 输入格式 / 输出格式 / 样例 / 数据范围 分节
+├── problem_zh.md    题面 Markdown，按二级标题分节
 └── testdata/
     ├── config.yaml  时空限制与判定方式
     ├── 1.in
@@ -120,7 +120,7 @@ export default function ProblemImportDialog() {
           导入题目包
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>导入题目包</DialogTitle>
           <DialogDescription>
@@ -128,7 +128,8 @@ export default function ProblemImportDialog() {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        {/* min-w-0：grid 子项默认不收缩，否则结构说明的长行会把整列撑出对话框 */}
+        <div className="min-w-0 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="import-pid">题号</Label>
             <Input
