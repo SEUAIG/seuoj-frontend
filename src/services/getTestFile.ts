@@ -17,24 +17,35 @@ export async function downloadProblemFile(pid: string, fileName: string): Promis
   return res.data;
 }
 
-/**
- * 导出题目包（Hydro 目录结构的 zip），可直接在“导入题目包”里导回
- * 出错时后端返回 JSON，但 responseType 为 blob，需要自己读出 message
- */
+/** responseType 为 blob 时，后端的 JSON 错误也是 Blob，需要自己读出 message */
+async function blobErrorMessage(e: any, fallback: string): Promise<string> {
+  const data = e?.response?.data;
+  if (data instanceof Blob) {
+    try {
+      return JSON.parse(await data.text())?.message || fallback;
+    } catch {
+      // 不是 JSON，保留默认提示
+    }
+  }
+  return fallback;
+}
+
+/** 导出题目包（Hydro 目录结构的 zip），可直接在“导入题目包”里导回 */
 export async function exportProblemPack(pid: string): Promise<Blob> {
   try {
     const res = await api.get(problemEndpoints.exportPack(pid), { responseType: "blob" });
     return res.data;
-  } catch (e: any) {
-    const data = e?.response?.data;
-    let message = "导出失败";
-    if (data instanceof Blob) {
-      try {
-        message = JSON.parse(await data.text())?.message || message;
-      } catch {
-        // 不是 JSON，保留默认提示
-      }
-    }
-    throw new Error(message);
+  } catch (e) {
+    throw new Error(await blobErrorMessage(e, "导出失败"));
+  }
+}
+
+/** 选中的测试文件打成一个 zip 下载；文件名相对 data 目录 */
+export async function downloadProblemFilesZip(pid: string, files: string[]): Promise<Blob> {
+  try {
+    const res = await api.post(problemEndpoints.filesZip(pid), { files }, { responseType: "blob" });
+    return res.data;
+  } catch (e) {
+    throw new Error(await blobErrorMessage(e, "打包下载失败"));
   }
 }

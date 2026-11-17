@@ -1,5 +1,10 @@
 import { useFileList } from "@/hooks/useFileList";
-import { getTestFile, downloadProblemFile, exportProblemPack } from "@/services/getTestFile";
+import {
+  getTestFile,
+  downloadProblemFile,
+  downloadProblemFilesZip,
+  exportProblemPack,
+} from "@/services/getTestFile";
 import { toast } from "sonner";
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -73,17 +78,18 @@ export default function ProblemTestFilePage() {
     }
   };
 
+  const [zipping, setZipping] = useState(false);
   const handleMuiltipleDownload = async () => {
-    if (!id || selectedRows.size === 0) return;
-    for (const item of Array.from(selectedRows)) {
-      try {
-        const blob = await downloadProblemFile(id, item);
-        triggerBlobDownload(blob, item);
-      } catch (e) {
-        console.error(`下载 ${item} 失败`, e);
-      }
-      // 间隔 200ms 避免浏览器限流
-      await new Promise((r) => setTimeout(r, 200));
+    if (!id || selectedRows.size === 0 || zipping) return;
+    setZipping(true);
+    try {
+      // 按列表顺序发送，打出来的 zip 也按这个顺序
+      const files = fileList.filter((item) => selectedRows.has(item));
+      triggerBlobDownload(await downloadProblemFilesZip(id, files), `${id}-data.zip`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "打包下载失败");
+    } finally {
+      setZipping(false);
     }
   };
 
@@ -238,12 +244,13 @@ export default function ProblemTestFilePage() {
                   variant="outline"
                   size="sm"
                   className="h-8 px-2.5 text-xs gap-1"
+                  disabled={selectedcount === 0 || zipping}
                   onClick={() => {
                     handleMuiltipleDownload();
                   }}
                 >
                   <Download className="h-3.5 w-3.5" />
-                  合并下载
+                  {zipping ? "打包中…" : "合并下载"}
                 </Button>
               </TableCell>
             </TableRow>

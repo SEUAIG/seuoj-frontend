@@ -12,4 +12,5 @@ export const problemEndpoints = {
   tags: "/api/problem/tag",
   statistics: (pid: string) => `/api/problem/${pid}/statistics`,
   exportPack: (pid: string) => `/api/problem/${pid}/export`,
+  filesZip: (pid: string) => `/api/problem/${pid}/files/zip`,
 };
