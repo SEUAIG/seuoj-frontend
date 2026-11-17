@@ -9,6 +9,7 @@ import SubmitPanel from "@/components/bussiness/SubmitPanel";
 import { setContestCodeFile, setContestLanguage } from "@/features/Code/contestCodeSlice";
 import useQueryToGetContestProblemDetail from "@/hooks/useQueryToGetContestProblemDetail";
 import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
+import useCommentSummary from "@/hooks/useCommentSummary";
 import type { ProblemData } from "@/models/problem";
 import ContestProblemDetailInfo from "@/components/bussiness/ContestProblemDetailInfo";
 import { submitContestSolution } from "@/services/Contest/submitContestSolution";
@@ -17,6 +18,7 @@ import ContestShell, { rememberProblem } from "@/components/contest/ContestShell
 import {
   STATE_TEXT,
   cellStateOf,
+  contestStatusOf,
   isMine,
   letterOf,
   sortProblems,
@@ -47,6 +49,14 @@ export default function ContestProblemDetailPage() {
   const problems = sortProblems(contestDetail?.problem_list);
   const me = standings?.records.find((r) => isMine(r, user));
   const current = problems.find((p) => p.pid === pidParam);
+  // 讨论入口：开关打开且比赛结束后才对选手出现；管理者随时可见
+  const discussionOpen =
+    !!contestDetail?.discussion_enabled &&
+    (!!contestDetail.can_write || contestStatusOf(contestDetail) === "FINISHED");
+  const { data: discussion } = useCommentSummary(
+    { target_type: "PROBLEM", pid: pidParam ?? "", contest_id: contestId },
+    discussionOpen && !!pidParam
+  );
 
   useEffect(() => {
     if (contestId && pidParam) rememberProblem(contestId, pidParam);
@@ -85,6 +95,15 @@ export default function ContestProblemDetailPage() {
           </Link>
         );
       })}
+      {discussionOpen && discussion?.can_view && (
+        <Link
+          to={`/contest/${contestId}/${pidParam}/discussion`}
+          aria-label={`讨论 ${discussion.comment_count} 条`}
+          className="ml-auto shrink-0 rounded px-2 pb-2.5 pt-2 text-sm text-slate-600 hover:text-slate-900"
+        >
+          💭 讨论 {discussion.comment_count}
+        </Link>
+      )}
     </nav>
   );
 
