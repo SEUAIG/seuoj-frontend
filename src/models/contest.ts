@@ -50,6 +50,7 @@ export interface CreateContestRequest {
   rule_type: ContestRuleType;
   is_public?: boolean;
   hide_statistics?: boolean;
+  discussion_enabled?: boolean;
   scoring_config?: string;
   scoring_script?: string;
 }
@@ -68,6 +69,7 @@ export interface ContestDetailData {
   rule_type?: ContestRuleType;
   is_public?: boolean;
   hide_statistics?: boolean;
+  discussion_enabled?: boolean;
   scoring_config?: string;
   scoring_script?: string;
   problem_list: ContestProblemOverview[];
@@ -230,6 +232,7 @@ export interface UpdateContestRequest {
   rule_type?: ContestRuleType;
   is_public?: boolean;
   hide_statistics?: boolean;
+  discussion_enabled?: boolean;
   scoring_config?: string;
   scoring_script?: string;
 }
@@ -304,4 +307,48 @@ export interface ContestAnnouncementRequest {
   title: string;
   content?: string;
   is_pinned?: boolean;
+}
+
+/** 比赛「讨论」标签：官方题解 + 题目索引 */
+export interface ContestEditorialAttachment {
+  id: number;
+  file_name: string;
+  file_size: number;
+}
+
+export interface ContestEditorial {
+  post_id: number;
+  title: string;
+  content: string;
+  status: "DRAFT" | "PUBLISHED";
+  visible_after?: string | null;
+  /** 此刻非管理者是否看得到 */
+  visible: boolean;
+  author_name?: string | null;
+  published_at?: string | null;
+  updated_at?: string | null;
+  attachments: ContestEditorialAttachment[];
+}
+
+export interface ContestDiscussionProblem {
+  sort_order: number;
+  pid: string;
+  title: string;
+}
+
+export interface ContestDiscussionData {
+  discussion_enabled: boolean;
+  ended: boolean;
+  can_manage: boolean;
+  editorial: ContestEditorial | null;
+  problems: ContestDiscussionProblem[];
+}
+
+export interface SaveContestEditorialRequest {
+  title: string;
+  content: string;
+  status: "DRAFT" | "PUBLISHED";
+  visible_after: string | null;
+  /** 完整附件列表：带 id 的保留，不带 id 的是新上传的 */
+  attachments: { id?: number; file_path?: string; file_name?: string }[];
 }

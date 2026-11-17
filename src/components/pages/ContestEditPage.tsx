@@ -55,6 +55,7 @@ const contestFormSchema = z.object({
   rule_type: z.enum(["ACM", "NOI", "IOI", "CUSTOM"]),
   is_public: z.boolean().default(false),
   hide_statistics: z.boolean().default(false),
+  discussion_enabled: z.boolean().default(false),
   scoring_config: z.string().optional(),
   scoring_script: z.string().optional(),
 });
@@ -67,6 +68,7 @@ export default function ContestEditPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSavingPublic, setIsSavingPublic] = React.useState(false);
   const [isSavingHideStats, setIsSavingHideStats] = React.useState(false);
+  const [isSavingDiscussion, setIsSavingDiscussion] = React.useState(false);
   const { data: contestDetail, isLoading: isFetchingDetail } =
     useQueryToGetContestDetail(contestId || 0);
   const { data: problemList, isLoading: isFetchingProblems } =
@@ -92,6 +94,7 @@ export default function ContestEditPage() {
       rule_type: "ACM",
       is_public: false,
       hide_statistics: false,
+      discussion_enabled: false,
     },
   });
 
@@ -110,6 +113,7 @@ export default function ContestEditPage() {
         rule_type: (contestDetail.rule_type as "NOI" | "IOI" | "ACM" | "CUSTOM") || "ACM",
         is_public: contestDetail.is_public || false,
         hide_statistics: contestDetail.hide_statistics || false,
+        discussion_enabled: contestDetail.discussion_enabled || false,
         scoring_config: contestDetail.scoring_config || "",
         scoring_script: contestDetail.scoring_script || "",
       });
@@ -532,6 +536,43 @@ export default function ContestEditPage() {
               )}
             />
           </div>
+          <FormField
+            control={form.control}
+            name="discussion_enabled"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    disabled={isSavingDiscussion}
+                    onCheckedChange={async (checked) => {
+                      const newValue = !!checked;
+                      field.onChange(newValue);
+                      setIsSavingDiscussion(true);
+                      try {
+                        const res = await updateContest(contestId, { discussion_enabled: newValue });
+                        if (res.code !== 0 && res.code !== 200) {
+                          throw new Error(res.message || "更新失败");
+                        }
+                        toast.success(newValue ? "已开启题解与讨论页面" : "已关闭题解与讨论页面");
+                      } catch (error: any) {
+                        field.onChange(!newValue);
+                        toast.error(error.message || "更新失败");
+                      } finally {
+                        setIsSavingDiscussion(false);
+                      }
+                    }}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>展示题解与讨论页面</FormLabel>
+                  <FormDescription>
+                    开启后，比赛结束时比赛页出现「讨论」标签，展示官方题解和题目索引；比赛管理者随时可以预览、编辑官方题解。建议只在正式比赛里打开，验题赛、考试和练习不要开启。
+                  </FormDescription>
+                </div>
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="description"

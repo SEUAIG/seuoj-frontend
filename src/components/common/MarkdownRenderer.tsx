@@ -5,6 +5,7 @@ import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { MarkdownCodeBlock } from "./MarkdownCodeBlock";
 import "katex/dist/katex.min.css";
 import "./problem-chinese-font.css";
 
@@ -13,6 +14,8 @@ interface MarkdownRendererProps {
   previewImages?: boolean;
   /** 单个换行也渲染成换行（适合答疑这类随手写的文本） */
   breaks?: boolean;
+  /** 围栏代码块按语言高亮（题解、讨论用；题面不开） */
+  highlightCode?: boolean;
 }
 
 interface MathNode {
@@ -86,17 +89,27 @@ function PreviewImage({ src, alt, title }: React.ImgHTMLAttributes<HTMLImageElem
 }
 
 const previewComponents = { img: PreviewImage };
+const highlightComponents = { pre: MarkdownCodeBlock };
+const previewHighlightComponents = { img: PreviewImage, pre: MarkdownCodeBlock };
 
 export const MarkdownRenderer = memo(function MarkdownRenderer({
   children,
   previewImages = false,
   breaks = false,
+  highlightCode = false,
 }: MarkdownRendererProps) {
+  const components = highlightCode
+    ? previewImages
+      ? previewHighlightComponents
+      : highlightComponents
+    : previewImages
+      ? previewComponents
+      : undefined;
   return (
     <ReactMarkdown
       remarkPlugins={breaks ? remarkPluginsWithBreaks : remarkPlugins}
       rehypePlugins={rehypePlugins}
-      components={previewImages ? previewComponents : undefined}
+      components={components}
     >
       {children}
     </ReactMarkdown>

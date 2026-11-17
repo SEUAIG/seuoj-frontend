@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { Settings, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
-import { hms, letterOf, parseTime, sortProblems } from "./contestKit";
+import { contestStatusOf, hms, letterOf, parseTime, sortProblems } from "./contestKit";
 import {
   announcementKey,
   answeredEvents,
@@ -16,7 +16,14 @@ import {
   useSeen,
 } from "./noticeKit";
 
-export type ContestTab = "overview" | "problem" | "submissions" | "standings" | "clarifications" | "balloon";
+export type ContestTab =
+  | "overview"
+  | "problem"
+  | "submissions"
+  | "standings"
+  | "clarifications"
+  | "discussion"
+  | "balloon";
 
 const lastProblemKey = (contestId: number) => `contest:${contestId}:lastProblem`;
 
@@ -203,6 +210,10 @@ export default function ContestShell({
     },
   ];
 
+  // 题解与讨论：比赛开了开关且已结束才出现；比赛管理者随时可见，用来提前写官方题解
+  if (data?.discussion_enabled && (data.can_write || contestStatusOf(data) === "FINISHED")) {
+    tabs.push({ key: "discussion", label: "讨论", to: `/contest/${contestId}/discussion` });
+  }
   if (data?.can_write) {
     tabs.push({ key: "balloon", label: "气球", to: `/contest/${contestId}/balloon` });
   }
