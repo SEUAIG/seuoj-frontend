@@ -10,3 +10,4 @@ export { problemEndpoints } from "./problem";
 export { fileEndpoints } from "./file";
 export { imageEndpoints } from "./image";
 export { discussionEndpoints } from "./discussion";
+export { notificationEndpoints } from "./notification";

@@ -3,6 +3,7 @@ import NavBar from "@/components/common/NavBar";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import Slogan from "@/components/common/Slogan";
 import { Toaster } from "@/components/ui/sonner";
+import NotificationToasts from "@/components/notification/NotificationToasts";
 
 export default function MainLayout() {
   const { pathname } = useLocation();
@@ -26,6 +27,7 @@ export default function MainLayout() {
         </footer>
       ) : null}
       <Toaster />
+      <NotificationToasts />
     </div>
   );
 }
