@@ -86,11 +86,6 @@ export default function ContestListTable({
                       {record.subtitle}
                     </div>
                   )}
-                  {record.description && (
-                    <div className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                      {record.description}
-                    </div>
-                  )}
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {formatContestTime(record.start_time, record.end_time)}
