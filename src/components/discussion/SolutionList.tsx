@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/app/store";
 import { Loader2, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSolutions } from "@/services/Discussion/posts";
@@ -17,6 +19,7 @@ interface SolutionListProps {
 /** 题目「题解」标签：精选在前，其余按净分；第 1 页顶上是我自己的草稿和被隐藏的 */
 export default function SolutionList({ pid, contestId }: SolutionListProps) {
   const [page, setPage] = useState(1);
+  const { isAuthenticated } = useSelector((s: RootState) => s.auth);
   const { data, error, isLoading } = useQuery({
     queryKey: ["solutions", pid, contestId ?? null, page],
     queryFn: () => getSolutions(pid, contestId, page),
@@ -35,7 +38,9 @@ export default function SolutionList({ pid, contestId }: SolutionListProps) {
   }
 
   const newPath = `/post/new?problem=${encodeURIComponent(pid)}${contestId ? `&contest=${contestId}` : ""}`;
-  const why = !data.has_accepted
+  const why = !isAuthenticated
+    ? "登录后才能写题解"
+    : !data.has_accepted
     ? "AC 这道题之后才能写题解"
     : data.my_count >= data.max_per_problem
       ? `每道题最多写 ${data.max_per_problem} 篇`
