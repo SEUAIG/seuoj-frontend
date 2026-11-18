@@ -56,7 +56,7 @@ function badgeStyle(color: string) {
   };
 }
 
-/** 题目色块：气球颜色作底，写题目字母（同 DOMjudge 气球页）；一血在外侧加一圈金色 */
+/** 题目色块：气球颜色作底，写题目字母（同 DOMjudge 气球页）；一血在外侧加一圈黑色 */
 function ProblemBadge({
   letter,
   color,
@@ -72,7 +72,7 @@ function ProblemBadge({
     <span
       className={cn(
         "inline-flex h-6 min-w-6 items-center justify-center rounded border px-1 text-xs font-bold leading-none",
-        first && "ring-2 ring-[#f5b301] ring-offset-1"
+        first && "ring-2 ring-black ring-offset-1"
       )}
       style={badgeStyle(color)}
       title={first ? `${title ? `${title} · ` : ""}一血` : title}
