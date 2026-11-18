@@ -570,7 +570,7 @@ function CommentBody({
               type="button"
               disabled={busy}
               onClick={() => {
-                if (!window.confirm(comment.reply_count > 0 ? "删除这条发言？下面的回复会保留。" : "删除这条发言？")) return;
+                if (!window.confirm("删除这条发言？原位置会显示「[已删除]」，下面的回复保留。")) return;
                 run(() => deleteComment(comment.id), "已删除");
               }}
               className="hover:text-red-600"
