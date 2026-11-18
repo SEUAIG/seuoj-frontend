@@ -286,7 +286,7 @@ export default function ContestBalloonPage() {
         }}
         className={cn(
           done ? GRID : PENDING_GRID,
-          "border-b px-3 py-2 text-sm transition-colors duration-700 last:border-b-0",
+          "border-b px-3 py-1 text-sm transition-colors duration-700 last:border-b-0",
           done && "text-slate-400",
           moving.has(item.id) && "invisible",
           arrived === item.id && "bg-emerald-50"
@@ -313,7 +313,7 @@ export default function ContestBalloonPage() {
           <Button
             size="icon"
             variant="ghost"
-            className="h-8 w-8 text-slate-400 hover:text-slate-900"
+            className="h-7 w-7 text-slate-400 hover:text-slate-900"
             disabled={moving.has(item.id)}
             onClick={() => void move(item, false)}
             aria-label="撤回"
@@ -324,7 +324,7 @@ export default function ContestBalloonPage() {
         ) : (
           <Button
             size="icon"
-            className="h-8 w-8"
+            className="h-7 w-7"
             disabled={moving.has(item.id)}
             onClick={() => void move(item, true)}
             aria-label="送达"
@@ -359,11 +359,11 @@ export default function ContestBalloonPage() {
   );
 
   return (
-    <ContestShell contestId={contestId} tab="balloon">
+    <ContestShell contestId={contestId} tab="balloon" wide>
       <Helmet>
         <title>气球 - SEUOJ</title>
       </Helmet>
-      <div className="mx-auto w-full max-w-[1160px] px-4 py-5 sm:px-7">
+      <div>
         <div className="mb-4 flex items-center gap-3">
           <h1 className="text-lg font-semibold">气球</h1>
           <Button
