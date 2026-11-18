@@ -22,8 +22,10 @@ import {
 
 const POLL_MS = 5000;
 const MOVE_MS = 450;
-/** 时间 | 题目 | 选手 | 已有气球 | 操作 */
+/** 已送达：时间 | 题目 | 选手 | 已有气球 | 操作 */
 const GRID = "grid grid-cols-[3.25rem_2rem_minmax(0,1fr)_minmax(0,auto)_2.5rem] items-center gap-x-3";
+/** 待送：时间 | 题目 | 选手 | 操作（不列已有气球，给选手名留位置） */
+const PENDING_GRID = "grid grid-cols-[3.25rem_2rem_minmax(0,1fr)_2.5rem] items-center gap-x-3";
 
 function formatClock(value: string | null | undefined) {
   if (!value) return "";
@@ -283,7 +285,7 @@ export default function ContestBalloonPage() {
           else rowRefs.current.delete(item.id);
         }}
         className={cn(
-          GRID,
+          done ? GRID : PENDING_GRID,
           "border-b px-3 py-2 text-sm transition-colors duration-700 last:border-b-0",
           done && "text-slate-400",
           moving.has(item.id) && "invisible",
@@ -300,11 +302,13 @@ export default function ContestBalloonPage() {
             </Badge>
           )}
         </span>
-        <span className="flex flex-wrap justify-end gap-1">
-          {(totals.get(item.username ?? `#${item.id}`) ?? []).map((b) => (
-            <ProblemBadge key={b.id} letter={problemInfo(b.pid).letter} color={b.color} first={!!b.firstSolve} />
-          ))}
-        </span>
+        {done && (
+          <span className="flex flex-wrap justify-end gap-1">
+            {(totals.get(item.username ?? `#${item.id}`) ?? []).map((b) => (
+              <ProblemBadge key={b.id} letter={problemInfo(b.pid).letter} color={b.color} first={!!b.firstSolve} />
+            ))}
+          </span>
+        )}
         {done ? (
           <Button
             size="icon"
