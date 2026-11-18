@@ -3,6 +3,7 @@ import { discussionEndpoints } from "@/services/endpoints";
 import type { ApiResponse, ApiResponseBase } from "@/models/common";
 import type {
   CommentItem,
+  CommentRevisions,
   CommentSummary,
   CommentThreadData,
   ThreadTarget,
@@ -35,6 +36,14 @@ export const getCommentSummary = async (target: ThreadTarget) => {
 
 export const createComment = async (body: Partial<ThreadTarget> & { parent_id?: number; content: string }) =>
   ok((await api.post<ApiResponse<CommentItem>>(discussionEndpoints.comments, body)).data).data;
+
+export const editComment = async (id: number, content: string) =>
+  ok((await api.put<ApiResponse<CommentItem>>(discussionEndpoints.comment(id), { content })).data).data;
+
+export const getCommentRevisions = async (id: number) => {
+  const res = await api.get<ApiResponse<CommentRevisions>>(discussionEndpoints.revisions(id));
+  return ok(res.data).data;
+};
 
 export const deleteComment = async (id: number) =>
   ok((await api.delete<ApiResponseBase>(discussionEndpoints.comment(id))).data);

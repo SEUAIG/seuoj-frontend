@@ -34,6 +34,16 @@ export interface CommentItem {
   mine: boolean;
   can_delete: boolean;
   created_at: string;
+  /** 最后一次修改时间，没改过为 null */
+  edited_at?: string | null;
+  /** 当前是第几版，没改过是 1 */
+  revision: number;
+}
+
+export interface CommentRevisions {
+  comment_id: number;
+  /** 从第 1 版到当前版 */
+  versions: { version: number; content: string; started_at: string; current: boolean }[];
 }
 
 export interface CommentThreadData {
