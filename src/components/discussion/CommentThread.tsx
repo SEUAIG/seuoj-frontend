@@ -16,9 +16,11 @@ import { MarkdownImageTextarea } from "@/components/common/MarkdownImageTextarea
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import SubmitterLink from "@/components/common/SubmitterLink";
 import { timeAgo } from "@/components/discussion/discussionKit";
+import RevisionsDialog from "@/components/discussion/RevisionsDialog";
 import {
   createComment,
   deleteComment,
+  editComment,
   getCommentSubtree,
   getCommentThread,
   moderateComment,
@@ -480,8 +482,10 @@ function CommentBody({
   onReply?: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
   const when = timeAgo(comment.created_at);
   const canManage = ctx.data.can_manage;
+  const editedAt = timeAgo(comment.edited_at);
 
   const run = async (fn: () => Promise<unknown>, done: string) => {
     setBusy(true);
@@ -515,6 +519,11 @@ function CommentBody({
           />
         )}
         <span title={when.title}>{when.text}</span>
+        {comment.revision > 1 && (
+          <span title={editedAt.title ? `最后修改于 ${editedAt.title}` : undefined}>
+            <RevisionsDialog commentId={comment.id} revision={comment.revision} />
+          </span>
+        )}
         {comment.pinned && !compact && <span title="已置顶">📌</span>}
         {comment.hidden && (
           <span className="rounded bg-amber-100 px-1.5 py-px text-amber-800">
@@ -522,16 +531,38 @@ function CommentBody({
           </span>
         )}
       </div>
-      <div className={cn(PROSE, "mt-1 text-slate-800")}>
-        <MarkdownRenderer breaks highlightCode>
-          {comment.content ?? ""}
-        </MarkdownRenderer>
-      </div>
+      {editing ? (
+        <div className="mt-1">
+          <Composer
+            autoFocus
+            initial={comment.content ?? ""}
+            placeholder="修改发言……"
+            submitLabel="保存修改"
+            onCancel={() => setEditing(false)}
+            onSubmit={async (content) => {
+              await editComment(comment.id, content);
+              setEditing(false);
+              await ctx.refresh();
+            }}
+          />
+        </div>
+      ) : (
+        <div className={cn(PROSE, "mt-1 text-slate-800")}>
+          <MarkdownRenderer breaks highlightCode>
+            {comment.content ?? ""}
+          </MarkdownRenderer>
+        </div>
+      )}
       {!compact && (
         <div className="mt-1 flex items-center gap-3 text-xs text-slate-400">
           {ctx.data.can_post && !comment.hidden && onReply && (
             <button type="button" onClick={onReply} className="hover:text-slate-900">
               回复
+            </button>
+          )}
+          {comment.mine && !editing && (
+            <button type="button" onClick={() => setEditing(true)} className="hover:text-slate-900">
+              编辑
             </button>
           )}
           {comment.can_delete && (
@@ -597,14 +628,16 @@ function Composer({
   onSubmit,
   onCancel,
   autoFocus,
+  initial = "",
 }: {
+  initial?: string;
   placeholder: string;
   submitLabel: string;
   onSubmit: (content: string) => Promise<void>;
   onCancel?: () => void;
   autoFocus?: boolean;
 }) {
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initial);
   const [busy, setBusy] = useState(false);
   const length = text.trim().length;
 
