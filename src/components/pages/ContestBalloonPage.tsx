@@ -56,7 +56,7 @@ function badgeStyle(color: string) {
   };
 }
 
-/** 题目色块：气球颜色作底，写题目字母（同 DOMjudge 气球页）；一血在外侧加一圈黑色 */
+/** 题目色块：气球颜色作底，写题目字母（同 DOMjudge 气球页）；一血在外侧加一圈金色 */
 function ProblemBadge({
   letter,
   color,
@@ -72,7 +72,7 @@ function ProblemBadge({
     <span
       className={cn(
         "inline-flex h-6 min-w-6 items-center justify-center rounded border px-1 text-xs font-bold leading-none",
-        first && "ring-2 ring-black ring-offset-1"
+        first && "ring-2 ring-[#f5b301] ring-offset-1"
       )}
       style={badgeStyle(color)}
       title={first ? `${title ? `${title} · ` : ""}一血` : title}
@@ -277,6 +277,8 @@ export default function ContestBalloonPage() {
   const renderRow = (item: ContestBalloonItem, side: "pending" | "delivered") => {
     const { letter, title } = problemInfo(item.pid, item.title);
     const done = side === "delivered";
+    // 一血这一行整条用深底白字，送达后稍淡
+    const first = !!item.firstSolve;
     return (
       <div
         key={item.id}
@@ -288,14 +290,15 @@ export default function ContestBalloonPage() {
           done ? GRID : PENDING_GRID,
           "border-b px-3 py-1 text-sm transition-colors duration-700 last:border-b-0",
           done && "text-slate-400",
+          first && (done ? "bg-slate-600 text-slate-200" : "bg-slate-800 text-white"),
           moving.has(item.id) && "invisible",
           arrived === item.id && "bg-emerald-50"
         )}
       >
         <span className="font-mono tabular-nums">{formatClock(done ? item.deliveredAt : item.createdAt)}</span>
-        <ProblemBadge letter={letter} color={item.color} title={title} first={!!item.firstSolve} />
+        <ProblemBadge letter={letter} color={item.color} title={first ? `${title} · 一血` : title} />
         <span className="flex min-w-0 items-center gap-2">
-          <span className={cn("truncate", !done && "font-medium text-slate-900")}>{displayName(item)}</span>
+          <span className={cn("truncate", !done && "font-medium", !done && !first && "text-slate-900")}>{displayName(item)}</span>
           {item.revoked && (
             <Badge variant="outline" className="shrink-0 border-amber-300 text-amber-700">
               AC 已撤销
@@ -313,7 +316,7 @@ export default function ContestBalloonPage() {
           <Button
             size="icon"
             variant="ghost"
-            className="h-7 w-7 text-slate-400 hover:text-slate-900"
+            className={cn("h-7 w-7 hover:text-slate-900", first ? "text-slate-200" : "text-slate-400")}
             disabled={moving.has(item.id)}
             onClick={() => void move(item, false)}
             aria-label="撤回"
