@@ -145,7 +145,6 @@ export default function PostEditPage() {
           <Button type="button" variant="outline" disabled={busy} onClick={() => save("DRAFT")}>
             {existing?.status === "PUBLISHED" ? "撤回为草稿" : "存为草稿"}
           </Button>
-          <span className="text-xs text-slate-400">草稿只有你自己看得到；每道题最多 3 篇。</span>
         </div>
       </form>
     );
