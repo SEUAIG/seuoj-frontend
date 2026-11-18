@@ -150,7 +150,11 @@ export default function ContestAnnouncements({ contestId, manage = false }: { co
             onSubmit={(v) => run(() => updateContestAnnouncement(contestId, a.announcement_id, v), "已保存")}
           />
         ) : (
-          <article key={a.announcement_id} className="group border-b border-slate-100 py-4">
+          <article
+            key={a.announcement_id}
+            id={`announcement-${a.announcement_id}`}
+            className="group border-b border-slate-100 py-4"
+          >
             <div className="flex items-center gap-2 text-xs text-slate-500">
               {a.is_pinned && <Pin className="h-3 w-3" aria-label="置顶" />}
               <span className="font-mono">{when(a)}</span>

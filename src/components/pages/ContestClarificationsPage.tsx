@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { useLocation, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useSelector } from "react-redux";
 import { useQueryClient } from "@tanstack/react-query";
@@ -136,6 +136,21 @@ export default function ContestClarificationsPage() {
     if (data) mark("c", answeredEvents(data).map(answeredKey));
   }, [data, mark]);
 
+  // 从右上角通知点进来时带着 #announcement-ID / #clarification-ID：数据到了就滚过去并闪一下
+  const location = useLocation();
+  const scrolledFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!data || !location.hash || scrolledFor.current === location.key) return;
+    const el = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    if (!el) return;
+    scrolledFor.current = location.key;
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    el.animate([{ backgroundColor: "rgb(254 249 195)" }, { backgroundColor: "transparent" }], {
+      duration: 2000,
+      easing: "ease-out",
+    });
+  }, [data, location.hash, location.key]);
+
   const refresh = () => qc.invalidateQueries({ queryKey: ["contestNotices", contestId] });
   const run = async (fn: () => Promise<unknown>, done: string, after?: () => void) => {
     setBusy(true);
@@ -217,7 +232,11 @@ export default function ContestClarificationsPage() {
           ) : (
             <div>
               {list.map((c) => (
-                <article key={c.clarification_id} className="group border-b border-slate-100 py-5">
+                <article
+                  key={c.clarification_id}
+                  id={`clarification-${c.clarification_id}`}
+                  className="group border-b border-slate-100 py-5"
+                >
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                     <span className="font-display text-sm font-semibold text-slate-900">
                       {c.problem_pid ? letters[c.problem_pid] ?? c.problem_pid : "全场"}
