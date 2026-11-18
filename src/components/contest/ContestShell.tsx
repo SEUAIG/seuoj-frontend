@@ -167,12 +167,15 @@ export default function ContestShell({
   tab,
   children,
   fill = false,
+  wide = false,
 }: {
   contestId: number;
   tab: ContestTab;
   children: React.ReactNode;
   /** 题目页：内容占满剩余视口高度 */
   fill?: boolean;
+  /** 气球页：内容不限最大宽度，铺满屏幕 */
+  wide?: boolean;
 }) {
   const { data, dataUpdatedAt } = useQueryToGetContestDetail(contestId || 0);
   const start = parseTime(data?.start_time);
@@ -296,7 +299,7 @@ export default function ContestShell({
       {fill ? (
         <div className="min-h-0 flex-1">{children}</div>
       ) : (
-        <div className="mx-auto max-w-[1160px] px-4 pb-20 pt-10 sm:px-7">{children}</div>
+        <div className={cn("mx-auto px-4 pb-20 pt-10 sm:px-7", !wide && "max-w-[1160px]")}>{children}</div>
       )}
     </div>
   );
