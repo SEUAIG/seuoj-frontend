@@ -163,7 +163,7 @@ export default function ContestListDetailPage() {
     const end = parseTime(data.end_time);
     const isRegistered = data.is_registered ?? false;
     const fullScore = problems.length * 100;
-    const hasAside = !!data.description || !!data.can_write || !!notices?.announcements.length;
+    const hasAside = !!data.can_write || !!notices?.announcements.length;
 
     return (
       <>
@@ -214,81 +214,83 @@ export default function ContestListDetailPage() {
         </div>
 
         <div className={cn("mt-10 grid gap-9 lg:gap-14", hasAside && "lg:grid-cols-[minmax(0,1fr)_300px]")}>
-          <section>
-            <SecHead>题目</SecHead>
-            <table className="w-full border-collapse text-sm">
-              <tbody>
-                {problems.map((p) => {
-                  const d = me?.score_details?.[p.pid];
-                  const state = cellStateOf(d, rule);
-                  const st = stats[p.pid];
-                  return (
-                    <tr
-                      key={p.pid}
-                      className="cursor-pointer hover:bg-white"
-                      onClick={() => nav(`/contest/${contestId}/${p.pid}`)}
-                    >
-                      <td
-                        className={cn(
-                          "w-7 border-t border-slate-100 px-2.5 py-3 font-display text-[17px] font-semibold",
-                          state && STATE_TEXT[state]
-                        )}
+          <div className="min-w-0 space-y-11">
+            {data.description && (
+              <section>
+                <SecHead>比赛说明</SecHead>
+                <div className="prose prose-sm prose-slate mt-4 max-w-none">
+                  <MarkdownRenderer>{data.description}</MarkdownRenderer>
+                </div>
+              </section>
+            )}
+            <section>
+              <SecHead>题目</SecHead>
+              <table className="w-full border-collapse text-sm">
+                <tbody>
+                  {problems.map((p) => {
+                    const d = me?.score_details?.[p.pid];
+                    const state = cellStateOf(d, rule);
+                    const st = stats[p.pid];
+                    return (
+                      <tr
+                        key={p.pid}
+                        className="cursor-pointer hover:bg-white"
+                        onClick={() => nav(`/contest/${contestId}/${p.pid}`)}
                       >
-                        {letterOf(p.sort_order)}
-                      </td>
-                      <td className="w-full border-t border-slate-100 px-2.5 py-3">
-                        <Link
-                          to={`/contest/${contestId}/${p.pid}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="hover:text-primary"
+                        <td
+                          className={cn(
+                            "w-7 border-t border-slate-100 px-2.5 py-3 font-display text-[17px] font-semibold",
+                            state && STATE_TEXT[state]
+                          )}
                         >
-                          {p.title}
-                        </Link>
-                      </td>
-                      <td className="whitespace-nowrap border-t border-slate-100 px-2.5 py-3">
-                        <MyCell d={d} rule={rule} />
-                      </td>
-                      <td className="whitespace-nowrap border-t border-slate-100 px-2.5 py-3 text-right">
-                        {st && participants > 0 && (
-                          <span
-                            className="inline-flex items-center gap-2.5"
-                            title={`${st.solvers} 人通过 · ${st.tried} 人尝试 · 共 ${participants} 人`}
+                          {letterOf(p.sort_order)}
+                        </td>
+                        <td className="w-full border-t border-slate-100 px-2.5 py-3">
+                          <Link
+                            to={`/contest/${contestId}/${p.pid}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="hover:text-primary"
                           >
-                            <span className="relative h-[3px] w-[72px] bg-slate-200">
-                              <i
-                                className="absolute inset-y-0 left-0 bg-green-700"
-                                style={{ width: `${(100 * st.solvers) / participants}%` }}
-                              />
+                            {p.title}
+                          </Link>
+                        </td>
+                        <td className="whitespace-nowrap border-t border-slate-100 px-2.5 py-3">
+                          <MyCell d={d} rule={rule} />
+                        </td>
+                        <td className="whitespace-nowrap border-t border-slate-100 px-2.5 py-3 text-right">
+                          {st && participants > 0 && (
+                            <span
+                              className="inline-flex items-center gap-2.5"
+                              title={`${st.solvers} 人通过 · ${st.tried} 人尝试 · 共 ${participants} 人`}
+                            >
+                              <span className="relative h-[3px] w-[72px] bg-slate-200">
+                                <i
+                                  className="absolute inset-y-0 left-0 bg-green-700"
+                                  style={{ width: `${(100 * st.solvers) / participants}%` }}
+                                />
+                              </span>
+                              <span className="min-w-[2.5rem] text-right font-mono text-[13px] text-slate-700">
+                                {st.solvers}
+                              </span>
                             </span>
-                            <span className="min-w-[2.5rem] text-right font-mono text-[13px] text-slate-700">
-                              {st.solvers}
-                            </span>
-                          </span>
-                        )}
-                      </td>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {problems.length === 0 && (
+                    <tr>
+                      <td className="border-t border-slate-100 py-10 text-center text-slate-400">—</td>
                     </tr>
-                  );
-                })}
-                {problems.length === 0 && (
-                  <tr>
-                    <td className="border-t border-slate-100 py-10 text-center text-slate-400">—</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </section>
+                  )}
+                </tbody>
+              </table>
+            </section>
+          </div>
 
           {hasAside && (
             <aside className="space-y-11 lg:border-l lg:pl-10">
               <ContestAnnouncements contestId={contestId} />
-              {data.description && (
-                <section>
-                  <SecHead>说明</SecHead>
-                  <div className="prose prose-sm prose-slate mt-4 max-w-none">
-                    <MarkdownRenderer>{data.description}</MarkdownRenderer>
-                  </div>
-                </section>
-              )}
               {data.can_write && (
                 <section>
                   <SecHead>管理</SecHead>
