@@ -38,13 +38,17 @@ export default function SolutionList({ pid, contestId }: SolutionListProps) {
   }
 
   const newPath = `/post/new?problem=${encodeURIComponent(pid)}${contestId ? `&contest=${contestId}` : ""}`;
-  const why = !isAuthenticated
-    ? "登录后才能写题解"
-    : !data.has_accepted
-    ? "AC 这道题之后才能写题解"
-    : data.my_count >= data.max_per_problem
-      ? `每道题最多写 ${data.max_per_problem} 篇`
-      : null;
+  // 每人每题 1 篇：写过（含草稿）就直接去改那一篇
+  const editPath = data.my_post_id
+    ? `/post/${data.my_post_id}/edit${contestId ? `?contest=${contestId}` : ""}`
+    : null;
+  const why = editPath
+    ? null
+    : !isAuthenticated
+      ? "登录后才能写题解"
+      : !data.has_accepted
+        ? "AC 这道题之后才能写题解"
+        : null;
   const pages = Math.max(1, Math.ceil(data.total / Math.max(1, data.size)));
 
   return (
@@ -53,7 +57,14 @@ export default function SolutionList({ pid, contestId }: SolutionListProps) {
         <span className="text-sm text-slate-500">{data.total} 篇题解</span>
         <div className="flex items-center gap-2">
           {why && <span className="text-xs text-slate-400">{why}</span>}
-          {data.can_post ? (
+          {editPath ? (
+            <Button asChild size="sm" variant="outline" className="gap-1.5">
+              <Link to={editPath}>
+                <PenLine className="h-4 w-4" />
+                编辑我的题解
+              </Link>
+            </Button>
+          ) : data.can_post ? (
             <Button asChild size="sm" className="gap-1.5">
               <Link to={newPath}>
                 <PenLine className="h-4 w-4" />

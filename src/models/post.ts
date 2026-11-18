@@ -20,11 +20,13 @@ export interface SolutionItem {
 export interface SolutionPageData {
   pid: string;
   problem_title: string;
-  /** 现在能不能写：登录、AC 过、没超过篇数上限 */
+  /** 现在能不能写：登录、AC 过、这道题还没写过 */
   can_post: boolean;
   has_accepted: boolean;
   can_manage: boolean;
   my_count: number;
+  /** 我在这道题下的题解（含草稿），写过就去改它 */
+  my_post_id?: number | null;
   max_per_problem: number;
   current: number;
   size: number;
