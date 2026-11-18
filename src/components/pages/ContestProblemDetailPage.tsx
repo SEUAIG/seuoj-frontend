@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../app/store";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import SubmitPanel from "@/components/bussiness/SubmitPanel";
@@ -10,6 +10,7 @@ import { setContestCodeFile, setContestLanguage } from "@/features/Code/contestC
 import useQueryToGetContestProblemDetail from "@/hooks/useQueryToGetContestProblemDetail";
 import useQueryToGetContestDetail from "@/hooks/useQueryToGetContestDetail";
 import useCommentSummary from "@/hooks/useCommentSummary";
+import SolutionList from "@/components/discussion/SolutionList";
 import type { ProblemData } from "@/models/problem";
 import ContestProblemDetailInfo from "@/components/bussiness/ContestProblemDetailInfo";
 import { submitContestSolution } from "@/services/Contest/submitContestSolution";
@@ -31,6 +32,7 @@ export default function ContestProblemDetailPage() {
   const { isAuthenticated } = useSelector((store: RootState) => store.auth);
   const user = useCurrentUser();
   const { id, pid: pidParam } = useParams();
+  const [searchParams] = useSearchParams();
   const contestId = Number(id);
   const [submitting, setSubmitting] = useState(false);
   const [problemErrorCode, setProblemErrorCode] = useState<number | null>(null);
@@ -53,6 +55,7 @@ export default function ContestProblemDetailPage() {
   const discussionOpen =
     !!contestDetail?.discussion_enabled &&
     (!!contestDetail.can_write || contestStatusOf(contestDetail) === "FINISHED");
+  const showSolutions = discussionOpen && searchParams.get("tab") === "solutions";
   const { data: discussion } = useCommentSummary(
     { target_type: "PROBLEM", pid: pidParam ?? "", contest_id: contestId },
     discussionOpen && !!pidParam
@@ -96,13 +99,25 @@ export default function ContestProblemDetailPage() {
         );
       })}
       {discussionOpen && discussion?.can_view && (
-        <Link
-          to={`/contest/${contestId}/${pidParam}/discussion`}
-          aria-label={`讨论 ${discussion.comment_count} 条`}
-          className="ml-auto shrink-0 rounded px-2 pb-2.5 pt-2 text-sm text-slate-600 hover:text-slate-900"
-        >
-          💭 讨论 {discussion.comment_count}
-        </Link>
+        <div className="ml-auto flex shrink-0 items-center">
+          <Link
+            to={showSolutions ? `/contest/${contestId}/${pidParam}` : `/contest/${contestId}/${pidParam}?tab=solutions`}
+            aria-label={`题解 ${discussion.solution_count} 篇`}
+            className={cn(
+              "-mb-px border-b-2 border-transparent px-2 pb-2.5 pt-2 text-sm text-slate-600 hover:text-slate-900",
+              showSolutions && "border-current text-slate-900"
+            )}
+          >
+            📖 题解 {discussion.solution_count}
+          </Link>
+          <Link
+            to={`/contest/${contestId}/${pidParam}/discussion`}
+            aria-label={`讨论 ${discussion.comment_count} 条`}
+            className="px-2 pb-2.5 pt-2 text-sm text-slate-600 hover:text-slate-900"
+          >
+            💭 讨论 {discussion.comment_count}
+          </Link>
+        </div>
       )}
     </nav>
   );
@@ -191,18 +206,26 @@ export default function ContestProblemDetailPage() {
         <title>{`${letter}. ${title} - SEUOJ`}</title>
       </Helmet>
       {problemNav}
-      <ContestProblemDetailInfo problem={{ ...problemData, pid: letter }} isAuthenticated={isAuthenticated} />
-      <div className="mx-auto max-w-[58rem] px-5 md:px-8">
-        <SubmitPanel
-          code={draftCode}
-          onCodeChange={(codeFile) => dispatch(setContestCodeFile({ contest_id: contestId, pid, codeFile }))}
-          language={language}
-          onLanguageChange={changeLanguage}
-          onSubmit={handleContestCodeSubmit}
-          isAuthenticated={isAuthenticated}
-          submitting={submitting}
-        />
-      </div>
+      {showSolutions && pidParam ? (
+        <div className="mx-auto max-w-[58rem] px-5 py-6 md:px-8">
+          <SolutionList pid={pidParam} contestId={contestId} />
+        </div>
+      ) : (
+        <>
+          <ContestProblemDetailInfo problem={{ ...problemData, pid: letter }} isAuthenticated={isAuthenticated} />
+          <div className="mx-auto max-w-[58rem] px-5 md:px-8">
+            <SubmitPanel
+              code={draftCode}
+              onCodeChange={(codeFile) => dispatch(setContestCodeFile({ contest_id: contestId, pid, codeFile }))}
+              language={language}
+              onLanguageChange={changeLanguage}
+              onSubmit={handleContestCodeSubmit}
+              isAuthenticated={isAuthenticated}
+              submitting={submitting}
+            />
+          </div>
+          </>
+        )}
     </>
   );
 }

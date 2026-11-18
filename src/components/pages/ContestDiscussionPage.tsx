@@ -161,6 +161,17 @@ export default function ContestDiscussionPage() {
                       <span className="truncate">{p.title}</span>
                     </Link>
                     <Link
+                      to={`/contest/${contestId}/${p.pid}?tab=solutions`}
+                      title={`题解 ${p.solution_count} 篇`}
+                      aria-label={`题解 ${p.solution_count} 篇`}
+                      className={cn(
+                        "shrink-0 rounded px-1.5 tabular-nums text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+                        p.solution_count === 0 && "opacity-40"
+                      )}
+                    >
+                      📖 {p.solution_count}
+                    </Link>
+                    <Link
                       to={`/contest/${contestId}/${p.pid}/discussion`}
                       title={`讨论 ${p.comment_count} 条`}
                       aria-label={`讨论 ${p.comment_count} 条`}

@@ -2,8 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { format, formatDistanceToNowStrict } from "date-fns";
-import { zhCN } from "date-fns/locale";
 import { ChevronDown, ChevronUp, CornerDownRight, Loader2, MoreHorizontal, Pin } from "lucide-react";
 import { toast } from "sonner";
 import type { RootState } from "@/app/store";
@@ -17,7 +15,7 @@ import {
 import { MarkdownImageTextarea } from "@/components/common/MarkdownImageTextarea";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import SubmitterLink from "@/components/common/SubmitterLink";
-import { parseTime } from "@/components/contest/contestKit";
+import { timeAgo } from "@/components/discussion/discussionKit";
 import {
   createComment,
   deleteComment,
@@ -64,17 +62,6 @@ function useNarrowScreen() {
   return narrow;
 }
 
-function timeAgo(s: string) {
-  const d = parseTime(s);
-  if (!d) return { text: "", title: "" };
-  // 一分钟内或客户端时钟偏慢（时间落在将来）时都显示「刚刚」，不出现「X 秒内」
-  const fresh = Date.now() - d.getTime() < 60_000;
-  return {
-    text: fresh ? "刚刚" : formatDistanceToNowStrict(d, { addSuffix: true, locale: zhCN }),
-    title: format(d, "yyyy-MM-dd HH:mm:ss"),
-  };
-}
-
 /** 同一层回复：净分高的在前，同分先发的在前 */
 const byScore = (a: CommentItem, b: CommentItem) => b.score - a.score || a.id - b.id;
 
@@ -98,7 +85,16 @@ export default function CommentThread({ mode, highlightId, contestId, onData }: 
 
   const queryKey =
     mode.kind === "thread"
-      ? ["comments", "thread", mode.target.target_type, mode.target.pid ?? null, mode.target.contest_id ?? null, sort, page]
+      ? [
+          "comments",
+          "thread",
+          mode.target.target_type,
+          mode.target.pid ?? null,
+          mode.target.contest_id ?? null,
+          mode.target.post_id ?? null,
+          sort,
+          page,
+        ]
       : ["comments", "subtree", mode.commentId, mode.contestId ?? null];
   const { data, error, isLoading } = useQuery({
     queryKey,
