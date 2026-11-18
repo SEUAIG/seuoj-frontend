@@ -1,11 +1,12 @@
 /** 讨论 thread：题目讨论、整场比赛讨论 */
-export type CommentTargetType = "PROBLEM" | "CONTEST";
+export type CommentTargetType = "PROBLEM" | "CONTEST" | "POST";
 
-/** 定位一个 thread：题目用 pid（从比赛进来再带 contest_id），整场讨论用 contest_id */
+/** 定位一个 thread：题目用 pid（从比赛进来再带 contest_id），整场讨论用 contest_id，题解评论区用 post_id */
 export interface ThreadTarget {
   target_type: CommentTargetType;
   pid?: string;
   contest_id?: number;
+  post_id?: number;
 }
 
 export interface CommentAuthor {
@@ -40,6 +41,9 @@ export interface CommentThreadData {
   pid?: string | null;
   problem_title?: string | null;
   contest_id?: number | null;
+  /** 题解评论区：题解 id 和标题 */
+  post_id?: number | null;
+  post_title?: string | null;
   can_post: boolean;
   can_manage: boolean;
   sort: "hot" | "new";
@@ -57,6 +61,8 @@ export interface CommentThreadData {
 export interface CommentSummary {
   can_view: boolean;
   comment_count: number;
+  /** 公开的用户题解数 */
+  solution_count: number;
 }
 
 export interface VoteResult {

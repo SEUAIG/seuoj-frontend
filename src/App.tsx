@@ -110,6 +110,8 @@ const ContestProblemDiscussionPage = React.lazy(
 );
 const ProblemDiscussionPage = React.lazy(() => import("./components/pages/ProblemDiscussionPage"));
 const CommentPage = React.lazy(() => import("./components/pages/CommentPage"));
+const PostPage = React.lazy(() => import("./components/pages/PostPage"));
+const PostEditPage = React.lazy(() => import("./components/pages/PostEditPage"));
 const ContestMemberImportPage = React.lazy(() => import("./components/pages/ContestMemberImportPage"));
 const ContestMembersPage = React.lazy(() => import("./components/pages/ContestMembersPage"));
 const ContestEditPage = React.lazy(
@@ -166,6 +168,9 @@ function App() {
             <Route path=":id/discussion" element={<ProblemDiscussionPage />} />
           </Route>
           <Route path="/comment/:id" element={<CommentPage />} />
+          <Route path="/post/new" element={<PostEditPage />} />
+          <Route path="/post/:id" element={<PostPage />} />
+          <Route path="/post/:id/edit" element={<PostEditPage key="edit" />} />
           <Route element={<ProtectedRoute allowRole="student" />}>
             <Route path="/problemsLibrary/create" element={<ProblemCreatePage />} />
             <Route path="/problemsLibrary/:id/edit" element={<ProblemEditPage />} />

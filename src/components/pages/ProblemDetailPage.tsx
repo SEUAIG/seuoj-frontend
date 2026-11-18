@@ -17,10 +17,20 @@ import ProblemAccessState from "@/components/common/ProblemAccessState";
 import { isAxiosError } from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import useCommentSummary from "@/hooks/useCommentSummary";
+import SolutionList from "@/components/discussion/SolutionList";
+import { cn } from "@/lib/utils";
+
+const tabClass = (on: boolean) =>
+  cn("rounded px-2 py-0.5", on ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900");
 export default function ProblemDetailPage() {
   const { isAuthenticated } = useSelector((store: RootState) => store.auth);
   const { id } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get("tab") === "solutions" ? "solutions" : "problem";
+  // 只有这几个参数决定拉哪份题目；切「题解」标签只改 tab，不重新拉题目
+  const ctxContestId = searchParams.get("contest_id");
+  const ctxProblemSetId = searchParams.get("problem_set_id");
+  const ctxAssignmentId = searchParams.get("assignment_id");
   const [problem, setProblem] = useState<ProblemData | null>(null);
   const [loadingProblem, setLoadingProblem] = useState(true);
   const [problemErrorCode, setProblemErrorCode] = useState<number | null>(null);
@@ -47,13 +57,10 @@ export default function ProblemDetailPage() {
       setProblem(null);
       setProblemErrorCode(null);
       try {
-        const contest_id = searchParams.get("contest_id");
-        const problem_set_id = searchParams.get("problem_set_id");
-        const assignment_id = searchParams.get("assignment_id");
         const result = await getProblemDetail(id, {
-          contest_id: contest_id || undefined,
-          problem_set_id: problem_set_id || undefined,
-          assignment_id: assignment_id || undefined,
+          contest_id: ctxContestId || undefined,
+          problem_set_id: ctxProblemSetId || undefined,
+          assignment_id: ctxAssignmentId || undefined,
         });
         const code = Number(result.code);
         if (code === 0 && result.data) {
@@ -68,7 +75,7 @@ export default function ProblemDetailPage() {
       }
     };
     fetchProblem();
-  }, [id, searchParams]);
+  }, [id, ctxContestId, ctxProblemSetId, ctxAssignmentId]);
   useEffect(() => {
     if (!problem) return;
     if (hasTestCases) return;
@@ -78,9 +85,17 @@ export default function ProblemDetailPage() {
     toast.warning('当前题目没有测试点，请点击"评测配置"上传压缩包并配置测试点');
   }, [problem, hasTestCases]);
 
+  const switchTab = (next: "problem" | "solutions") => {
+    const params = new URLSearchParams(searchParams);
+    if (next === "solutions") params.set("tab", "solutions");
+    else params.delete("tab");
+    setSearchParams(params, { replace: true });
+  };
+
   const navigateToProblem = useCallback((targetPid: string | null) => {
     if (!targetPid) return;
     const params = new URLSearchParams(searchParams);
+    params.delete("tab");
     const qs = params.toString();
     nav(`/problemsLibrary/${targetPid}${qs ? `?${qs}` : ""}`);
   }, [nav, searchParams]);
@@ -184,16 +199,33 @@ export default function ProblemDetailPage() {
             <ChevronLeft className="mr-1 h-4 w-4" />
             上一题
           </Button>
-          <div className="flex items-center gap-3 text-xs">
-            <span className="text-muted-foreground">{pid}</span>
+          <div className="flex items-center gap-1 text-xs">
+            <span className="mr-2 text-muted-foreground">{pid}</span>
             {discussion?.can_view && (
-              <Link
-                to={`/problemsLibrary/${pid}/discussion`}
-                aria-label={`讨论 ${discussion.comment_count} 条`}
-                className="rounded px-1.5 py-0.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              >
-                💭 讨论 {discussion.comment_count}
-              </Link>
+              <>
+                <button
+                  type="button"
+                  onClick={() => switchTab("problem")}
+                  className={tabClass(tab === "problem")}
+                >
+                  题目
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchTab("solutions")}
+                  aria-label={`题解 ${discussion.solution_count} 篇`}
+                  className={tabClass(tab === "solutions")}
+                >
+                  📖 题解 {discussion.solution_count}
+                </button>
+                <Link
+                  to={`/problemsLibrary/${pid}/discussion`}
+                  aria-label={`讨论 ${discussion.comment_count} 条`}
+                  className={tabClass(false)}
+                >
+                  💭 讨论 {discussion.comment_count}
+                </Link>
+              </>
             )}
           </div>
           <Button
@@ -207,22 +239,30 @@ export default function ProblemDetailPage() {
             <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
-        <ProblemDetailInfo problem={problem} isAuthenticated={isAuthenticated} />
-        <div className="mx-auto max-w-[58rem] px-5 pb-16 md:px-8">
-          <SubmitPanel
-            code={draftCode}
-            onCodeChange={(codeFile) => dispatch(setCodeFile({ pid, codeFile }))}
-            language={language}
-            onLanguageChange={changeLanguage}
-            onSubmit={handleCodeSubmit}
-            isAuthenticated={isAuthenticated}
-            submitting={submitting}
-            disabledReason={
-              isAssignmentClosed ? "作业已关闭，仅供查看" : !hasTestCases ? "这道题还没有测试数据" : undefined
-            }
-          />
+        {tab === "solutions" ? (
+          <div className="mx-auto max-w-[58rem] px-5 py-6 pb-16 md:px-8">
+            <SolutionList pid={pid} />
+          </div>
+        ) : (
+          <>
+            <ProblemDetailInfo problem={problem} isAuthenticated={isAuthenticated} />
+            <div className="mx-auto max-w-[58rem] px-5 pb-16 md:px-8">
+              <SubmitPanel
+                code={draftCode}
+                onCodeChange={(codeFile) => dispatch(setCodeFile({ pid, codeFile }))}
+                language={language}
+                onLanguageChange={changeLanguage}
+                onSubmit={handleCodeSubmit}
+                isAuthenticated={isAuthenticated}
+                submitting={submitting}
+                disabledReason={
+                  isAssignmentClosed ? "作业已关闭，仅供查看" : !hasTestCases ? "这道题还没有测试数据" : undefined
+                }
+              />
+            </div>
+            </>
+          )}
         </div>
-      </div>
     </>
   );
 }

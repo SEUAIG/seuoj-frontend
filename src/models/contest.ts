@@ -336,6 +336,8 @@ export interface ContestDiscussionProblem {
   title: string;
   /** 这道题的讨论发言数 */
   comment_count: number;
+  /** 这道题公开的用户题解数 */
+  solution_count: number;
 }
 
 export interface ContestDiscussionData {

@@ -5,4 +5,8 @@ export const discussionEndpoints = {
   subtree: (id: number) => `/api/comments/${id}/subtree`,
   moderation: (id: number) => `/api/comments/${id}/moderation`,
   votes: "/api/votes",
+  solutions: (pid: string) => `/api/problem/${encodeURIComponent(pid)}/solutions`,
+  posts: "/api/post",
+  post: (id: number) => `/api/post/${id}`,
+  postModeration: (id: number) => `/api/post/${id}/moderation`,
 };

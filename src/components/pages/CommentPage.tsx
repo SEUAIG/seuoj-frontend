@@ -15,7 +15,10 @@ export default function CommentPage() {
   const [back, setBack] = useState<{ to: string; label: string } | null>(null);
 
   const onData = useCallback((d: CommentThreadData) => {
-    if (d.target_type === "CONTEST" && d.contest_id) {
+    if (d.target_type === "POST" && d.post_id) {
+      const to = d.contest_id ? `/post/${d.post_id}?contest_id=${d.contest_id}` : `/post/${d.post_id}`;
+      setBack({ to, label: `返回题解「${d.post_title ?? ""}」` });
+    } else if (d.target_type === "CONTEST" && d.contest_id) {
       setBack({ to: `/contest/${d.contest_id}/discussion`, label: "返回整场讨论" });
     } else if (d.pid) {
       const to = d.contest_id ? `/contest/${d.contest_id}/${d.pid}/discussion` : `/problemsLibrary/${d.pid}/discussion`;
