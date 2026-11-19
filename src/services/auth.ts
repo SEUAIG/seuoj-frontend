@@ -5,6 +5,8 @@ import type {
   ChangePasswordResponse,
   LoginRequest,
   LoginResponse,
+  MfaCodeRequest,
+  MfaSetupResponse,
   ResetPasswordRequest,
   ResetPasswordResponse,
   SendCodeRequest,
@@ -44,5 +46,20 @@ export const changePassword = async (
   payload: ChangePasswordRequest
 ): Promise<ChangePasswordResponse> => {
   const res = await api.post<ChangePasswordResponse>(authEndpoints.changePassword, payload);
+  return res.data;
+};
+
+export const mfaVerifyRequest = async (payload: MfaCodeRequest): Promise<LoginResponse> => {
+  const res = await api.post<LoginResponse>(authEndpoints.mfaVerify, payload);
+  return res.data;
+};
+
+export const mfaSetupRequest = async (mfaToken: string): Promise<MfaSetupResponse> => {
+  const res = await api.post<MfaSetupResponse>(authEndpoints.mfaSetup, { mfaToken });
+  return res.data;
+};
+
+export const mfaEnableRequest = async (payload: MfaCodeRequest): Promise<LoginResponse> => {
+  const res = await api.post<LoginResponse>(authEndpoints.mfaEnable, payload);
   return res.data;
 };

@@ -13,9 +13,26 @@ export interface LoginData {
   username: string;
   nickname?: string;
   role?: string;
+  /** 非空表示还差两步验证：verify 输入动态码，setup 先绑定验证器；此时 jwt 为空 */
+  mfa?: "verify" | "setup" | null;
+  mfaToken?: string | null;
+  /** 刚绑定验证器时返回的一次性恢复码 */
+  recoveryCodes?: string[] | null;
 }
 
 export type LoginResponse = ApiResponse<LoginData>;
+
+export interface MfaCodeRequest {
+  mfaToken: string;
+  code: string;
+}
+
+export interface MfaSetupData {
+  secret: string;
+  otpauthUri: string;
+}
+
+export type MfaSetupResponse = ApiResponse<MfaSetupData>;
 
 export interface SignupRequest {
   username: string;

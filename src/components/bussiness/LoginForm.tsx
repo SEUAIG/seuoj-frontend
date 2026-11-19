@@ -19,6 +19,7 @@ import { login, setError } from "@/features/auth/authSlice";
 import { AppDispatch, RootState } from "@/app/store";
 import { toast } from "sonner";
 import { loginDestination } from "@/lib/loginRedirect";
+import MfaLoginStep from "./MfaLoginStep";
 
 export default function LoginForm() {
   // 我们虽然使用ShadCn组件库 但form组件是基于react hook form的 这个还是很强大的 推荐你学习一下 用于处理表单提交
@@ -57,9 +58,26 @@ export default function LoginForm() {
     }
   }, [isAuthenticated, nav, destination]);
   const [showPassword, setShowPassword] = useState(false);
+  const [mfa, setMfa] = useState<{ step: "verify" | "setup"; token: string } | null>(null);
   const { handleSubmit, register, control } = form;
   async function onSubmit(values: login_Values) {
-    await dispatch(login({ identifier: values.identifier, password: values.password }));
+    const action = await dispatch(login({ identifier: values.identifier, password: values.password }));
+    if (login.fulfilled.match(action)) {
+      const { mfa: step, mfaToken } = action.payload.data;
+      if (step && mfaToken) setMfa({ step, token: mfaToken });
+    }
+  }
+  if (mfa) {
+    return (
+      <MfaLoginStep
+        step={mfa.step}
+        mfaToken={mfa.token}
+        onCancel={() => {
+          setMfa(null);
+          setValue("password", "");
+        }}
+      />
+    );
   }
   return (
     <Form {...form}>

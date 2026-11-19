@@ -1,5 +1,6 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { User, AuthState } from "./types";
+import type { LoginData } from "@/models/auth";
 import { loginRequest, signupRequest } from "@/services/auth";
 
 let onLoginSuccess: (() => void) | null = null;
@@ -23,6 +24,24 @@ const initialState: AuthState = {
   jwt: undefined,
 };
 const isSuccessCode = (code: number) => code === 0;
+const applyLogin = (state: AuthState, data: LoginData) => {
+  const { jwt, username, nickname, role, id, capabilities } = data;
+  const normalizedRole: User["role"] =
+    role === "admin" || role === "superadmin" || role === "teacher" || role === "student" || role === "guest"
+      ? role
+      : "student";
+  state.jwt = jwt;
+  state.user = {
+    id: String(id),
+    capabilities,
+    username: username || "user",
+    nickname: nickname || undefined,
+    avatarUrl: "",
+    role: normalizedRole,
+  };
+  state.isAuthenticated = true;
+  onLoginSuccess?.();
+};
 // axios 拦截器会把后端返回的 message 写进 error.message
 const requestErrorMessage = (error: unknown) =>
   typeof error === "object" &&
@@ -103,26 +122,17 @@ const authSlice = createSlice({
         state.user.nickname = action.payload;
       }
     },
+    // 两步验证通过后由登录表单提交
+    loginCompleted(state, action: PayloadAction<LoginData>) {
+      applyLogin(state, action.payload);
+    },
   },
   extraReducers: (builder) => {
     builder
       .addCase(login.fulfilled, (state, action) => {
-        const { jwt, username, nickname, role, id, capabilities } = action.payload.data;
-        const normalizedRole: User["role"] =
-          role === "admin" || role === "superadmin" || role === "teacher" || role === "student" || role === "guest"
-            ? role
-            : "student";
-        state.jwt = jwt;
-        state.user = {
-          id: String(id),
-          capabilities,
-          username: username || "user",
-          nickname: nickname || undefined,
-          avatarUrl: "",
-          role: normalizedRole,
-        };
-        state.isAuthenticated = true;
-        onLoginSuccess?.();
+        // 还差两步验证时不登录，由登录表单接着走验证码步骤
+        if (action.payload.data.mfa) return;
+        applyLogin(state, action.payload.data);
       })
       .addCase(login.rejected, (state, action) => {
         state.isAuthenticated = false;
@@ -130,5 +140,5 @@ const authSlice = createSlice({
       });
   },
 });
-export const { resetAuth, setError, setNickname, setCurrentProfile } = authSlice.actions;
+export const { resetAuth, setError, setNickname, setCurrentProfile, loginCompleted } = authSlice.actions;
 export const authReducer = authSlice.reducer;

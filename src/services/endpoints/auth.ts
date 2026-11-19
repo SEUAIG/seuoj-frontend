@@ -6,4 +6,7 @@ export const authEndpoints = {
   resetPassword: "/api/auth/reset-password",
   changePassword: "/api/auth/change-password",
   tokenExchange: "/api/auth/token/exchange",
+  mfaVerify: "/api/auth/mfa/verify",
+  mfaSetup: "/api/auth/mfa/setup",
+  mfaEnable: "/api/auth/mfa/enable",
 };
