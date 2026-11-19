@@ -13,7 +13,10 @@ export interface GetUserPageRequest {
 }
 
 export interface UserPageRecord {
+  /** 能否编辑资料、重设密码、改权限（只有超级管理员） */
   canManageProfile: boolean;
+  /** 能否封禁／解封 */
+  canBan: boolean;
   user_id: number;
   username: string;
   nickname: string | null;

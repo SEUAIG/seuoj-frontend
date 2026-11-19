@@ -260,7 +260,7 @@ export default function AdminUserManagementPage() {
 
 
     const canBan = (user: UserPageRecord) =>
-        user.canManageProfile && String(user.user_id) !== String(currentUserId);
+        user.canBan && String(user.user_id) !== String(currentUserId);
     const selectableOnPage = users.filter(canBan);
     const allOnPageSelected =
         selectableOnPage.length > 0 && selectableOnPage.every((u) => selected.has(u.user_id));

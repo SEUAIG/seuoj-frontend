@@ -122,7 +122,9 @@ export default function ProfileEditPage() {
   const effective = effectiveCapabilities(assigned);
   const profileChanged = settings && (nickname.trim() !== (settings.nickname || "") || (!isSelf && (email.trim() !== settings.email || allowNickname !== settings.allowNicknameChange)));
   const permissionsChanged = settings && [...assigned].sort().join() !== [...settings.assigned].sort().join();
-  const canEditNickname = !isSelf || settings?.allowNicknameChange;
+  // 他人资料只有超级管理员能改，其他管理者打开是只读
+  const canEditOthers = !isSelf && !!settings?.canManageProfile;
+  const canEditNickname = isSelf ? settings?.allowNicknameChange : canEditOthers;
   return <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
     <Helmet><title>编辑资料 - SEUOJ</title></Helmet>
     <Link to={isSelf ? "/personal" : `/user/${userId}`} className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />返回主页</Link>
@@ -149,10 +151,10 @@ export default function ProfileEditPage() {
               <Input id="nickname" value={nickname} onChange={e => setNickname(e.target.value)} maxLength={64} disabled={busy || !canEditNickname} autoComplete="nickname" />
               <p className="text-sm text-muted-foreground">{canEditNickname ? "显示在用户主页和提交记录中，留空使用用户名。" : "此账号的昵称由管理员维护。"}</p>
             </div>
-            <div className="space-y-2"><label htmlFor="profile-email">邮箱</label><Input id="profile-email" type="email" value={isSelf ? settings.email : email} onChange={e => setEmail(e.target.value)} readOnly={isSelf} disabled={busy} required maxLength={128} />
+            <div className="space-y-2"><label htmlFor="profile-email">邮箱</label><Input id="profile-email" type="email" value={isSelf ? settings.email : email} onChange={e => setEmail(e.target.value)} readOnly={isSelf} disabled={busy || (!isSelf && !canEditOthers)} required maxLength={128} />
               {isSelf && <Button type="button" variant="link" className="h-auto p-0" onClick={() => setParams({ tab: "security" })}>修改邮箱</Button>}
             </div>
-            <Button disabled={busy || !profileChanged} type="submit">{busy ? "保存中…" : "保存资料"}</Button>
+            {(isSelf || canEditOthers) && <Button disabled={busy || !profileChanged} type="submit">{busy ? "保存中…" : "保存资料"}</Button>}
           </form>
         </TabsContent>
         {isSelf && <TabsContent value="security" className="space-y-10 pt-6">
@@ -199,7 +201,7 @@ export default function ProfileEditPage() {
           </AlertDialog>
         </TabsContent>}
         <TabsContent value="permissions" className="pt-6">
-          <p className="mb-4 text-sm text-muted-foreground">{settings.canManagePermissions ? "调整后点击保存权限生效。" : "以下为账号现有权限，由账号管理员分配。"}</p>
+          <p className="mb-4 text-sm text-muted-foreground">{settings.canManagePermissions ? "调整后点击保存权限生效。" : "以下为账号现有权限，由超级管理员分配。"}</p>
           <div className="divide-y">{(Object.keys(capabilityLabels) as Capability[]).map(capability => {
             const inherited = !assigned.includes(capability) && effective.includes(capability);
             const lockedByRole = capability !== "ACCOUNT_ADMIN" && assigned.includes("ACCOUNT_ADMIN") || ["PROBLEM_CREATE", "CONTEST_CREATE"].includes(capability) && assigned.includes("TEACHER");
