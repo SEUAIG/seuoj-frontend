@@ -42,7 +42,11 @@ function AcmCell({ d, st, go }: CellProps) {
   const n = d.unacceptedCount ?? 0;
   if (d.accepted) {
     const t = d.acceptedTime ?? 0;
-    const first = st?.firstAc != null && d.acceptedTime === st.firstAc;
+    // 同一分钟内可能有多个 AC，只有提交 ID 与一血一致的那个才高亮
+    const first =
+      st?.firstAc != null &&
+      d.acceptedTime === st.firstAc &&
+      (st.firstJudgeId == null || Number(d.judge_id) === st.firstJudgeId);
     return (
       <td
         onClick={go}

@@ -148,27 +148,37 @@ export interface ProblemStat {
   tried: number;
   /** ACM：本题最早通过的分钟数 */
   firstAc: number | null;
-  /** 最早通过的人（同一分钟可能有多人） */
+  /** 最早通过的人 */
   firstBy: string[];
+  /** 一血对应的提交 ID：同一分钟内用提交先后区分唯一的一血 */
+  firstJudgeId: number | null;
 }
 
 export function problemStats(data?: ContestStandingsData): Record<string, ProblemStat> {
   const out: Record<string, ProblemStat> = {};
-  for (const p of data?.problems ?? []) out[p.pid] = { solvers: 0, tried: 0, firstAc: null, firstBy: [] };
+  const empty = (): ProblemStat => ({ solvers: 0, tried: 0, firstAc: null, firstBy: [], firstJudgeId: null });
+  for (const p of data?.problems ?? []) out[p.pid] = empty();
   for (const r of data?.records ?? []) {
     for (const [pid, d] of Object.entries(r.score_details ?? {})) {
-      const st = (out[pid] ??= { solvers: 0, tried: 0, firstAc: null, firstBy: [] });
+      const st = (out[pid] ??= empty());
       const state = cellStateOf(d, data?.rule_type);
       if (!state) continue;
       st.tried++;
-      if (state === "ok") {
-        st.solvers++;
-        if (d.acceptedTime != null && (st.firstAc == null || d.acceptedTime < st.firstAc)) {
-          st.firstAc = d.acceptedTime;
-          st.firstBy = [displayName(r)];
-        } else if (d.acceptedTime != null && d.acceptedTime === st.firstAc) {
-          st.firstBy.push(displayName(r));
-        }
+      if (state !== "ok") continue;
+      st.solvers++;
+      if (d.acceptedTime == null) continue;
+      const judgeId = d.judge_id == null ? null : Number(d.judge_id);
+      // 一血必须唯一：先比分钟，同分钟再比提交 ID（ID 随提交时间递增）
+      const earlier =
+        st.firstAc == null ||
+        d.acceptedTime < st.firstAc ||
+        (d.acceptedTime === st.firstAc &&
+          judgeId != null &&
+          (st.firstJudgeId == null || judgeId < st.firstJudgeId));
+      if (earlier) {
+        st.firstAc = d.acceptedTime;
+        st.firstJudgeId = judgeId;
+        st.firstBy = [displayName(r)];
       }
     }
   }
