@@ -136,27 +136,27 @@ export default function ContestStandingsPage() {
         ) : (
           <div className="max-h-[calc(100vh-11rem)] overflow-auto bg-white">
             <table className="w-full border-separate border-spacing-0 text-sm">
-              <thead>
+              <thead className="sticky top-0 z-20 bg-white">
                 <tr className="text-xs text-slate-500">
-                  <th className={cn(TH, "sticky left-0 top-0 z-30 w-12 min-w-[48px] text-right")}>#</th>
+                  <th className={cn(TH, "sticky left-0 z-30 w-12 min-w-[48px] text-right")}>#</th>
                   <th
                     className={cn(
                       TH,
-                      "sticky left-12 top-0 z-30 min-w-[140px] border-r border-slate-200/80 text-left"
+                      "sticky left-12 z-30 min-w-[140px] border-r border-slate-200/80 text-left"
                     )}
                   >
                     选手
                   </th>
                   {acm ? (
                     <>
-                      <th className={cn(TH, "sticky top-0 z-20")}>通过</th>
-                      <th className={cn(TH, "sticky top-0 z-20")}>罚时</th>
+                      <th className={TH}>通过</th>
+                      <th className={TH}>罚时</th>
                     </>
                   ) : (
-                    <th className={cn(TH, "sticky top-0 z-20")}>总分</th>
+                    <th className={TH}>总分</th>
                   )}
                   {problems.map((p) => (
-                    <th key={p.pid} className={cn(TH, "sticky top-0 z-20 min-w-[60px] text-center")}>
+                    <th key={p.pid} className={cn(TH, "min-w-[60px] text-center")}>
                       <Link
                         to={`/contest/${contestId}/${p.pid}`}
                         title={`${letterOf(p.sort_order)}. ${p.title}`}
@@ -167,25 +167,23 @@ export default function ContestStandingsPage() {
                     </th>
                   ))}
                 </tr>
-              </thead>
-              <tbody>
-                {/* 每题统计放在所有人上面（不随纵向滚动冻结，保持顶部只有一行题号） */}
-                <tr className="text-xs text-slate-500">
-                  <td className={cn("sticky left-0 z-10 bg-white", !acm && "border-b border-slate-900")} />
+                {/* 每题统计放在所有人上面，随表头一起冻结 */}
+                <tr className="bg-white text-xs text-slate-500">
+                  <td className={cn("sticky left-0 z-30 bg-white", !acm && "border-b border-slate-900")} />
                   <td
                     className={cn(
-                      "sticky left-12 z-10 border-r border-slate-200/80 bg-white px-2 py-2 text-left",
+                      "sticky left-12 z-30 border-r border-slate-200/80 bg-white px-2 py-2 text-left",
                       !acm && "border-b border-slate-900"
                     )}
                   >
                     通过 / 尝试
                   </td>
-                  <td colSpan={statCols} className={cn(!acm && "border-b border-slate-900")} />
+                  <td colSpan={statCols} className={cn("bg-white", !acm && "border-b border-slate-900")} />
                   {problems.map((p) => (
                     <td
                       key={p.pid}
                       className={cn(
-                        "whitespace-nowrap px-2 py-2 text-center font-mono",
+                        "whitespace-nowrap bg-white px-2 py-2 text-center font-mono",
                         !acm && "border-b border-slate-900"
                       )}
                     >
@@ -194,19 +192,19 @@ export default function ContestStandingsPage() {
                   ))}
                 </tr>
                 {acm && (
-                  <tr className="text-xs text-slate-500">
-                    <td className="sticky left-0 z-10 border-b border-slate-900 bg-white" />
-                    <td className="sticky left-12 z-10 border-b border-r border-b-slate-900 border-r-slate-200/80 bg-white px-2 pb-2.5 text-left align-top">
+                  <tr className="bg-white text-xs text-slate-500">
+                    <td className="sticky left-0 z-30 border-b border-slate-900 bg-white" />
+                    <td className="sticky left-12 z-30 border-b border-r border-b-slate-900 border-r-slate-200/80 bg-white px-2 pb-2.5 text-left align-top">
                       第一个通过
                     </td>
-                    <td colSpan={statCols} className="border-b border-slate-900" />
+                    <td colSpan={statCols} className="border-b border-slate-900 bg-white" />
                     {problems.map((p) => {
                       const st = stats[p.pid];
                       const who = st?.firstBy.join("、");
                       return (
                         <td
                           key={p.pid}
-                          className="border-b border-slate-900 px-2 pb-2.5 text-center align-top"
+                          className="border-b border-slate-900 bg-white px-2 pb-2.5 text-center align-top"
                           title={who}
                         >
                           {st?.firstAc != null ? (
@@ -222,6 +220,8 @@ export default function ContestStandingsPage() {
                     })}
                   </tr>
                 )}
+              </thead>
+              <tbody>
                 {records.map((r) => {
                   const mine = isMine(r, user);
                   const name = displayName(r);
