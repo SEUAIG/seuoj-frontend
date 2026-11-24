@@ -1,6 +1,5 @@
 import SubmitterLink from "@/components/common/SubmitterLink";
-import ClassPagination from "@/components/bussiness/ClassPagination";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/app/store";
@@ -26,11 +25,9 @@ import type { ContestRuleType, ContestStandingsScoreDetail } from "@/models/cont
 import { cn } from "@/lib/utils";
 
 const TD = "whitespace-nowrap border-b border-slate-100 px-2 py-[9px] text-center font-mono";
-const TH = "whitespace-nowrap px-2 py-2.5 font-medium";
+const TH = "whitespace-nowrap border-b border-slate-200 bg-white px-2 py-2.5 font-medium";
 /** 能点进提交记录的格子 */
 const GO = "cursor-pointer hover:bg-slate-100";
-/** 默认每页显示选手数（支持任意正整数连续调节） */
-const DEFAULT_PAGE_SIZE = 15;
 
 interface CellProps {
   d?: ContestStandingsScoreDetail;
@@ -101,10 +98,6 @@ export default function ContestStandingsPage() {
   const blocked = standingsBlockedReason(detail, isAuthenticated);
   const { data, isLoading, isError, error } = useContestStandings(contestId, detail);
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
-  const [pageSizeInput, setPageSizeInput] = useState<string>(String(DEFAULT_PAGE_SIZE));
-
   const rule = data?.rule_type ?? detail?.rule_type;
   const acm = isAcm(rule);
   const problems = sortProblems(data?.problems?.length ? data.problems : detail?.problem_list);
@@ -112,37 +105,6 @@ export default function ContestStandingsPage() {
   const stats = problemStats(data);
   const statCols = acm ? 2 : 1;
   const canManage = !!detail?.can_write;
-
-  // 切换比赛时重置到第一页
-  useEffect(() => {
-    setPage(1);
-  }, [contestId]);
-
-  const totalRecords = records.length;
-  const maxPageSize = Math.max(totalRecords, 1);
-  const effectivePageSize = Math.min(Math.max(1, pageSize), maxPageSize);
-  const totalPages = Math.max(1, Math.ceil(totalRecords / effectivePageSize));
-  const safePage = Math.min(page, totalPages);
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
-
-  const applyPageSize = (raw: number) => {
-    const clamped = Math.min(Math.max(1, Math.floor(raw)), maxPageSize);
-    setPageSize(clamped);
-    setPageSizeInput(String(clamped));
-    setPage(1);
-  };
-
-  const startIdx = (safePage - 1) * effectivePageSize;
-  const endIdx = Math.min(startIdx + effectivePageSize, totalRecords);
-  const visibleRecords = records.slice(startIdx, endIdx);
-
-  const myIndex = records.findIndex((r) => isMine(r, user));
-  const myPage = myIndex >= 0 ? Math.floor(myIndex / effectivePageSize) + 1 : null;
 
   /** 进入某人的提交记录：管理者可以看任何人，选手只能看自己 */
   const submissionsOf = (username: string, mine: boolean, pid?: string) => {
@@ -154,97 +116,47 @@ export default function ContestStandingsPage() {
   };
 
   return (
-    <ContestShell contestId={contestId} tab="standings">
+    <ContestShell contestId={contestId} tab="standings" wide>
       <Helmet>
         <title>{detail?.title ? `排名 - ${detail.title} - SEUOJ` : "排名 - SEUOJ"}</title>
       </Helmet>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-[26px] font-semibold">排名</h2>
-        {!blocked && detail && !isLoading && !(isError && !data) && totalRecords > 0 && (
-          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-            <span>
-              第 {startIdx + 1}–{endIdx} 名，共 {totalRecords} 名选手
-            </span>
-            {myPage != null && myPage !== safePage && (
-              <button
-                type="button"
-                onClick={() => setPage(myPage)}
-                className="rounded border border-primary/30 bg-primary/5 px-2 py-1 font-medium text-primary hover:bg-primary/10"
-              >
-                定位到我（第 {myPage} 页）
-              </button>
-            )}
-            <label className="inline-flex items-center gap-1.5">
-              <span>每页</span>
-              {totalRecords > 1 && (
-                <input
-                  type="range"
-                  min={1}
-                  max={maxPageSize}
-                  value={effectivePageSize}
-                  onChange={(e) => applyPageSize(Number(e.target.value))}
-                  aria-label="每页显示选手数"
-                  className="hidden h-1.5 w-24 cursor-pointer accent-primary sm:inline-block"
-                />
-              )}
-              <input
-                type="number"
-                min={1}
-                max={maxPageSize}
-                value={pageSizeInput}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setPageSizeInput(val);
-                  const parsed = Number.parseInt(val, 10);
-                  if (Number.isFinite(parsed) && parsed >= 1) {
-                    setPageSize(Math.min(parsed, maxPageSize));
-                    setPage(1);
-                  }
-                }}
-                onBlur={() => setPageSizeInput(String(effectivePageSize))}
-                className="w-16 rounded border border-slate-200 bg-white px-2 py-1 text-center font-mono text-xs text-slate-700 focus:border-primary focus:outline-none"
-              />
-              <span>名</span>
-            </label>
-          </div>
-        )}
-      </div>
+      <div className="mx-auto max-w-[1560px]">
+        <h2 className="mb-4 font-display text-[26px] font-semibold">排名</h2>
 
-      {blocked ? (
-        <p className="py-24 text-center text-slate-500">{blocked}</p>
-      ) : !detail || isLoading ? (
-        <div className="flex justify-center py-24">
-          <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-        </div>
-      ) : isError && !data ? (
-        <p className="py-24 text-center text-slate-500">
-          {error instanceof Error ? error.message : "排名暂不可见"}
-        </p>
-      ) : (
-        <>
-          <div className="overflow-x-auto bg-white">
-            <table className="w-full border-collapse text-sm">
+        {blocked ? (
+          <p className="py-24 text-center text-slate-500">{blocked}</p>
+        ) : !detail || isLoading ? (
+          <div className="flex justify-center py-24">
+            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+          </div>
+        ) : isError && !data ? (
+          <p className="py-24 text-center text-slate-500">
+            {error instanceof Error ? error.message : "排名暂不可见"}
+          </p>
+        ) : (
+          <div className="max-h-[calc(100vh-11rem)] overflow-auto bg-white">
+            <table className="w-full border-separate border-spacing-0 text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-xs text-slate-500">
-                  <th className={cn(TH, "sticky left-0 z-20 w-12 min-w-[48px] bg-white text-right")}>#</th>
+                <tr className="text-xs text-slate-500">
+                  <th className={cn(TH, "sticky left-0 top-0 z-30 w-12 min-w-[48px] text-right")}>#</th>
                   <th
                     className={cn(
                       TH,
-                      "sticky left-12 z-20 min-w-[140px] border-r border-slate-200/80 bg-white text-left"
+                      "sticky left-12 top-0 z-30 min-w-[140px] border-r border-slate-200/80 text-left"
                     )}
                   >
                     选手
                   </th>
                   {acm ? (
                     <>
-                      <th className={TH}>通过</th>
-                      <th className={TH}>罚时</th>
+                      <th className={cn(TH, "sticky top-0 z-20")}>通过</th>
+                      <th className={cn(TH, "sticky top-0 z-20")}>罚时</th>
                     </>
                   ) : (
-                    <th className={TH}>总分</th>
+                    <th className={cn(TH, "sticky top-0 z-20")}>总分</th>
                   )}
                   {problems.map((p) => (
-                    <th key={p.pid} className={cn(TH, "min-w-[64px] text-center")}>
+                    <th key={p.pid} className={cn(TH, "sticky top-0 z-20 min-w-[60px] text-center")}>
                       <Link
                         to={`/contest/${contestId}/${p.pid}`}
                         title={`${letterOf(p.sort_order)}. ${p.title}`}
@@ -255,31 +167,48 @@ export default function ContestStandingsPage() {
                     </th>
                   ))}
                 </tr>
-                {/* 每题统计放在所有人上面 */}
-                <tr className={cn("text-xs text-slate-500", !acm && "border-b border-slate-900")}>
-                  <td className="sticky left-0 z-20 bg-white" />
-                  <td className="sticky left-12 z-20 border-r border-slate-200/80 bg-white px-2 py-2 text-left">
+              </thead>
+              <tbody>
+                {/* 每题统计放在所有人上面（不随纵向滚动冻结，保持顶部只有一行题号） */}
+                <tr className="text-xs text-slate-500">
+                  <td className={cn("sticky left-0 z-10 bg-white", !acm && "border-b border-slate-900")} />
+                  <td
+                    className={cn(
+                      "sticky left-12 z-10 border-r border-slate-200/80 bg-white px-2 py-2 text-left",
+                      !acm && "border-b border-slate-900"
+                    )}
+                  >
                     通过 / 尝试
                   </td>
-                  <td colSpan={statCols} />
+                  <td colSpan={statCols} className={cn(!acm && "border-b border-slate-900")} />
                   {problems.map((p) => (
-                    <td key={p.pid} className="whitespace-nowrap px-2 py-2 text-center font-mono">
+                    <td
+                      key={p.pid}
+                      className={cn(
+                        "whitespace-nowrap px-2 py-2 text-center font-mono",
+                        !acm && "border-b border-slate-900"
+                      )}
+                    >
                       {stats[p.pid]?.solvers ?? 0} / {stats[p.pid]?.tried ?? 0}
                     </td>
                   ))}
                 </tr>
                 {acm && (
-                  <tr className="border-b border-slate-900 text-xs text-slate-500">
-                    <td className="sticky left-0 z-20 bg-white" />
-                    <td className="sticky left-12 z-20 border-r border-slate-200/80 bg-white px-2 pb-2.5 text-left align-top">
+                  <tr className="text-xs text-slate-500">
+                    <td className="sticky left-0 z-10 border-b border-slate-900 bg-white" />
+                    <td className="sticky left-12 z-10 border-b border-r border-b-slate-900 border-r-slate-200/80 bg-white px-2 pb-2.5 text-left align-top">
                       第一个通过
                     </td>
-                    <td colSpan={statCols} />
+                    <td colSpan={statCols} className="border-b border-slate-900" />
                     {problems.map((p) => {
                       const st = stats[p.pid];
                       const who = st?.firstBy.join("、");
                       return (
-                        <td key={p.pid} className="px-2 pb-2.5 text-center align-top" title={who}>
+                        <td
+                          key={p.pid}
+                          className="border-b border-slate-900 px-2 pb-2.5 text-center align-top"
+                          title={who}
+                        >
                           {st?.firstAc != null ? (
                             <>
                               <span className="block font-mono">{hm(st.firstAc)}</span>
@@ -293,9 +222,7 @@ export default function ContestStandingsPage() {
                     })}
                   </tr>
                 )}
-              </thead>
-              <tbody>
-                {visibleRecords.map((r) => {
+                {records.map((r) => {
                   const mine = isMine(r, user);
                   const name = displayName(r);
                   const goAll = submissionsOf(r.username, mine);
@@ -368,15 +295,8 @@ export default function ContestStandingsPage() {
               </tbody>
             </table>
           </div>
-          {totalPages > 1 && (
-            <ClassPagination
-              totalPages={totalPages}
-              currentPage={safePage}
-              onPageChange={(nextPage) => setPage(nextPage)}
-            />
-          )}
-        </>
-      )}
+        )}
+      </div>
     </ContestShell>
   );
 }
