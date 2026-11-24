@@ -116,12 +116,12 @@ export default function ContestStandingsPage() {
   };
 
   return (
-    <ContestShell contestId={contestId} tab="standings" wide>
+    <ContestShell contestId={contestId} tab="standings" fill>
       <Helmet>
         <title>{detail?.title ? `排名 - ${detail.title} - SEUOJ` : "排名 - SEUOJ"}</title>
       </Helmet>
-      <div className="mx-auto max-w-[1560px]">
-        <h2 className="mb-4 font-display text-[26px] font-semibold">排名</h2>
+      <div className="mx-auto flex h-full max-w-[1560px] flex-col px-4 pb-6 pt-6 sm:px-7">
+        <h2 className="mb-4 flex-none font-display text-[26px] font-semibold">排名</h2>
 
         {blocked ? (
           <p className="py-24 text-center text-slate-500">{blocked}</p>
@@ -134,7 +134,7 @@ export default function ContestStandingsPage() {
             {error instanceof Error ? error.message : "排名暂不可见"}
           </p>
         ) : (
-          <div className="max-h-[calc(100vh-11rem)] overflow-auto bg-white">
+          <div className="min-h-0 flex-1 overflow-auto bg-white">
             <table className="w-full border-separate border-spacing-0 text-sm">
               <thead className="sticky top-0 z-20 bg-white">
                 <tr className="text-xs text-slate-500">
