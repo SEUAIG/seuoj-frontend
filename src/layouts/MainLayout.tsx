@@ -7,7 +7,7 @@ import NotificationToasts from "@/components/notification/NotificationToasts";
 
 export default function MainLayout() {
   const { pathname } = useLocation();
-  const isFullscreenPage = pathname === "/chat-agent";
+  const isFullscreenPage = pathname === "/chat-agent" || /^\/contest\/\d+\/standings\/?$/.test(pathname);
 
   return (
     <div className={`flex flex-col min-h-screen bg-background ${isFullscreenPage ? "h-screen overflow-hidden" : ""}`}>
